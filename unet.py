@@ -27,14 +27,14 @@ def upsample_block(lyr, conv_features, n_filt, kernel_size, dropout_rate):
 
     lyr = layers.Dropout(dropout_rate)(lyr)
 
-    lyr = double_conv_block(lyr, n_filt, kernel_size)(lyr)
+    lyr = double_conv_block(lyr, n_filt, kernel_size)
     return lyr
 
 
 def build_unet(dropout_rate):
 
     # inputs
-    inputs = layers.Input(shape=(512, 512))
+    inputs = layers.Input(shape=(512, 512, 1))
 
     # encoder
     f1, p1 = downsample_block(inputs, n_filt=64, kernel_size=3, dropout_rate=dropout_rate)
@@ -52,6 +52,11 @@ def build_unet(dropout_rate):
     u9 = upsample_block(u8, conv_features=f1, n_filt=64, kernel_size=3, dropout_rate=dropout_rate)
 
     # outputs
-    outputs = layers.Conv2D(n_filt=2, kernel_size=1, padding="same", activation="softmax")(u9)
+    outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="softmax")(u9)
     unet_model = tf.keras.Model(inputs, outputs, name="U-Net")
     return unet_model
+
+
+if __name__ == "__main__":
+    unet_model = build_unet(dropout_rate=0.3)
+    unet_model.summary()
