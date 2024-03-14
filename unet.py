@@ -20,3 +20,12 @@ def downsample_block(lyr, n_filt, kernel_size):
     return f, p
 
 
+def upsample_block(lyr, conv_features, n_filt, kernel_size):
+    lyr = layers.Conv2DTranspose(n_filt, kernel_size, 2, padding="same")(lyr)
+
+    lyr = layers.concatenate([lyr, conv_features])
+
+    lyr = layers.Dropout(0.3)(lyr)
+
+    lyr = double_conv_block(lyr, n_filt, kernel_size)(lyr)
+    return layer
