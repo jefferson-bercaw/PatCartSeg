@@ -52,7 +52,7 @@ def build_unet(dropout_rate):
     u9 = upsample_block(u8, conv_features=f1, n_filt=64, kernel_size=3, dropout_rate=dropout_rate)
 
     # outputs
-    outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="softmax")(u9)
+    outputs = layers.Conv2D(filters=3, kernel_size=1, padding="same", activation="softmax")(u9)
     unet_model = tf.keras.Model(inputs, outputs, name="U-Net")
     return unet_model
 
