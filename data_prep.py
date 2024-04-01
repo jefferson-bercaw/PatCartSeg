@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
         for file in image_files:
 
-            mri = read_bmp(source_mri, file) / 255.0
+            mri = read_bmp(source_mri, file)
             P = read_bmp(source_P, file)
             PC = read_bmp(source_PC, file)
 
