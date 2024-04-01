@@ -100,9 +100,9 @@ if __name__ == "__main__":
     test_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == test_subj]
     val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == val_subj]
 
-    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/train"
-    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/test"
-    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/val"
+    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/train_bmp"
+    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/test_bmp"
+    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/val_bmp"
 
     for scan in scans.keys():
 
