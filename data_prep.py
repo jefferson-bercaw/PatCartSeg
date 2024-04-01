@@ -70,6 +70,11 @@ def get_bmp_files(folder_path):
     return bmp_files
 
 
+def save_bmp(np_array, file_location):
+    im = Image.fromarray(np_array)
+    im.save(file_location)
+
+
 if __name__ == "__main__":
     # Save option
     save_opt = True
@@ -131,12 +136,23 @@ if __name__ == "__main__":
             # Save .npz files
             if save_opt:
                 if scan in train_scans:
-                    np.savez(os.path.join(dest_train, "mri", file_to_save), arr=mri)
-                    np.savez(os.path.join(dest_train, "mask_3d", file_to_save), arr=mask)
+                    # np.savez(os.path.join(dest_train, "mri", file_to_save), arr=mri)
+                    # np.savez(os.path.join(dest_train, "mask_3d", file_to_save), arr=mask)
+
+                    save_bmp(mri, os.path.join(dest_train, "mri", file_to_save))
+                    save_bmp(mask, os.path.join(dest_train, "mask_3d", file_to_save))
+
                 elif scan in test_scans:
-                    np.savez(os.path.join(dest_test, "mri", file_to_save), arr=mri)
-                    np.savez(os.path.join(dest_test, "mask_3d", file_to_save), arr=mask)
+                    # np.savez(os.path.join(dest_test, "mri", file_to_save), arr=mri)
+                    # np.savez(os.path.join(dest_test, "mask_3d", file_to_save), arr=mask)
+
+                    save_bmp(mri, os.path.join(dest_test, "mri", file_to_save))
+                    save_bmp(mask, os.path.join(dest_test, "mask_3d", file_to_save))
+
                 elif scan in val_scans:
-                    np.savez(os.path.join(dest_val, "mri", file_to_save), arr=mri)
-                    np.savez(os.path.join(dest_val, "mask_3d", file_to_save), arr=mask)
+                    # np.savez(os.path.join(dest_val, "mri", file_to_save), arr=mri)
+                    # np.savez(os.path.join(dest_val, "mask_3d", file_to_save), arr=mask)
+
+                    save_bmp(mri, os.path.join(dest_val, "mri", file_to_save))
+                    save_bmp(mask, os.path.join(dest_val, "mask_3d", file_to_save))
 
