@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
             mask = assemble_3d_mask(P, PC)
 
-            file_to_save = file.split(".")[0] + ".npz"
+            file_to_save = file.split(".")[0] + ".bmp"
 
             # Save .npz files
             if save_opt:
