@@ -96,5 +96,4 @@ if __name__ == '__main__':
     image_files = [os.path.join(images_dir, file) for file in os.listdir(images_dir) if file.endswith('.npz')]
     label_files = [os.path.join(masks_dir, file) for file in os.listdir(masks_dir) if file.endswith('.npz')]
 
-    print("Starting Creation of Dataset")
     dataset = create_dataset(image_files, label_files, batch_size=32, shuffle=True)
