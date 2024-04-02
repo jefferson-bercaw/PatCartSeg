@@ -86,17 +86,3 @@ if __name__ == '__main__':
 
     print("Starting Creation of Dataset")
     dataset = create_dataset(image_files, label_files, batch_size=32, shuffle=True)
-
-    # list_mri = tf.data.Dataset.list_files(str(images_dir + '/*'), shuffle=False, )
-    # for f in list_mri.take(5):
-    #     print(f.numpy())
-    #
-    # list_label = tf.data.Dataset.list_files(str(masks_dir + '/*'), shuffle=False)
-    # for f in list_label.take(5):
-    #     print(f.numpy())
-    #
-    # combined_paths = []
-    # for mri, label in zip(list_mri, list_label):
-    #     combined_paths.append([mri, label])
-    #
-    # pause()
