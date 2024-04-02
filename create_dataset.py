@@ -62,15 +62,27 @@ def create_dataset(image_files, mask_files, batch_size=32, shuffle=True):
     return dataset
 
 
-def get_dataset(batch_size):
-    images_dir = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/train/mri"
-    masks_dir = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/train/mask_3d"
+def get_dataset(batch_size, dataset_type):
+
+    if dataset_type == 'train':
+        images_dir = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/train/mri"
+        masks_dir = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/train/mask_3d"
+    elif dataset_type == 'test':
+        images_dir = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/test/mri"
+        masks_dir = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/test/mask_3d"
+    elif dataset_type == 'val' or dataset_type == 'validation':
+        images_dir = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/val/mri"
+        masks_dir = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/val/mask_3d"
+    else:
+        raise(ValueError, "The value {dataset_type} for the variable dataset_type is not one of0 'train', 'test', or 'val'")
 
     # Create a dataset of file paths
     image_files = [os.path.join(images_dir, file) for file in os.listdir(images_dir) if file.endswith('.npz')]
     label_files = [os.path.join(masks_dir, file) for file in os.listdir(masks_dir) if file.endswith('.npz')]
 
-    dataset = create_dataset(image_files, label_files, batch_size=32, shuffle=True)
+    # Create dataset
+    dataset = create_dataset(image_files, label_files, batch_size=batch_size, shuffle=True)
+
     return dataset
 
 
