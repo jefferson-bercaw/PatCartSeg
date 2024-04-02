@@ -105,9 +105,9 @@ if __name__ == "__main__":
     test_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == test_subj]
     val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == val_subj]
 
-    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/train_bmp"
-    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/test_bmp"
-    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data/val_bmp"
+    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/train"
+    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/test"
+    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/val"
 
     for scan in scans.keys():
 
@@ -129,30 +129,21 @@ if __name__ == "__main__":
             P = read_bmp(source_P, file)
             PC = read_bmp(source_PC, file)
 
-            mask = assemble_3d_mask(P, PC)
-
             file_to_save = file.split(".")[0] + ".bmp"
 
-            # Save .npz files
+            # Save .bmp files
             if save_opt:
                 if scan in train_scans:
-                    # np.savez(os.path.join(dest_train, "mri", file_to_save), arr=mri)
-                    # np.savez(os.path.join(dest_train, "mask_3d", file_to_save), arr=mask)
-
-                    save_bmp(mri, os.path.join(dest_train, "mri", file_to_save))
-                    save_bmp(mask, os.path.join(dest_train, "mask_3d", file_to_save))
+                    save_bmp(mri, str(dest_train + "/mri/" + file_to_save))
+                    save_bmp(P, str(dest_train + "/mask_P/" + file_to_save))
+                    save_bmp(PC, str(dest_train, "/mask_PC/" + file_to_save))
 
                 elif scan in test_scans:
-                    # np.savez(os.path.join(dest_test, "mri", file_to_save), arr=mri)
-                    # np.savez(os.path.join(dest_test, "mask_3d", file_to_save), arr=mask)
-
-                    save_bmp(mri, os.path.join(dest_test, "mri", file_to_save))
-                    save_bmp(mask, os.path.join(dest_test, "mask_3d", file_to_save))
+                    save_bmp(mri, str(dest_test + "/mri/" + file_to_save))
+                    save_bmp(P, str(dest_test + "/mask_P/" + file_to_save))
+                    save_bmp(PC, str(dest_test, "/mask_PC/" + file_to_save))
 
                 elif scan in val_scans:
-                    # np.savez(os.path.join(dest_val, "mri", file_to_save), arr=mri)
-                    # np.savez(os.path.join(dest_val, "mask_3d", file_to_save), arr=mask)
-
-                    save_bmp(mri, os.path.join(dest_val, "mri", file_to_save))
-                    save_bmp(mask, os.path.join(dest_val, "mask_3d", file_to_save))
-
+                    save_bmp(mri, str(dest_val + "/mri/" + file_to_save))
+                    save_bmp(P, str(dest_val + "/mask_P/" + file_to_save))
+                    save_bmp(PC, str(dest_val, "/mask_PC/" + file_to_save))
