@@ -1,0 +1,11 @@
+#!/bin/sh
+#SBATCH --output=%A_%a_slurm.out
+#SBATCH --error=%A_%a_slurm.err
+#SBATCH --nodes=1
+#SBATCH --mem=96G
+#SBATCH -p scavenger-gpu
+#SBATCH --gres=gpu:1
+#SBATCH --exclusive
+#SBATCH --array=0-95
+
+python

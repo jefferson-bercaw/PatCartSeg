@@ -3,6 +3,8 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 ## Model Creation
 def double_conv_block(lyr, n_filt, kernel_size):
