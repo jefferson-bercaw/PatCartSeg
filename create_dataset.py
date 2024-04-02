@@ -73,6 +73,7 @@ def get_dataset(batch_size):
     dataset = create_dataset(image_files, label_files, batch_size=32, shuffle=True)
     return dataset
 
+
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 32
