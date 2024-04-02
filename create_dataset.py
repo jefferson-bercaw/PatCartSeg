@@ -1,10 +1,6 @@
 import tensorflow as tf
-import pathlib
 import os
-import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 def load_image_and_label(image_file, label):
@@ -75,7 +71,7 @@ def get_dataset(batch_size):
     label_files = [os.path.join(masks_dir, file) for file in os.listdir(masks_dir) if file.endswith('.npz')]
 
     dataset = create_dataset(image_files, label_files, batch_size=32, shuffle=True)
-
+    return dataset
 
 if __name__ == '__main__':
     # Hyperparameters
