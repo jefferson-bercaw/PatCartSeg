@@ -51,13 +51,10 @@ def read_bmp(image_path, image_name):
     return np_image
 
 
-def assemble_3d_mask(P_mask, PC_mask):
-    mask = np.zeros((512, 512, 3))
-    any_mask = P_mask | PC_mask
-
-    mask[:, :, 0] = 1 - any_mask
-    mask[:, :, 1] = P_mask
-    mask[:, :, 2] = PC_mask
+def assemble_2d_mask(P_mask, PC_mask):
+    mask = np.zeros((512, 512))
+    mask[P_mask > 0] = 1
+    mask[PC_mask > 0] = 2
 
     return mask
 
@@ -105,9 +102,9 @@ if __name__ == "__main__":
     test_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == test_subj]
     val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == val_subj]
 
-    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/train"
-    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/test"
-    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/val"
+    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP2/train"
+    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP2/test"
+    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP2/val"
 
     for scan in scans.keys():
 
@@ -129,21 +126,20 @@ if __name__ == "__main__":
             P = read_bmp(source_P, file)
             PC = read_bmp(source_PC, file)
 
+            mask = assemble_2d_mask(P, PC)
+            mask = mask.astype(np.uint8)
             file_to_save = file.split(".")[0] + ".bmp"
 
             # Save .bmp files
             if save_opt:
                 if scan in train_scans:
                     save_bmp(mri, str(dest_train + "/mri/" + file_to_save))
-                    save_bmp(P, str(dest_train + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_train + "/mask_PC/" + file_to_save))
+                    save_bmp(mask, str(dest_train + "/mask/" + file_to_save))
 
                 elif scan in test_scans:
                     save_bmp(mri, str(dest_test + "/mri/" + file_to_save))
-                    save_bmp(P, str(dest_test + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_test + "/mask_PC/" + file_to_save))
+                    save_bmp(mask, str(dest_test + "/mask/" + file_to_save))
 
                 elif scan in val_scans:
                     save_bmp(mri, str(dest_val + "/mri/" + file_to_save))
-                    save_bmp(P, str(dest_val + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_val + "/mask_PC/" + file_to_save))
+                    save_bmp(mask, str(dest_val + "/mask/" + file_to_save))

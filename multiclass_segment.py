@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     # Build and compile model
     unet_model = build_unet(dropout_rate=dropout_rate)
-    unet_model.compile(optimizer='adam', loss=dice_loss, metrics=['accuracy', 'loss'])
+    unet_model.compile(optimizer='adam', loss=dice_loss, metrics=['accuracy'])
 
     # Get datasets
     train_dataset = get_dataset(batch_size=batch_size, dataset_type='train')
