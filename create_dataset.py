@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 def assemble_3d_mask(mask_2d, xy_dim):
 
-    background_inds = tf.equal(mask_2d, 0)
-    bckgrnd = tf.where(background_inds, 1, 0)
+    # background_inds = tf.equal(mask_2d, 0)
+    # bckgrnd = tf.where(background_inds, 1, 0)
 
     p_mask_inds = tf.equal(mask_2d, 1)
     p = tf.where(p_mask_inds, 1, 0)
@@ -17,7 +17,7 @@ def assemble_3d_mask(mask_2d, xy_dim):
     pc_mask_inds = tf.equal(mask_2d, 2)
     pc = tf.where(pc_mask_inds, 1, 0)
 
-    mask = tf.stack([bckgrnd, p, pc], axis=-1)
+    mask = tf.stack([p, pc], axis=-1)
     mask = tf.squeeze(mask, axis=-2)
 
     return mask
