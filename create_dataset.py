@@ -74,11 +74,13 @@ def get_dataset(batch_size, dataset_type):
     # Create dataset
     dataset = create_dataset(images_dir, mask_dir)
 
-    # Completely randomly shuffle
+    dataset = dataset.cache()
+
+    # randomly shuffle
     dataset = dataset.shuffle(buffer_size=tf.data.experimental.cardinality(dataset).numpy() // 2, seed=42)
 
     # Prefetch twice as much data per each batch into memory at a given time
-    dataset = dataset.prefetch(buffer_size=batch_size*2)
+    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     # Batch each dataset
     dataset = dataset.batch(batch_size=batch_size)
@@ -91,19 +93,19 @@ if __name__ == '__main__':
     batch_size = 32
     dataset = get_dataset(batch_size=batch_size, dataset_type='train')
 
-    for mri, mask in dataset:
-        print(mri, mask)
-        plt.imshow(mri, cmap='gray')
-        plt.show()
-
-        plt.imshow(mask[:, :, 0], cmap='gray')
-        plt.show()
-
-        plt.imshow(mask[:, :, 1], cmap='gray')
-        plt.show()
-
-        plt.imshow(mask[:, :, 2], cmap='gray')
-        plt.show()
-
-        pause = input("Enter to continue")
+    # for mri, mask in dataset:
+    #     print(mri, mask)
+    #     plt.imshow(mri, cmap='gray')
+    #     plt.show()
+    #
+    #     plt.imshow(mask[:, :, 0], cmap='gray')
+    #     plt.show()
+    #
+    #     plt.imshow(mask[:, :, 1], cmap='gray')
+    #     plt.show()
+    #
+    #     plt.imshow(mask[:, :, 2], cmap='gray')
+    #     plt.show()
+    #
+    #     pause = input("Enter to continue")
 
