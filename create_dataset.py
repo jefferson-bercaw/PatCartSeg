@@ -2,27 +2,23 @@ import tensorflow as tf
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import numpy as np
+from get_data_path import get_data_path
+import matplotlib.pyplot as plt
 
 
 def assemble_3d_mask(mask_2d, xy_dim):
-    mask = np.zeros((xy_dim, xy_dim, 3))
 
-    bckgrnd = np.zeros((xy_dim, xy_dim))
-    p = np.zeros((xy_dim, xy_dim))
-    pc = np.zeros((xy_dim, xy_dim))
+    background_inds = tf.equal(mask_2d, 0)
+    bckgrnd = tf.where(background_inds, 1, 0)
 
-    background_inds = mask_2d == 0
-    bckgrnd[background_inds] = 1
+    p_mask_inds = tf.equal(mask_2d, 1)
+    p = tf.where(p_mask_inds, 1, 0)
 
-    p_mask_inds = mask_2d == 1
-    p[p_mask_inds] = 1
+    pc_mask_inds = tf.equal(mask_2d, 2)
+    pc = tf.where(pc_mask_inds, 1, 0)
 
-    pc_mask_inds = mask_2d == 2
-    pc[pc_mask_inds] = 1
-
-    mask[:, :, 0] = bckgrnd
-    mask[:, :, 1] = p
-    mask[:, :, 2] = pc
+    mask = tf.stack([bckgrnd, p, pc], axis=-1)
+    mask = tf.squeeze(mask, axis=-2)
 
     return mask
 
@@ -55,15 +51,18 @@ def create_dataset(image_dir, mask_dir):
 
 
 def get_dataset(batch_size, dataset_type):
+
+    data_path = get_data_path()
+
     if dataset_type == 'train':
-        images_dir = "../Split_Data_BMP2/train/mri"
-        mask_dir = "../Split_Data_BMP2/train/mask"
+        images_dir = data_path + "/train/mri"
+        mask_dir = data_path + "/train/mask"
     elif dataset_type == 'test':
-        images_dir = "../Split_Data_BMP2/test/mri"
-        mask_dir = "../Split_Data_BMP2/test/mask"
+        images_dir = data_path + "/test/mri"
+        mask_dir = data_path + "/test/mask"
     elif dataset_type == 'val' or dataset_type == 'validation':
-        images_dir = "../Split_Data_BMP2/val/mri"
-        mask_dir = "../Split_Data_BMP2/val/mask"
+        images_dir = data_path + "/val/mri"
+        mask_dir = data_path + "/val/mask"
     else:
         raise(ValueError, f"The value {dataset_type} for the variable dataset_type is not one of 'train', 'test', "
                           f"or 'val'")
@@ -75,6 +74,15 @@ def get_dataset(batch_size, dataset_type):
     # Create dataset
     dataset = create_dataset(images_dir, mask_dir)
 
+    # Completely randomly shuffle
+    dataset = dataset.shuffle(buffer_size=tf.data.experimental.cardinality(dataset).numpy() // 2, seed=42)
+
+    # Prefetch twice as much data per each batch into memory at a given time
+    dataset = dataset.prefetch(buffer_size=batch_size*2)
+
+    # Batch each dataset
+    dataset = dataset.batch(batch_size=batch_size)
+
     return dataset
 
 
@@ -85,4 +93,17 @@ if __name__ == '__main__':
 
     for mri, mask in dataset:
         print(mri, mask)
-        break
+        plt.imshow(mri, cmap='gray')
+        plt.show()
+
+        plt.imshow(mask[:, :, 0], cmap='gray')
+        plt.show()
+
+        plt.imshow(mask[:, :, 1], cmap='gray')
+        plt.show()
+
+        plt.imshow(mask[:, :, 2], cmap='gray')
+        plt.show()
+
+        pause = input("Enter to continue")
+
