@@ -23,5 +23,5 @@ if __name__ == "__main__":
     test_dataset = get_dataset(batch_size=batch_size, dataset_type='test')
 
     # Train model
-    unet_model.fit(train_dataset, epochs=epochs, val_dataset=val_dataset)
+    unet_model.fit(train_dataset, epochs=epochs)
     unet_model.save("Unet_Model")
