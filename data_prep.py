@@ -136,14 +136,14 @@ if __name__ == "__main__":
                 if scan in train_scans:
                     save_bmp(mri, str(dest_train + "/mri/" + file_to_save))
                     save_bmp(P, str(dest_train + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_train, "/mask_PC/" + file_to_save))
+                    save_bmp(PC, str(dest_train + "/mask_PC/" + file_to_save))
 
                 elif scan in test_scans:
                     save_bmp(mri, str(dest_test + "/mri/" + file_to_save))
                     save_bmp(P, str(dest_test + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_test, "/mask_PC/" + file_to_save))
+                    save_bmp(PC, str(dest_test + "/mask_PC/" + file_to_save))
 
                 elif scan in val_scans:
                     save_bmp(mri, str(dest_val + "/mri/" + file_to_save))
                     save_bmp(P, str(dest_val + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_val, "/mask_PC/" + file_to_save))
+                    save_bmp(PC, str(dest_val + "/mask_PC/" + file_to_save))
