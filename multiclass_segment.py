@@ -9,7 +9,7 @@ from create_dataset import get_dataset
 
 if __name__ == "__main__":
     # Hyperparameters
-    batch_size = 32
+    batch_size = 16
     dropout_rate = 0.3
     epochs = 10
 
