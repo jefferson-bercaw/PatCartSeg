@@ -1,6 +1,6 @@
 #!/bin/sh
-#SBATCH --output=%A_%a_slurm.out
-#SBATCH --error=%A_%a_slurm.err
+#SBATCH --output=./outputs/%A_%a_slurm.out
+#SBATCH --error=./errors/%A_%a_slurm.err
 #SBATCH --nodes=1
 #SBATCH --mem=64G
 #SBATCH -p scavenger-gpu
