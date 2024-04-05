@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 def dice_coefficient(y_true, y_pred):
-    smooth = 100
+    smooth = 1e-5
     y_true_f = tf.reshape(y_true, [-1])
     y_pred_f = tf.reshape(y_pred, [-1])
     intersection = tf.reduce_sum(y_true_f * y_pred_f)
