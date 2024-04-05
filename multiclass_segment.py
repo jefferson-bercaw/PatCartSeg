@@ -32,7 +32,13 @@ if __name__ == "__main__":
 
     # Build and compile model
     unet_model = build_unet(dropout_rate=dropout_rate)
-    unet_model.compile(optimizer='adam', loss=dice_loss, metrics=['accuracy'])
+    unet_model.compile(optimizer='adam',
+                       loss=tf.keras.losses.BinaryCrossentropy,
+                       metrics=['accuracy',
+                                tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
+                                tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
+                                tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),
+                                tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
 
     # Get datasets
     train_dataset = get_dataset(batch_size=batch_size, dataset_type='train')
