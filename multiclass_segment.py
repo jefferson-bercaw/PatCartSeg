@@ -9,6 +9,21 @@ from unet import build_unet
 from dice_loss_function import dice_loss
 from create_dataset import get_dataset
 
+
+class RecordHistory(tf.keras.callbacks.Callback):
+    def __init__(self, validation_dataset):
+        self.validation_dataset = validation_dataset
+        self.history = {'loss': [], 'val_loss': []}
+
+    def on_batch_end(self, batch, logs=None):
+        # Calculate dice score for training data
+        self.history['loss'].append(logs['loss'])
+
+    def on_epoch_end(self, epoch, logs=None):
+        val_loss = self.model.evaluate(self.validation_dataset, verbose=0)
+        self.history['val_loss'].append(val_loss)
+
+
 if __name__ == "__main__":
     # Hyperparameters
     batch_size = 16
