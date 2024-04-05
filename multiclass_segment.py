@@ -24,8 +24,17 @@ if __name__ == "__main__":
     val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
     test_dataset = get_dataset(batch_size=batch_size, dataset_type='test')
 
+    # Define model callbacks
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="{epoch:02d}-{val_loss:.4f}.keras",
+                                                     monitor='val_loss',
+                                                     verbose=1,
+                                                     save_best_only=True)
+
     # Train model
-    history = unet_model.fit(train_dataset, epochs=epochs)
+    history = unet_model.fit(train_dataset,
+                             epochs=epochs,
+                             callbacks=[cp_callback],
+                             validation_data=val_dataset)
 
     # Save model
     current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
