@@ -44,11 +44,13 @@ if __name__ == "__main__":
                                                      monitor='val_loss',
                                                      verbose=1,
                                                      save_best_only=True)
+    # Initialize recording history
+    record_history_callback = RecordHistory(validation_dataset=val_dataset)
 
     # Train model
     history = unet_model.fit(train_dataset,
                              epochs=epochs,
-                             callbacks=[cp_callback],
+                             callbacks=[cp_callback, record_history_callback],
                              validation_data=val_dataset)
 
     # Save model
