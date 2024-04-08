@@ -25,46 +25,50 @@ class RecordHistory(tf.keras.callbacks.Callback):
 
 
 if __name__ == "__main__":
-    # Hyperparameters
-    batch_size = 16
-    dropout_rate = 0.3
-    epochs = 5
+    # GPUs
+    strategy = tf.distribute.MirroredStrategy()
 
-    # Build and compile model
-    unet_model = build_unet(dropout_rate=dropout_rate)
-    unet_model.compile(optimizer='adam',
-                       loss=tf.keras.losses.BinaryCrossentropy(),
-                       metrics=['accuracy',
-                                tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
-                                tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
-                                tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),
-                                tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
+    with strategy.scope():
+        # Hyperparameters
+        batch_size = 16
+        dropout_rate = 0.3
+        epochs = 5
 
-    # Get datasets
-    train_dataset = get_dataset(batch_size=batch_size, dataset_type='train')
-    val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
-    test_dataset = get_dataset(batch_size=batch_size, dataset_type='test')
+        # Build and compile model
+        unet_model = build_unet(dropout_rate=dropout_rate)
+        unet_model.compile(optimizer='adam',
+                           loss=tf.keras.losses.BinaryCrossentropy(),
+                           metrics=['accuracy',
+                                    tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
+                                    tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
+                                    tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),
+                                    tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
 
-    # Define model callbacks
-    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="{epoch:02d}-{val_loss:.4f}.keras",
-                                                     monitor='val_loss',
-                                                     verbose=1,
-                                                     save_best_only=True)
-    # Initialize recording history
-    record_history_callback = RecordHistory(validation_dataset=val_dataset)
+        # Get datasets
+        train_dataset = get_dataset(batch_size=batch_size, dataset_type='train')
+        val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
+        test_dataset = get_dataset(batch_size=batch_size, dataset_type='test')
 
-    # Train model
-    history = unet_model.fit(train_dataset,
-                             epochs=epochs,
-                             callbacks=[cp_callback, record_history_callback],
-                             validation_data=val_dataset)
+        # Define model callbacks
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="{epoch:02d}-{val_loss:.4f}.keras",
+                                                         monitor='val_loss',
+                                                         verbose=1,
+                                                         save_best_only=True)
+        # Initialize recording history
+        record_history_callback = RecordHistory(validation_dataset=val_dataset)
 
-    # Save model
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    model_name = f"unet_{current_time}.h5"
-    unet_model.save(f"./models/{model_name}")
+        # Train model
+        history = unet_model.fit(train_dataset,
+                                 epochs=epochs,
+                                 callbacks=[cp_callback, record_history_callback],
+                                 validation_data=val_dataset)
 
-    # Save history
-    hist_name = f"unet_{current_time}.pkl"
-    with open(f"./history/{hist_name}", "wb") as f:
-        pickle.dump(history.history, f)
+        # Save model
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        model_name = f"unet_{current_time}.h5"
+        unet_model.save(f"./models/{model_name}")
+
+        # Save history
+        hist_name = f"unet_{current_time}.pkl"
+        with open(f"./history/{hist_name}", "wb") as f:
+            pickle.dump(history.history, f)
