@@ -49,10 +49,12 @@ if __name__ == "__main__":
         # Get datasets
         train_dataset = get_dataset(batch_size=batch_size, dataset_type='train')
         val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
-        test_dataset = get_dataset(batch_size=batch_size, dataset_type='test')
 
         # Iterate over the dataset to cache it into memory
         for _ in train_dataset:
+            pass
+
+        for _ in val_dataset:
             pass
 
         # Early stopping callback
