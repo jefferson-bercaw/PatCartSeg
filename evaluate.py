@@ -50,7 +50,7 @@ def get_hist_and_model(date_time):
 
 if __name__ == "__main__":
     # date_time pattern to identify model we just trained
-    date_time = "2024-04-09"
+    date_time = get_date_and_hour()
 
     # get the history and model
     history, model = get_hist_and_model(date_time)
