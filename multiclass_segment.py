@@ -66,7 +66,7 @@ if __name__ == "__main__":
                                                                    verbose=1)
 
         # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="/models/{epoch:02d}-{val_loss:.4f}.h5",
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="/models/unet_04092024}.h5",
                                                          monitor='val_loss',
                                                          verbose=1,
                                                          save_best_only=True)
