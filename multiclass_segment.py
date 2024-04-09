@@ -51,9 +51,11 @@ if __name__ == "__main__":
         val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
 
         # Iterate over the dataset to cache it into memory
+        print("Reading in training dataset")
         for _ in train_dataset:
             pass
 
+        print("Reading in validation dataset")
         for _ in val_dataset:
             pass
 
