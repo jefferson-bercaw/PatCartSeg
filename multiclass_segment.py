@@ -32,7 +32,9 @@ if __name__ == "__main__":
         # Hyperparameters
         batch_size = 32
         dropout_rate = 0.3
-        epochs = 20
+        epochs = 300
+        patience = 10
+        min_delta = 0.0001
 
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
@@ -49,6 +51,12 @@ if __name__ == "__main__":
         val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
         test_dataset = get_dataset(batch_size=batch_size, dataset_type='test')
 
+        # Early stopping callback
+        early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                                   patience=patience,
+                                                                   min_delta=min_delta,
+                                                                   verbose=1)
+
         # Define model callbacks
         cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="{epoch:02d}-{val_loss:.4f}.keras",
                                                          monitor='val_loss',
@@ -60,7 +68,7 @@ if __name__ == "__main__":
         # Train model
         history = unet_model.fit(train_dataset,
                                  epochs=epochs,
-                                 callbacks=[cp_callback, record_history_callback],
+                                 callbacks=[cp_callback, record_history_callback, early_stopping_callback],
                                  validation_data=val_dataset)
 
         # Save model
