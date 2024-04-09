@@ -32,14 +32,14 @@ if __name__ == "__main__":
         # Hyperparameters
         batch_size = 32
         dropout_rate = 0.3
-        epochs = 300
+        epochs = 500
         patience = 10
         min_delta = 0.0001
 
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
         unet_model.compile(optimizer='adam',
-                           loss=tf.keras.losses.BinaryCrossentropy(),
+                           loss=tf.keras.losses.CategoricalFocalCrossentropy(),
                            metrics=['accuracy',
                                     tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
                                     tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
@@ -49,7 +49,15 @@ if __name__ == "__main__":
         # Get datasets
         train_dataset = get_dataset(batch_size=batch_size, dataset_type='train')
         val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
-        test_dataset = get_dataset(batch_size=batch_size, dataset_type='test')
+
+        # Iterate over the dataset to cache it into memory
+        print("Reading in training dataset")
+        for _ in train_dataset:
+            pass
+
+        print("Reading in validation dataset")
+        for _ in val_dataset:
+            pass
 
         # Early stopping callback
         early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -58,7 +66,7 @@ if __name__ == "__main__":
                                                                    verbose=1)
 
         # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="{epoch:02d}-{val_loss:.4f}.keras",
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="/models/unet_04092024}.h5",
                                                          monitor='val_loss',
                                                          verbose=1,
                                                          save_best_only=True)
