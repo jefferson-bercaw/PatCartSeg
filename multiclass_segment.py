@@ -32,7 +32,7 @@ if __name__ == "__main__":
         # Hyperparameters
         batch_size = 16
         dropout_rate = 0.3
-        epochs = 5
+        epochs = 20
 
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
