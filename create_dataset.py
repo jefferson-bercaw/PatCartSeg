@@ -79,11 +79,17 @@ def get_dataset(batch_size, dataset_type):
     # randomly shuffle
     dataset = dataset.shuffle(buffer_size=tf.data.experimental.cardinality(dataset).numpy() // 2, seed=42)
 
-    # Prefetch twice as much data per each batch into memory at a given time
+    # Prefetch batch into memory at a given time
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+    # Parallelize Data Loading Step
+    dataset = dataset.interleave(num_parallel_calls=tf.data.AUTOTUNE)
 
     # Batch each dataset
     dataset = dataset.batch(batch_size=batch_size)
+
+    # Cache dataset into memory on first epoch
+    dataset = dataset.cache()
 
     return dataset
 
