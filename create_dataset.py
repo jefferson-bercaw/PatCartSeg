@@ -83,7 +83,7 @@ def get_dataset(batch_size, dataset_type):
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     # Parallelize Data Loading Step
-    dataset = dataset.interleave(num_parallel_calls=tf.data.AUTOTUNE)
+    # dataset = dataset.interleave(num_parallel_calls=tf.data.AUTOTUNE)
 
     # Batch each dataset
     dataset = dataset.batch(batch_size=batch_size)
