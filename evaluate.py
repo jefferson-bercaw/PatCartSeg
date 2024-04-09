@@ -5,6 +5,13 @@ import pickle
 import os
 import matplotlib.pyplot as plt
 from create_dataset import get_dataset
+import datetime
+
+
+def get_date_and_hour():
+    date_time = datetime.datetime.now().strftime("%Y-%m-%d_%H")
+    return date_time
+
 
 def get_history_filename(date_time):
     files = os.listdir("./history")
