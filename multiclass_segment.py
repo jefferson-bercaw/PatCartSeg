@@ -39,7 +39,7 @@ if __name__ == "__main__":
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
         unet_model.compile(optimizer='adam',
-                           loss=tf.keras.losses.BinaryCrossentropy(),
+                           loss=tf.keras.losses.CategoricalFocalCrossentropy(),
                            metrics=['accuracy',
                                     tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
                                     tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
