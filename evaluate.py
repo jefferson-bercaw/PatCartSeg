@@ -42,9 +42,9 @@ def get_hist_and_model(date_time):
 
 if __name__ == "__main__":
     # date_time pattern to identify model we just trained
-    date_time = "2024-04-04"
+    date_time = "2024-04-09"
 
     # get the history and model
     history, model = get_hist_and_model(date_time)
 
-
+    print("Done")
