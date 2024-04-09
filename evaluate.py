@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     # get the history and model
     history, model = get_hist_and_model(date_time)
-    test_dataset = get_dataset(batch_size=1, dataset_type='test')
+    test_dataset = get_dataset(batch_size=16, dataset_type='test')
 
     # Get evaluation metrics
     loss, accuracy = model.evaluate(test_dataset)
