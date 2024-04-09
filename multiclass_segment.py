@@ -32,7 +32,7 @@ if __name__ == "__main__":
         # Hyperparameters
         batch_size = 32
         dropout_rate = 0.3
-        epochs = 300
+        epochs = 500
         patience = 10
         min_delta = 0.0001
 
