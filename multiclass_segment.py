@@ -39,7 +39,7 @@ if __name__ == "__main__":
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
         unet_model.compile(optimizer='adam',
-                           loss=tf.keras.losses.CategoricalFocalCrossentropy(),
+                           loss=dice_loss,
                            metrics=['accuracy',
                                     tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
                                     tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
@@ -70,6 +70,7 @@ if __name__ == "__main__":
                                                          monitor='val_loss',
                                                          verbose=1,
                                                          save_best_only=True)
+
         # Initialize recording history
         record_history_callback = RecordHistory(validation_dataset=val_dataset)
 
