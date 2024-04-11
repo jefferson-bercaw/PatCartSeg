@@ -9,4 +9,4 @@
 
 source venv/bin/activate
 
-python multiclass_segment.py
+python starting_small.py
