@@ -67,7 +67,7 @@ if __name__ == "__main__":
             pass
         print(f"It took {time.time() - t} seconds to loop through the training dataset")
 
-        print("Reading in validation dataset")
+        t = time.time()
         for _ in val_dataset:
             pass
         print(f"It took {time.time() - t} seconds to loop through the validation dataset")
@@ -87,11 +87,24 @@ if __name__ == "__main__":
         # Initialize recording history
         record_history_callback = RecordHistory(validation_dataset=val_dataset)
 
+        optimizer = tf.keras.optimizers.Adam()
+
+        for epoch in range(epochs):
+            for batch in train_dataset:
+                mri, y_true = batch
+                with tf.GradientTape() as tape:
+                    y_pred = unet_model(mri)
+                    loss = dice_loss(y_true, y_pred)
+
+                gradients = tape.gradient(loss, unet_model.trainable_variables)
+
+                optimizer.apply_gradients(zip(gradients, unet_model.trainable_variables))
+
         # Train model
-        history = unet_model.fit(train_dataset,
-                                 epochs=epochs,
-                                 callbacks=[cp_callback, record_history_callback, early_stopping_callback],
-                                 validation_data=val_dataset)
+        # history = unet_model.fit(train_dataset,
+        #                          epochs=epochs,
+        #                          callbacks=[cp_callback, record_history_callback, early_stopping_callback],
+        #                          validation_data=val_dataset)
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
