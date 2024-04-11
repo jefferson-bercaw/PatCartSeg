@@ -67,7 +67,7 @@ if __name__ == "__main__":
             pass
         print(f"It took {time.time() - t} seconds to loop through the training dataset")
 
-        print("Reading in validation dataset")
+        t = time.time()
         for _ in val_dataset:
             pass
         print(f"It took {time.time() - t} seconds to loop through the validation dataset")
@@ -87,11 +87,39 @@ if __name__ == "__main__":
         # Initialize recording history
         record_history_callback = RecordHistory(validation_dataset=val_dataset)
 
+        optimizer = tf.keras.optimizers.Adam()
+
+        for epoch in range(epochs):
+            for batch in train_dataset:
+                t_batch = time.time()
+                t = time.time()
+                mri, y_true = batch
+                print(f"It took {time.time() - t} seconds to extract MRI and labels from batch")
+
+                with tf.GradientTape() as tape:
+                    t = time.time()
+                    y_pred = unet_model(mri)
+                    print(f"It took {time.time() - t} seconds for the forward pass")
+
+                    t = time.time()
+                    loss = dice_loss(y_true, y_pred)
+                    print(f"It took {time.time() - t} seconds to compute the loss function")
+
+                t = time.time()
+                gradients = tape.gradient(loss, unet_model.trainable_variables)
+                print(f"It took {time.time() - t} seconds to calculate the gradients")
+
+                t = time.time()
+                optimizer.apply_gradients(zip(gradients, unet_model.trainable_variables))
+                print(f"It took {time.time() - t} seconds to apply the gradients to the weights")
+
+            print(f"It took {time.time() - t_batch} seconds to complete a single batch")
+
         # Train model
-        history = unet_model.fit(train_dataset,
-                                 epochs=epochs,
-                                 callbacks=[cp_callback, record_history_callback, early_stopping_callback],
-                                 validation_data=val_dataset)
+        # history = unet_model.fit(train_dataset,
+        #                          epochs=epochs,
+        #                          callbacks=[cp_callback, record_history_callback, early_stopping_callback],
+        #                          validation_data=val_dataset)
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
