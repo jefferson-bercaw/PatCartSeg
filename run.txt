@@ -3,7 +3,7 @@
 #SBATCH --error=./errors/%A_%a_slurm.err
 #SBATCH --nodes=1
 #SBATCH --mem=128G
-#SBATCH -p scavenger-gpu
+#SBATCH -p scavenger
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
 
