@@ -11,11 +11,11 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 def double_conv_block(lyr, n_filt, kernel_size):
     lyr = layers.Conv2D(n_filt, kernel_size, padding="same", kernel_initializer="he_normal")(lyr)
     lyr = layers.BatchNormalization()(lyr)
-    lyr = tf.keras.activations.relu()(lyr)
+    lyr = tf.keras.activations.relu(lyr)
 
     lyr = layers.Conv2D(n_filt, kernel_size, padding="same", kernel_initializer="he_normal")(lyr)
     lyr = layers.BatchNormalization()(lyr)
-    lyr = tf.keras.activations.relu()(lyr)
+    lyr = tf.keras.activations.relu(lyr)
 
     return lyr
 
