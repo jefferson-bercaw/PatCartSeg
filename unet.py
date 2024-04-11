@@ -6,10 +6,16 @@ import matplotlib.pyplot as plt
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
-## Model Creation
+
+# Model Creation
 def double_conv_block(lyr, n_filt, kernel_size):
-    lyr = layers.Conv2D(n_filt, kernel_size, padding="same", activation="relu", kernel_initializer="he_normal")(lyr)
-    lyr = layers.Conv2D(n_filt, kernel_size, padding="same", activation="relu", kernel_initializer="he_normal")(lyr)
+    lyr = layers.Conv2D(n_filt, kernel_size, padding="same", kernel_initializer="he_normal")(lyr)
+    lyr = layers.BatchNormalixation()(lyr)
+    lyr = tf.keras.activations.relu()(lyr)
+
+    lyr = layers.Conv2D(n_filt, kernel_size, padding="same", kernel_initializer="he_normal")(lyr)
+    lyr = layers.BatchNormalixation()(lyr)
+    lyr = tf.keras.activations.relu()(lyr)
 
     return lyr
 
