@@ -4,6 +4,7 @@ import datetime
 import tensorflow as tf
 import numpy as np
 import pickle
+import time
 
 from unet import build_unet
 from dice_loss_function import dice_loss
@@ -37,7 +38,11 @@ if __name__ == "__main__":
         min_delta = 0.0001
 
         # Build and compile model
+        t = time.time()
         unet_model = build_unet(dropout_rate=dropout_rate)
+        print(f"It took {time.time() - t} seconds to build the UNet")
+
+        t = time.time()
         unet_model.compile(optimizer='adam',
                            loss=dice_loss,
                            metrics=['accuracy',
@@ -45,19 +50,27 @@ if __name__ == "__main__":
                                     tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
                                     tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),
                                     tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
+        print(f"It took {time.time() - t} seconds to compile the UNet")
 
         # Get datasets
+        t = time.time()
         train_dataset = get_dataset(batch_size=batch_size, dataset_type='train')
+        print(f"It took {time.time() - t} seconds to get the training dataset")
+
+        t = time.time()
         val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
+        print(f"It took {time.time() - t} seconds to get the val dataset")
 
         # Iterate over the dataset to cache it into memory
-        print("Reading in training dataset")
+        t = time.time()
         for _ in train_dataset:
             pass
+        print(f"It took {time.time() - t} seconds to loop through the training dataset")
 
         print("Reading in validation dataset")
         for _ in val_dataset:
             pass
+        print(f"It took {time.time() - t} seconds to loop through the validation dataset")
 
         # Early stopping callback
         early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
