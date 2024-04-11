@@ -4,7 +4,6 @@
 #SBATCH --nodes=1
 #SBATCH --mem=128G
 #SBATCH -p scavenger
-#SBATCH --gres=gpu:1
 #SBATCH --exclusive
 
 source venv/bin/activate
