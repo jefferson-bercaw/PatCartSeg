@@ -91,14 +91,29 @@ if __name__ == "__main__":
 
         for epoch in range(epochs):
             for batch in train_dataset:
+                t_batch = time.time()
+                t = time.time()
                 mri, y_true = batch
+                print(f"It took {time.time() - t} seconds to extract MRI and labels from batch")
+
                 with tf.GradientTape() as tape:
+                    t = time.time()
                     y_pred = unet_model(mri)
+                    print(f"It took {time.time() - t} seconds for the forward pass")
+
+                    t = time.time()
                     loss = dice_loss(y_true, y_pred)
+                    print(f"It took {time.time() - t} seconds to compute the loss function")
 
+                t = time.time()
                 gradients = tape.gradient(loss, unet_model.trainable_variables)
+                print(f"It took {time.time() - t} seconds to calculate the gradients")
 
+                t = time.time()
                 optimizer.apply_gradients(zip(gradients, unet_model.trainable_variables))
+                print(f"It took {time.time() - t} seconds to apply the gradients to the weights")
+
+            print(f"It took {time.time() - t_batch} seconds to complete a single batch")
 
         # Train model
         # history = unet_model.fit(train_dataset,
