@@ -3,7 +3,8 @@
 #SBATCH --error=./errors/%A_%a_slurm.err
 #SBATCH --nodes=1
 #SBATCH --mem=128G
-#SBATCH -p scavenger
+#SBATCH -p scavenger-gpu
+#SBATCH --gres=gpu:2
 #SBATCH --exclusive
 
 source venv/bin/activate
