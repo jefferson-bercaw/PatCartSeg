@@ -4,11 +4,9 @@
 #SBATCH --nodes=1
 #SBATCH --mem=64G
 #SBATCH -p scavenger-gpu
-#SBATCH - -gres=gpu:1
+#SBATCH --gres=gpu:1
 #SBATCH --exclusive
 
-source venv/bin/activate
-
-module load CUDA/11.4
+source venv2/bin/activate
 
 python starting_small.py
