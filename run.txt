@@ -9,4 +9,6 @@
 
 source venv/bin/activate
 
+module load CUDA/11.4
+
 python starting_small.py
