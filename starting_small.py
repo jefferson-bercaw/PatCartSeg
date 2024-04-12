@@ -1,4 +1,6 @@
 import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
 import datetime
 import tensorflow as tf
 import numpy as np
