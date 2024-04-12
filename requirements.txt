@@ -1,2 +1,2 @@
-tensorflow
+tensorflow[and-cuda]
 matplotlib
