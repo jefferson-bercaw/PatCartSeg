@@ -7,9 +7,6 @@
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
 
-source venv/bin/activate
-
-export PATH=/usr/local/cuda/bin:$PATH
-export CUDA_HOME=/usr/local/cuda
+source venv_new/bin/activate
 
 python starting_small.py
