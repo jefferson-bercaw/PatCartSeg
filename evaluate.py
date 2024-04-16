@@ -10,7 +10,7 @@ from dice_loss_function import dice_loss
 
 
 def get_date_and_hour():
-    date_time = datetime.datetime.now().strftime("%Y-%m-%d")
+    date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H")
     return date_time
 
 
