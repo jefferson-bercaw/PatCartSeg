@@ -40,9 +40,9 @@ if __name__ == '__main__':
     else:
         print("No GPU detected")
 
-    central_storage_strategy = tf.distribute.experimental.CentralStorageStrategy()
+    mirrored_strategy = tf.distribute.MirroredStrategy()
 
-    with central_storage_strategy.scope():
+    with mirrored_strategy.scope():
         start_path = get_data_path()
 
         mri_path = start_path + "/train/mri"
