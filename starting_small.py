@@ -40,6 +40,10 @@ if __name__ == '__main__':
     else:
         print("No GPU detected")
 
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
+
     mirrored_strategy = tf.distribute.MirroredStrategy()
 
     with mirrored_strategy.scope():
