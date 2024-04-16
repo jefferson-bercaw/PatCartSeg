@@ -1,2 +1,2 @@
-tensorflow
+tensorflow[and-cuda]==2.14.1
 matplotlib

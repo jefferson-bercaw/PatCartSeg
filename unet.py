@@ -6,10 +6,16 @@ import matplotlib.pyplot as plt
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
-## Model Creation
+
+# Model Creation
 def double_conv_block(lyr, n_filt, kernel_size):
-    lyr = layers.Conv2D(n_filt, kernel_size, padding="same", activation="relu", kernel_initializer="he_normal")(lyr)
-    lyr = layers.Conv2D(n_filt, kernel_size, padding="same", activation="relu", kernel_initializer="he_normal")(lyr)
+    lyr = layers.Conv2D(n_filt, kernel_size, padding="same", kernel_initializer="he_normal")(lyr)
+    lyr = layers.BatchNormalization()(lyr)
+    lyr = tf.keras.activations.relu(lyr)
+
+    lyr = layers.Conv2D(n_filt, kernel_size, padding="same", kernel_initializer="he_normal")(lyr)
+    lyr = layers.BatchNormalization()(lyr)
+    lyr = tf.keras.activations.relu(lyr)
 
     return lyr
 
@@ -54,7 +60,7 @@ def build_unet(dropout_rate):
     u9 = upsample_block(u8, conv_features=f1, n_filt=64, kernel_size=3, dropout_rate=dropout_rate)
 
     # outputs
-    outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="softmax")(u9)
+    outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u9)
     unet_model = tf.keras.Model(inputs, outputs, name="U-Net")
     return unet_model
 

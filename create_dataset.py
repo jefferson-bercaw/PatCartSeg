@@ -74,9 +74,6 @@ def get_dataset(batch_size, dataset_type):
     # Create dataset
     dataset = create_dataset(images_dir, mask_dir)
 
-    # Cache dataset into memory on first epoch
-    dataset = dataset.cache()
-
     # randomly shuffle
     dataset = dataset.shuffle(buffer_size=tf.data.experimental.cardinality(dataset).numpy() // 2, seed=42)
 
