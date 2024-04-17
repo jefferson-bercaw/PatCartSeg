@@ -93,8 +93,9 @@ def process_mri(mri):
 if __name__ == "__main__":
     # date_time pattern to identify model we just trained
     num_examples = 100
-    # date_time = get_date_and_hour()
-    date_time = "2024-04-17-05"
+    date_time = get_date_and_hour()
+    # date_time = "2024-04-17_08"
+
     # Get results filename
     results_filename = get_results_filename(date_time)
     prep_results_filepath(results_filename)
@@ -126,8 +127,8 @@ if __name__ == "__main__":
     plt.plot(history["TN"])
     plt.xlabel('Epoch')
     plt.title("True Negatives")
-    plt.show()
     plt.savefig(results_filename + "\\tn.png")
+    plt.show()
 
     plt.plot(history["TP"])
     plt.xlabel('Epoch')
