@@ -10,7 +10,7 @@ from dice_loss_function import dice_loss
 
 
 def get_date_and_hour():
-    date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H")
+    date_time = datetime.datetime.now().strftime("%Y-%m-%d_%H")
     return date_time
 
 
@@ -94,6 +94,7 @@ if __name__ == "__main__":
     # date_time pattern to identify model we just trained
     num_examples = 100
     date_time = get_date_and_hour()
+    # date_time = "2024-04-17_08"
 
     # Get results filename
     results_filename = get_results_filename(date_time)
@@ -126,8 +127,8 @@ if __name__ == "__main__":
     plt.plot(history["TN"])
     plt.xlabel('Epoch')
     plt.title("True Negatives")
-    plt.show()
     plt.savefig(results_filename + "\\tn.png")
+    plt.show()
 
     plt.plot(history["TP"])
     plt.xlabel('Epoch')
