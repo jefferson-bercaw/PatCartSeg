@@ -77,7 +77,7 @@ def prep_results_filepath(results_filename):
 
 
 def process_label(pred_label):
-    thresholded_label = pred_label >= 0.5
+    thresholded_label = (pred_label >= 0.5) * 255.0
     binary_data = thresholded_label.astype(np.uint8)
 
     pat = np.squeeze(binary_data[:, :, :, 0])
