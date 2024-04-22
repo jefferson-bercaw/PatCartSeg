@@ -23,6 +23,22 @@ def assemble_3d_mask(mask_2d, xy_dim):
     return mask
 
 
+def load_test_data(image_path, mask_path):
+    image = tf.io.read_file(image_path)
+    mask = tf.io.read_file(mask_path)
+    filename = tf.strings.split(image_path, os.path.sep)[-1]
+
+    image = tf.image.decode_bmp(image)
+    mask = tf.image.decode_bmp(mask)
+
+    mask_3d = assemble_3d_mask(mask, 512)
+
+    image = tf.cast(image, tf.float64) / 255.0
+    mask_3d = tf.cast(mask_3d, tf.float64)
+
+    return filename, image, mask_3d
+
+
 def load_data(image_path, mask_path):
     image = tf.io.read_file(image_path)
     mask = tf.io.read_file(mask_path)
@@ -38,14 +54,17 @@ def load_data(image_path, mask_path):
     return image, mask_3d
 
 
-def create_dataset(image_dir, mask_dir):
+def create_dataset(image_dir, mask_dir, dataset_type):
     # Create dataset from list of image files
     mri = tf.data.Dataset.list_files(image_dir, shuffle=False)
     mask = tf.data.Dataset.list_files(mask_dir, shuffle=False)
 
     dataset = tf.data.Dataset.zip((mri, mask))
 
-    dataset = dataset.map(load_data)
+    if dataset_type == 'train' or dataset_type == 'validation' or dataset_type == 'val':
+        dataset = dataset.map(load_data)
+    elif dataset_type == 'test':
+        dataset = dataset.map(load_test_data)
 
     return dataset
 
@@ -72,7 +91,7 @@ def get_dataset(batch_size, dataset_type):
     mask_dir = mask_dir + "/*.bmp"
 
     # Create dataset
-    dataset = create_dataset(images_dir, mask_dir)
+    dataset = create_dataset(images_dir, mask_dir, dataset_type)
 
     # randomly shuffle
     dataset = dataset.shuffle(buffer_size=tf.data.experimental.cardinality(dataset).numpy() // 2, seed=42)
@@ -93,6 +112,8 @@ if __name__ == '__main__':
     # Hyperparameters
     batch_size = 32
     dataset = get_dataset(batch_size=batch_size, dataset_type='train')
+    iterable = iter(dataset)
+    out = next(iterable)
 
     # for mri, mask in dataset:
     #     print(mri, mask)

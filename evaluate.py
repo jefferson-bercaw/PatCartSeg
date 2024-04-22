@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from create_dataset import get_dataset
 import datetime
 from dice_loss_function import dice_loss
+from PIL import Image
 
 
 def get_date_and_hour():
@@ -76,7 +77,7 @@ def prep_results_filepath(results_filename):
 
 
 def process_label(pred_label):
-    thresholded_label = pred_label >= 0.5
+    thresholded_label = (pred_label >= 0.5) * 255.0
     binary_data = thresholded_label.astype(np.uint8)
 
     pat = np.squeeze(binary_data[:, :, :, 0])
@@ -90,11 +91,36 @@ def process_mri(mri):
     return mri
 
 
+def save_result(filename, date_time, pat, pat_cart):
+    filename_str = filename.numpy()[0].decode()
+    results_filename = get_results_filename(date_time)
+
+    pat_filepath = results_filename + "\\pat"
+    pat_cart_filepath = results_filename + "\\pat_cart"
+
+    # Make directories if they don't exist
+    if not os.path.exists(pat_filepath):
+        os.mkdir(pat_filepath)
+    if not os.path.exists(pat_cart_filepath):
+        os.mkdir(pat_cart_filepath)
+
+    pat_filepath = pat_filepath + "\\" + filename_str
+    pat_cart_filepath = pat_cart_filepath + "\\" + filename_str
+
+    pat_img = Image.fromarray(pat)
+    pat_cart_img = Image.fromarray(pat_cart)
+
+    # Save the image as a BMP file
+    pat_img.save(pat_filepath)
+    pat_cart_img.save(pat_cart_filepath)
+    return
+
+
 if __name__ == "__main__":
     # date_time pattern to identify model we just trained
     num_examples = 100
-    date_time = get_date_and_hour()
-    # date_time = "2024-04-17_08"
+    # date_time = get_date_and_hour()
+    date_time = "2024-04-17_08"
 
     # Get results filename
     results_filename = get_results_filename(date_time)
@@ -146,28 +172,33 @@ if __name__ == "__main__":
     plt.show()
 
     iterable = iter(test_dataset)
-    for i in range(num_examples):
-        mri, label = next(iterable)
+    n_test_images = len(test_dataset)
+
+    for i in range(n_test_images):
+        filename, mri, label = next(iterable)
+
         pred_label = model.predict(mri)
 
         mri = process_mri(mri)
         pat, pat_cart = process_label(pred_label)
 
-        fig, axs = plt.subplots(3, 1)
+        save_result(filename, date_time, pat, pat_cart)
+        print(f"Img {i} of {n_test_images}")
 
-        axs[0].imshow(mri, cmap='gray')
-        axs[0].set_title("MRI")
-
-        axs[1].imshow(pat, cmap='gray')
-        axs[1].set_title("Predicted Patella")
-
-        axs[2].imshow(pat_cart, cmap='gray')
-        axs[2].set_title("Predicted Patellar Cartilage")
-
-        plt.tight_layout()
-
-        plt.savefig(results_filename + "\\examples\\" + str(i) + ".png", dpi=600)
-        plt.show()
+        # fig, axs = plt.subplots(3, 1)
+        #
+        # axs[0].imshow(mri, cmap='gray')
+        # axs[0].set_title("MRI")
+        #
+        # axs[1].imshow(pat, cmap='gray')
+        # axs[1].set_title("Predicted Patella")
+        #
+        # axs[2].imshow(pat_cart, cmap='gray')
+        # axs[2].set_title("Predicted Patellar Cartilage")
+        #
+        # plt.tight_layout()
+        # plt.savefig(results_filename + "\\examples\\" + str(i) + ".png", dpi=600)
+        # plt.show()
 
 
 
