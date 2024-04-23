@@ -76,8 +76,8 @@ def prep_results_filepath(results_filename):
         os.mkdir(examples_filename)
 
 
-def process_label(pred_label):
-    thresholded_label = (pred_label >= 0.5) * 255.0
+def process_predicted_label(pred_label):
+    thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
     pat = np.squeeze(binary_data[:, :, :, 0])
@@ -114,6 +114,25 @@ def save_result(filename, date_time, pat, pat_cart):
     pat_img.save(pat_filepath)
     pat_cart_img.save(pat_cart_filepath)
     return
+
+
+def process_true_label(label):
+    label = tf.squeeze(label, axis=0)
+    pat = label[:, :, 0].numpy().astype(np.uint8)
+    pat_cart = label[:, :, 1].numpy().astype(np.uint8)
+    return pat, pat_cart
+
+
+def count_positives(pred, true, positives):
+    # Positives: [intersection, predicted, true]
+    positives[0] += np.sum(np.where(pred + true == 2))
+    positives[1] += np.sum(np.where(pred == 1))
+    positives[2] += np.sum(np.where(true == 1))
+    return positives
+
+
+def calculate_dice(positives):
+    return (2 * positives[0]) / (positives[1] + positives[2])
 
 
 if __name__ == "__main__":
@@ -174,16 +193,31 @@ if __name__ == "__main__":
     iterable = iter(test_dataset)
     n_test_images = len(test_dataset)
 
+    # Count true pixels [intersection, predicted, true]
+    pat_positives = [0, 0, 0]
+    pat_cart_positives = [0, 0, 0]
+
     for i in range(n_test_images):
         filename, mri, label = next(iterable)
 
         pred_label = model.predict(mri)
 
         mri = process_mri(mri)
-        pat, pat_cart = process_label(pred_label)
+        pat, pat_cart = process_predicted_label(pred_label)
+        pat_true, pat_cart_true = process_true_label(label)
 
-        save_result(filename, date_time, pat, pat_cart)
+        pat_positives = count_positives(pat, pat_true, pat_positives)
+        pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
+
+        # save_result(filename, date_time, pat, pat_cart)
         print(f"Img {i} of {n_test_images}")
+
+    pat_dsc = calculate_dice(pat_positives)
+    pat_cart_dsc = calculate_dice(pat_positives)
+
+    print(f"Patellar Dice Score: {pat_dsc}")
+    print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
+
 
         # fig, axs = plt.subplots(3, 1)
         #
