@@ -219,20 +219,5 @@ if __name__ == "__main__":
     print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
 
 
-        # fig, axs = plt.subplots(3, 1)
-        #
-        # axs[0].imshow(mri, cmap='gray')
-        # axs[0].set_title("MRI")
-        #
-        # axs[1].imshow(pat, cmap='gray')
-        # axs[1].set_title("Predicted Patella")
-        #
-        # axs[2].imshow(pat_cart, cmap='gray')
-        # axs[2].set_title("Predicted Patellar Cartilage")
-        #
-        # plt.tight_layout()
-        # plt.savefig(results_filename + "\\examples\\" + str(i) + ".png", dpi=600)
-        # plt.show()
-
 
 
