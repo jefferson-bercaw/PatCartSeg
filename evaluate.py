@@ -142,6 +142,34 @@ def save_metrics(date_time, metrics):
     return
 
 
+def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask):
+    # Define colors for ground truth and predicted masks
+    gt_color = 'blue'
+    pred_color = 'red'
+    overlap_color = 'purple'  # Color for areas of overlap
+
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Plot MRI image
+    ax.imshow(mri_image, cmap='gray')
+
+    # Overlay ground truth mask
+    ax.imshow(ground_truth_mask*255, cmap='Blues', alpha=0.5)
+
+    # Overlay predicted mask
+    ax.imshow(predicted_mask*255, cmap='Reds', alpha=0.5)
+
+    # Create legend
+    legend_handles = [
+        plt.Rectangle((0, 0), 1, 1, color=gt_color, alpha=0.5, label='Ground Truth'),
+        plt.Rectangle((0, 0), 1, 1, color=pred_color, alpha=0.5, label='Predicted')
+    ]
+    ax.legend(handles=legend_handles, loc='upper right')
+
+    plt.show()
+
+
 if __name__ == "__main__":
     # date_time pattern to identify model we just trained
     num_examples = 100
@@ -196,6 +224,7 @@ if __name__ == "__main__":
     # Count true pixels [intersection, predicted, true]
     pat_positives = [0, 0, 0]
     pat_cart_positives = [0, 0, 0]
+    example_num = 0
 
     for i in range(n_test_images):
         filename, mri, label = next(iterable)
@@ -208,6 +237,12 @@ if __name__ == "__main__":
 
         pat_positives = count_positives(pat, pat_true, pat_positives)
         pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
+
+        # Plot examples of true masks that have predictions on them
+        if np.sum(pat_true) > 0 and np.sum(pat_cart_true) > 0 and example_num < num_examples:
+            plot_mri_with_masks(mri, pat_true, pat)
+            plot_mri_with_masks(mri, pat_cart_true, pat_cart)
+            example_num += 1
 
         # save_result(filename, date_time, pat, pat_cart)
         print(f"Img {i} of {n_test_images}")
