@@ -135,6 +135,14 @@ def calculate_dice(positives):
     return (2 * positives[0]) / (positives[1] + positives[2])
 
 
+def save_metrics(filename, date_time, metrics):
+    filename_str = filename.numpy()[0].decode()
+    results_filename = get_results_filename(date_time)
+    with open(results_filename + "\\metrics.pkl", 'wb') as f:
+        pickle.dump(metrics, f)
+    return
+
+
 if __name__ == "__main__":
     # date_time pattern to identify model we just trained
     num_examples = 100
@@ -148,13 +156,6 @@ if __name__ == "__main__":
     # get the history and model
     history, model = get_hist_and_model(date_time)
     test_dataset = get_dataset(batch_size=1, dataset_type='test')
-
-    # Get evaluation metrics
-    # loss, accuracy = model.evaluate(test_dataset)
-
-    # Get predicted label metrics
-    # predicted_labels = model.predict(test_dataset)
-    # predicted_labels = tf.argmax(predicted_labels, axis=1)
 
     # Output plots
     plt.plot(history["FN"])
@@ -218,6 +219,10 @@ if __name__ == "__main__":
     print(f"Patellar Dice Score: {pat_dsc}")
     print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
 
-
-
+    metrics = {"patellar_dice": pat_dsc,
+               "patellar_cartilage_dice": pat_cart_dsc,
+               "pat_positive_counts": pat_positives,
+               "pat_cart_positive_counts": pat_cart_positives,
+               "positive_count_info": ["intersection", "predicted", "true"]}
+    save_metrics(filename, date_time, metrics)
 
