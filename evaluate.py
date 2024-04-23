@@ -213,7 +213,7 @@ if __name__ == "__main__":
         print(f"Img {i} of {n_test_images}")
 
     pat_dsc = calculate_dice(pat_positives)
-    pat_cart_dsc = calculate_dice(pat_positives)
+    pat_cart_dsc = calculate_dice(pat_cart_positives)
 
     print(f"Patellar Dice Score: {pat_dsc}")
     print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
