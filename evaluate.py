@@ -135,8 +135,7 @@ def calculate_dice(positives):
     return (2 * positives[0]) / (positives[1] + positives[2])
 
 
-def save_metrics(filename, date_time, metrics):
-    filename_str = filename.numpy()[0].decode()
+def save_metrics(date_time, metrics):
     results_filename = get_results_filename(date_time)
     with open(results_filename + "\\metrics.pkl", 'wb') as f:
         pickle.dump(metrics, f)
@@ -224,5 +223,5 @@ if __name__ == "__main__":
                "pat_positive_counts": pat_positives,
                "pat_cart_positive_counts": pat_cart_positives,
                "positive_count_info": ["intersection", "predicted", "true"]}
-    save_metrics(filename, date_time, metrics)
+    save_metrics(date_time, metrics)
 
