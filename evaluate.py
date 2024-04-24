@@ -142,7 +142,7 @@ def save_metrics(date_time, metrics):
     return
 
 
-def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask):
+def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filename, image_filename, tissue):
     # Define colors for ground truth and predicted masks
     gt_color = 'blue'
     pred_color = 'red'
@@ -155,10 +155,12 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask):
     ax.imshow(mri_image, cmap='gray')
 
     # Overlay ground truth mask
-    ax.imshow(ground_truth_mask*255, cmap='Blues', alpha=0.5)
+    alpha_gt = np.where(ground_truth_mask == 1, 0.4, 0)  # Set alpha based on mask values
+    ax.imshow(ground_truth_mask, cmap='Blues', alpha=alpha_gt)
 
     # Overlay predicted mask
-    ax.imshow(predicted_mask*255, cmap='Reds', alpha=0.5)
+    alpha_pred = np.where(predicted_mask == 1, 0.4, 0)  # Set alpha based on mask values
+    ax.imshow(predicted_mask, cmap='Reds', alpha=alpha_pred)
 
     # Create legend
     legend_handles = [
@@ -167,12 +169,31 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask):
     ]
     ax.legend(handles=legend_handles, loc='upper right')
 
-    plt.show()
+    # Saving figure
+    image_filename = image_filename.numpy()[0].decode()
+    plot_filename = comp_filename + "\\" + tissue
+
+    if not os.path.exists(plot_filename):
+        os.mkdir(plot_filename)
+
+    plot_filename = plot_filename + "\\" + image_filename
+
+    # Go to .png format
+    plot_filename = plot_filename[:-3] + "png"
+    plt.savefig(plot_filename, dpi=600)
+
+
+def get_comparison_plot_filename(date_time):
+    model_filename = get_model_filename(date_time)
+    results_filename = build_results_filename(model_filename)
+    comp_filename = results_filename + "\\comparisons"
+    if not os.path.exists(comp_filename):
+        os.mkdir(comp_filename)
+    return comp_filename
 
 
 if __name__ == "__main__":
     # date_time pattern to identify model we just trained
-    num_examples = 100
     # date_time = get_date_and_hour()
     date_time = "2024-04-17_08"
 
@@ -221,10 +242,12 @@ if __name__ == "__main__":
     iterable = iter(test_dataset)
     n_test_images = len(test_dataset)
 
+    # Get comparison plots filename
+    comp_filename = get_comparison_plot_filename(date_time)
+
     # Count true pixels [intersection, predicted, true]
     pat_positives = [0, 0, 0]
     pat_cart_positives = [0, 0, 0]
-    example_num = 0
 
     for i in range(n_test_images):
         filename, mri, label = next(iterable)
@@ -239,10 +262,8 @@ if __name__ == "__main__":
         pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
 
         # Plot examples of true masks that have predictions on them
-        if np.sum(pat_true) > 0 and np.sum(pat_cart_true) > 0 and example_num < num_examples:
-            plot_mri_with_masks(mri, pat_true, pat)
-            plot_mri_with_masks(mri, pat_cart_true, pat_cart)
-            example_num += 1
+        plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
+        plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
         # save_result(filename, date_time, pat, pat_cart)
         print(f"Img {i} of {n_test_images}")
