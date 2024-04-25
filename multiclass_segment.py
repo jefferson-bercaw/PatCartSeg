@@ -27,6 +27,7 @@ class RecordHistory(tf.keras.callbacks.Callback):
 
 if __name__ == "__main__":
     # GPUs
+    task_id = int(os.environ['SLURM_ARRAY_TASK_ID'])
     strategy = tf.distribute.MirroredStrategy()
 
     with strategy.scope():
@@ -59,7 +60,7 @@ if __name__ == "__main__":
                                                                    verbose=1)
 
         # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="./models/unet_temp.keras",
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./models/unet_temp_task{task_id}.keras",
                                                          monitor='val_loss',
                                                          verbose=1,
                                                          save_best_only=True)
@@ -75,10 +76,10 @@ if __name__ == "__main__":
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_name = f"unet_{current_time}.h5"
+        model_name = f"unet_{current_time}_task{task_id}.h5"
         unet_model.save(f"./models/{model_name}")
 
         # Save history
-        hist_name = f"unet_{current_time}.pkl"
+        hist_name = f"unet_{current_time}_task{task_id}.pkl"
         with open(f"./history/{hist_name}", "wb") as f:
             pickle.dump(history.history, f)
