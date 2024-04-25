@@ -100,7 +100,7 @@ def four_digit_number(int_num):
 
 
 def store_sigma(sigma_dict, sigma_list, idx, mean_val):
-    sigma_dict{idx} = {"mean_value": mean_val, "sigmas": sigma_list}
+    sigma_dict[idx] = {"mean_value": mean_val, "sigmas": sigma_list}
     return sigma_dict
 
 
