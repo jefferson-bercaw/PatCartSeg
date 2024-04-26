@@ -45,11 +45,17 @@ def load_model(model_filename):
 
 def build_results_filename(model_filename):
     results_directory = model_filename[:-3]  # remove extension on model name
-    print(f"Results Directory: {results_directory}")
-    files = results_directory.split("\\")
-    files[-2] = 'results'
 
-    separator = "\\"
+    if "\\" in results_directory:
+        files = results_directory.split("\\")
+        separator = "\\"
+    elif "/" in results_directory:
+        files = results_directory.split("/")
+        separator = "/"
+    else:
+        raise(SyntaxError, f"There are no single forward or double backward slashes in the results directory: {results_directory}")
+
+    files[-2] = 'results'
     results_filename = separator.join(files)
     return results_filename
 
