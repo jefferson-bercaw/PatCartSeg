@@ -45,7 +45,7 @@ def load_model(model_filename):
 
 def build_results_filename(model_filename):
     results_directory = model_filename[:-3]  # remove extension on model name
-    print(f"Results Directory: {results_directory})
+    print(f"Results Directory: {results_directory}")
     files = results_directory.split("\\")
     files[-2] = 'results'
 
