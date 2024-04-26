@@ -14,6 +14,6 @@ def get_data_path():
         if task_id == 5:
             data_path = "/hpc/group/ldefratelab/jrb187/PatCartSeg/Split_Data_BMP2"
         elif task_id < 5:
-            data_path = "/hpc/group/defratelab/jrb187/PatCartSeg/Augmentations/sig" + str(task_id)
+            data_path = "/hpc/group/ldefratelab/jrb187/PatCartSeg/Augmentations/sig" + str(task_id)
 
     return data_path
