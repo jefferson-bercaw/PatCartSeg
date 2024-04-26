@@ -195,6 +195,7 @@ def get_comparison_plot_filename(date_time):
 if __name__ == "__main__":
     # date_time pattern to identify model we just trained
     date_time = get_date_and_hour()
+    print(f"Date_time: {date_time}")
     # date_time = "2024-04-17_08"
 
     # Get results filename
