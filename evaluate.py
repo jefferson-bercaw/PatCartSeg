@@ -273,7 +273,7 @@ if __name__ == "__main__":
         plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
         plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
-        # save_result(filename, date_time, pat, pat_cart)
+        save_result(filename, date_time, pat, pat_cart)
         print(f"Img {i} of {n_test_images}")
 
     pat_dsc = calculate_dice(pat_positives)
