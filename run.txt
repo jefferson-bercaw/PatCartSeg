@@ -6,7 +6,7 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
-#SBATCH --array=1-4
+#SBATCH --array=0-5
 
 python multiclass_segment.py
 python evaluate.py
