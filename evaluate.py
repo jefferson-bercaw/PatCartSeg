@@ -1,3 +1,4 @@
+import matplotlib.colors
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
@@ -9,6 +10,8 @@ import datetime
 from dice_loss_function import dice_loss
 from PIL import Image
 from unet import build_unet
+from get_data_path import get_data_path
+from augmentation import assemble_mask_volume, assemble_mri_volume, four_digit_number
 
 
 def get_date_and_hour():
@@ -168,7 +171,6 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filen
     # Define colors for ground truth and predicted masks
     gt_color = 'blue'
     pred_color = 'red'
-    overlap_color = 'purple'  # Color for areas of overlap
 
     # Create figure and axes
     fig, ax = plt.subplots()
@@ -205,6 +207,98 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filen
     plt.savefig(plot_filename, dpi=600)
 
 
+def get_slice_list(p_truth_volume, pc_truth_volume):
+    starting_slice = 0
+    for i in range(120):
+        slice_p_truth = p_truth_volume[:, :, i]
+        slice_pc_truth = pc_truth_volume[:, :, i]
+
+        p_sum = np.sum(slice_p_truth)
+        pc_sum = np.sum(slice_pc_truth)
+
+        if starting_slice == 0 and p_sum > 0 and pc_sum > 0:
+            starting_slice = i
+
+        if starting_slice > 0 and p_sum == 0 and pc_sum == 0:
+            ending_slice = i - 1
+            break
+
+    slice_list = np.floor(np.linspace(starting_slice, ending_slice, 9))
+    slice_list = slice_list.astype(int)
+    return slice_list
+
+
+def plot_mri_with_both_masks(subj_name, model_name):
+    # Get Volumes for this subject and model prediction
+    mri_volume, p_truth_volume, p_pred_volume, pc_truth_volume, pc_pred_volume = return_volumes(subj_name, model_name)
+
+    alpha_p_truth = np.where(p_truth_volume == 1, 0.4, 0)  # Set alpha based on mask values
+    alpha_p_pred = np.where(p_pred_volume == 1, 0.4, 0)  # Set alpha based on mask values
+    alpha_pc_truth = np.where(pc_truth_volume == 1, 0.4, 0)
+    alpha_pc_pred = np.where(pc_pred_volume == 1, 0.4, 0)
+
+    top_left_coords = [150, 50]  # row, col
+    img_size = 175
+    bottom_right_coords = [top_left_coords[0] + img_size, top_left_coords[1] + img_size]
+
+    # Find a 9 element slice list containing the first and last ground truth predictions
+    slice_list = get_slice_list(p_truth_volume, pc_truth_volume)
+
+    fig, axs = plt.subplots(3, 3, figsize=(15, 15))
+
+    for i, slice_idx in enumerate(slice_list):
+        ax = axs[i // 3, i % 3]
+
+        ax.imshow(mri_volume[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='gray')
+        ax.axis('off')
+
+        # Overlay ground truth and predicted patella masks
+        ax.imshow(alpha_p_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Blues', alpha=alpha_p_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+        ax.imshow(alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+
+        # Overlay ground truth and predicted patellar cartilage masks
+        ax.imshow(alpha_pc_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Wistia', alpha=alpha_pc_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+        ax.imshow(alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Greens', alpha=alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+
+    plt.tight_layout()
+    plt.savefig(f"R:/DefratePrivate/Bercaw/Patella_Autoseg/results/{model_name}/{subj_name}_p_and_pc_windows.png", dpi=600)
+    plt.show()
+
+    # Patella only
+    fig, axs = plt.subplots(3, 3, figsize=(15, 15))
+
+    for i, slice_idx in enumerate(slice_list):
+        ax = axs[i // 3, i % 3]
+
+        ax.imshow(mri_volume[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='gray')
+        ax.axis('off')
+
+        # Overlay ground truth and predicted patella masks
+        ax.imshow(alpha_p_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Blues', alpha=alpha_p_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+        ax.imshow(alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+
+    plt.tight_layout()
+    plt.savefig(f"R:/DefratePrivate/Bercaw/Patella_Autoseg/results/{model_name}/{subj_name}_p_windows.png", dpi=600)
+    plt.show()
+
+    # Patellar Cartilage Only
+    fig, axs = plt.subplots(3, 3, figsize=(15, 15))
+
+    for i, slice_idx in enumerate(slice_list):
+        ax = axs[i // 3, i % 3]
+
+        ax.imshow(mri_volume[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='gray')
+        ax.axis('off')
+
+        # Overlay ground truth and predicted patellar cartilage masks
+        ax.imshow(alpha_pc_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Blues', alpha=alpha_pc_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+        ax.imshow(alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+
+    plt.tight_layout()
+    plt.savefig(f"R:/DefratePrivate/Bercaw/Patella_Autoseg/results/{model_name}/{subj_name}_pc_windows.png", dpi=600)
+    plt.show()
+
+
 def get_comparison_plot_filename(date_time):
     model_filename = get_model_filename(date_time)
     results_filename = build_results_filename(model_filename)
@@ -214,12 +308,46 @@ def get_comparison_plot_filename(date_time):
     return comp_filename
 
 
+def return_volumes(subj_name, model_name):
+    """Returns volumes for a given subject and a given model"""
+    # Point to predictions
+    pred_folder = f"./results/{model_name}"
+    p_pred_folder = f"{pred_folder}/pat"
+    pc_pred_folder = f"{pred_folder}/pat_cart"
+
+    # Point to Ground Truth
+    truth_folder = get_data_path()
+    mri_folder = f"{truth_folder}/test/mri"
+    p_and_pc_truth_folder = f"{truth_folder}/test/mask"
+
+    # Get list of images in each folder for this subject
+    image_list = [f"{subj_name}-{four_digit_number(i)}.bmp" for i in range(1, 120)]
+
+    # Append image list to all absolute paths to load
+    p_pred_names = [f"{p_pred_folder}/{image_name}" for image_name in image_list]
+    pc_pred_names = [f"{pc_pred_folder}/{image_name}" for image_name in image_list]
+    mri_names = [f"{mri_folder}/{image_name}" for image_name in image_list]
+    p_and_pc_truth_names = [f"{p_and_pc_truth_folder}/{image_name}" for image_name in image_list]
+
+    # Load volumes
+    p_pred_volume = assemble_mri_volume(p_pred_names)
+    pc_pred_volume = assemble_mri_volume(pc_pred_names)
+    mri_volume = assemble_mri_volume(mri_names)
+    p_truth_volume, pc_truth_volume = assemble_mask_volume(p_and_pc_truth_names)
+
+    return mri_volume, p_truth_volume, p_pred_volume, pc_truth_volume, pc_pred_volume
+
+
 if __name__ == "__main__":
 
     # # date_time pattern to identify model we just trained
     # date_time = get_date_and_hour()
     # print(f"Date_time: {date_time}")
-    date_times = ["temp_task0", "temp_task1", "temp_task2", "temp_task3", "temp_task4", "temp_task5"]
+    # date_times = ["temp_task0", "temp_task1", "temp_task2", "temp_task3", "temp_task4", "temp_task5"]
+    # date_times = ["04-26_19-09"]
+    model_name = "unet_2024-04-17_08-06-28"
+    subj_name = "AS_018"
+    plot_mri_with_both_masks(subj_name, model_name)
 
     for date_time in date_times:
         # Get results filename
@@ -227,8 +355,8 @@ if __name__ == "__main__":
         prep_results_filepath(results_filename)
 
         # get the history and model
-        # history, model = get_hist_and_model(date_time)
-        model = get_model(date_time)
+        history, model = get_hist_and_model(date_time)
+        # model = get_model(date_time)
         test_dataset = get_dataset(batch_size=1, dataset_type='test')
 
         # Output plots
@@ -288,10 +416,10 @@ if __name__ == "__main__":
             pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
 
             # Plot examples of true masks that have predictions on them
-            plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
-            plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
+            # plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
+            # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
-            save_result(filename, date_time, pat, pat_cart)
+            # save_result(filename, date_time, pat, pat_cart)
             print(f"Img {i} of {n_test_images}")
 
         pat_dsc = calculate_dice(pat_positives)
