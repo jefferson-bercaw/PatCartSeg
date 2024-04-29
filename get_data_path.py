@@ -7,7 +7,7 @@ def get_data_path():
         task_id = int(os.environ['SLURM_ARRAY_TASK_ID'])
     except KeyError:
         print("No SLURM array task ID found--> Manual task ID employed")
-        task_id = 0
+        task_id = 5
 
     if cur_dir[0:2] == "R:" or cur_dir[0:2] == "C:":  # If on local machine
         if task_id == 5:
