@@ -8,6 +8,7 @@ from create_dataset import get_dataset
 import datetime
 from dice_loss_function import dice_loss
 from PIL import Image
+from unet import build_unet
 
 
 def get_date_and_hour():
@@ -66,6 +67,12 @@ def get_hist_and_model(date_time):
     history = load_history(history_filename)
     model = load_model(model_filename)
     return history, model
+
+
+def get_model(date_time):
+    model_filename = get_model_filename(date_time)
+    model = load_model(model_filename)
+    return model
 
 
 def get_results_filename(date_time):
@@ -204,7 +211,7 @@ if __name__ == "__main__":
     # # date_time pattern to identify model we just trained
     # date_time = get_date_and_hour()
     # print(f"Date_time: {date_time}")
-    date_times = ["2024-04-27_00", "2024-04-27_02", "2024-04-27_04", "2024-04-27_10"]
+    date_times = ["temp_task0", "temp_task1", "temp_task2", "temp_task3", "temp_task4", "temp_task5"]
 
     for date_time in date_times:
         # Get results filename
@@ -212,42 +219,43 @@ if __name__ == "__main__":
         prep_results_filepath(results_filename)
 
         # get the history and model
-        history, model = get_hist_and_model(date_time)
+        # history, model = get_hist_and_model(date_time)
+        model = get_model(date_time)
         test_dataset = get_dataset(batch_size=1, dataset_type='test')
 
         # Output plots
-        plt.plot(history["FN"])
-        plt.xlabel('Epoch')
-        plt.title("False Negatives")
-        plt.savefig(results_filename + "\\fn.png")
-        plt.show()
-
-        plt.plot(history["FP"])
-        plt.xlabel('Epoch')
-        plt.title("False Positives")
-        plt.savefig(results_filename + "\\fp.png")
-        plt.show()
-
-        plt.plot(history["TN"])
-        plt.xlabel('Epoch')
-        plt.title("True Negatives")
-        plt.savefig(results_filename + "\\tn.png")
-        plt.show()
-
-        plt.plot(history["TP"])
-        plt.xlabel('Epoch')
-        plt.title("True Positives")
-        plt.savefig(results_filename + "\\tp.png")
-        plt.show()
-
-        plt.plot(history["val_loss"], label='val_loss')
-        plt.plot(history["loss"], label='train_loss')
-        plt.xlabel('Epoch')
-        plt.ylabel('Dice Loss')
-        plt.legend()
-        plt.title("Loss")
-        plt.savefig(results_filename + "\\loss.png")
-        plt.show()
+        # plt.plot(history["FN"])
+        # plt.xlabel('Epoch')
+        # plt.title("False Negatives")
+        # plt.savefig(results_filename + "\\fn.png")
+        # plt.show()
+        #
+        # plt.plot(history["FP"])
+        # plt.xlabel('Epoch')
+        # plt.title("False Positives")
+        # plt.savefig(results_filename + "\\fp.png")
+        # plt.show()
+        #
+        # plt.plot(history["TN"])
+        # plt.xlabel('Epoch')
+        # plt.title("True Negatives")
+        # plt.savefig(results_filename + "\\tn.png")
+        # plt.show()
+        #
+        # plt.plot(history["TP"])
+        # plt.xlabel('Epoch')
+        # plt.title("True Positives")
+        # plt.savefig(results_filename + "\\tp.png")
+        # plt.show()
+        #
+        # plt.plot(history["val_loss"], label='val_loss')
+        # plt.plot(history["loss"], label='train_loss')
+        # plt.xlabel('Epoch')
+        # plt.ylabel('Dice Loss')
+        # plt.legend()
+        # plt.title("Loss")
+        # plt.savefig(results_filename + "\\loss.png")
+        # plt.show()
 
         iterable = iter(test_dataset)
         n_test_images = len(test_dataset)
