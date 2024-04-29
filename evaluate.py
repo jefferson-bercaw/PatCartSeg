@@ -70,8 +70,16 @@ def get_hist_and_model(date_time):
 
 
 def get_model(date_time):
-    model_filename = get_model_filename(date_time)
-    model = load_model(model_filename)
+    # model = build_unet(dropout_rate=0.3)
+    # model.compile(optimizer='adam',
+    #                    loss=dice_loss,
+    #                    metrics=['accuracy',
+    #                             tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
+    #                             tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
+    #                             tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),
+    #                             tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
+    # model_new = keras.models.load_model("C:/Users/jrb187/PycharmProjects/PatCartSeg/models/unet_temp_task5.keras",
+    #                                     custom_objects={'dice_loss': dice_loss})
     return model
 
 
