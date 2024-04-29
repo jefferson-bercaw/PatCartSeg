@@ -63,7 +63,7 @@ if __name__ == "__main__":
         cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./models/unet_temp_task{task_id}.weights.h5",
                                                          monitor='val_loss',
                                                          verbose=1,
-                                                         save_best_only=True
+                                                         save_best_only=True,
                                                          save_weights_only=False)
 
         # Initialize recording history
