@@ -2,11 +2,10 @@
 #SBATCH --output=./outputs/%A_%a_slurm.out
 #SBATCH --error=./errors/%A_%a_slurm.err
 #SBATCH --nodes=1
-#SBATCH --mem=128G
+#SBATCH --mem=180G
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
 #SBATCH --array=0-5
 
 python multiclass_segment.py
-python evaluate.py
