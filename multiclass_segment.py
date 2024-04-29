@@ -60,7 +60,7 @@ if __name__ == "__main__":
                                                                    verbose=1)
 
         # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./models/unet_temp_task{task_id}.weights.h5",
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./models/unet_temp_task{task_id}.model.keras",
                                                          monitor='val_loss',
                                                          verbose=1,
                                                          save_best_only=True,
