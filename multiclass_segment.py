@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 8
+        batch_size = 4
         dropout_rate = 0.3
         epochs = 500
         patience = 20
@@ -60,10 +60,11 @@ if __name__ == "__main__":
                                                                    verbose=1)
 
         # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./models/unet_temp_task{task_id}.h5",
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./models/unet_temp_task{task_id}.weights.h5",
                                                          monitor='val_loss',
                                                          verbose=1,
-                                                         save_best_only=True)
+                                                         save_best_only=True
+                                                         save_weights_only=False)
 
         # Initialize recording history
         record_history_callback = RecordHistory(validation_dataset=val_dataset)
