@@ -59,12 +59,14 @@ if __name__ == "__main__":
                                                                    min_delta=min_delta,
                                                                    verbose=1)
 
+        checkpoint_filepath = f"./checkpoints/task{task_id}/tmp/checkpoint"
+
         # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./models/unet_temp_task{task_id}.model.keras",
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./checkpoints/task{task_id}/tmp/checkpoint",
                                                          monitor='val_loss',
                                                          verbose=1,
                                                          save_best_only=True,
-                                                         save_weights_only=False)
+                                                         save_weights_only=True)
 
         # Initialize recording history
         record_history_callback = RecordHistory(validation_dataset=val_dataset)
@@ -79,6 +81,10 @@ if __name__ == "__main__":
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         model_name = f"unet_{current_time}_task{task_id}.h5"
         unet_model.save(f"./models/{model_name}")
+
+        # Save best model
+        unet_model.load_weights(checkpoint_filepath)
+        unet_model.save(f"./models/best_{model_name}")
 
         # Save history
         hist_name = f"unet_{current_time}_task{task_id}.pkl"
