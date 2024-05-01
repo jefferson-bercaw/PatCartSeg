@@ -344,10 +344,10 @@ if __name__ == "__main__":
     # date_time = get_date_and_hour()
     # print(f"Date_time: {date_time}")
     # date_times = ["temp_task0", "temp_task1", "temp_task2", "temp_task3", "temp_task4", "temp_task5"]
-    # date_times = ["04-26_19-09"]
-    model_name = "unet_2024-04-17_08-06-28"
-    subj_name = "AS_018"
-    plot_mri_with_both_masks(subj_name, model_name)
+    date_times = ["04-30_02"]
+    # model_name = "unet_2024-04-17_08-06-28"
+    # subj_name = "AS_018"
+    # plot_mri_with_both_masks(subj_name, model_name)
 
     for date_time in date_times:
         # Get results filename
@@ -360,38 +360,38 @@ if __name__ == "__main__":
         test_dataset = get_dataset(batch_size=1, dataset_type='test')
 
         # Output plots
-        # plt.plot(history["FN"])
-        # plt.xlabel('Epoch')
-        # plt.title("False Negatives")
-        # plt.savefig(results_filename + "\\fn.png")
-        # plt.show()
-        #
-        # plt.plot(history["FP"])
-        # plt.xlabel('Epoch')
-        # plt.title("False Positives")
-        # plt.savefig(results_filename + "\\fp.png")
-        # plt.show()
-        #
-        # plt.plot(history["TN"])
-        # plt.xlabel('Epoch')
-        # plt.title("True Negatives")
-        # plt.savefig(results_filename + "\\tn.png")
-        # plt.show()
-        #
-        # plt.plot(history["TP"])
-        # plt.xlabel('Epoch')
-        # plt.title("True Positives")
-        # plt.savefig(results_filename + "\\tp.png")
-        # plt.show()
-        #
-        # plt.plot(history["val_loss"], label='val_loss')
-        # plt.plot(history["loss"], label='train_loss')
-        # plt.xlabel('Epoch')
-        # plt.ylabel('Dice Loss')
-        # plt.legend()
-        # plt.title("Loss")
-        # plt.savefig(results_filename + "\\loss.png")
-        # plt.show()
+        plt.plot(history["FN"])
+        plt.xlabel('Epoch')
+        plt.title("False Negatives")
+        plt.savefig(results_filename + "\\fn.png")
+        plt.show()
+
+        plt.plot(history["FP"])
+        plt.xlabel('Epoch')
+        plt.title("False Positives")
+        plt.savefig(results_filename + "\\fp.png")
+        plt.show()
+
+        plt.plot(history["TN"])
+        plt.xlabel('Epoch')
+        plt.title("True Negatives")
+        plt.savefig(results_filename + "\\tn.png")
+        plt.show()
+
+        plt.plot(history["TP"])
+        plt.xlabel('Epoch')
+        plt.title("True Positives")
+        plt.savefig(results_filename + "\\tp.png")
+        plt.show()
+
+        plt.plot(history["val_loss"], label='val_loss')
+        plt.plot(history["loss"], label='train_loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Dice Loss')
+        plt.legend()
+        plt.title("Loss")
+        plt.savefig(results_filename + "\\loss.png")
+        plt.show()
 
         iterable = iter(test_dataset)
         n_test_images = len(test_dataset)
@@ -416,8 +416,8 @@ if __name__ == "__main__":
             pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
 
             # Plot examples of true masks that have predictions on them
-            # plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
-            # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
+            plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
+            plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
             # save_result(filename, date_time, pat, pat_cart)
             print(f"Img {i} of {n_test_images}")
