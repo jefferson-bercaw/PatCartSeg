@@ -108,6 +108,7 @@ def save_sigma(sigma_dict):
     with open("./augmentation/parameters.pkl", "wb") as f:
         pickle.dump(sigma_dict, f)
 
+
 if __name__ == "__main__":
     random.seed(42)
     data_path = get_data_path()
