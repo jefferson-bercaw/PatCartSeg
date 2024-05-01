@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 16
+        batch_size = 12
         dropout_rate = 0.3
         epochs = 500
         patience = 20
