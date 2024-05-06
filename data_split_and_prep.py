@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from PIL import Image
+import random
+
 
 def get_all_scan_names(directory):
     folders = []
@@ -89,25 +91,28 @@ if __name__ == "__main__":
 
     # Get Subject IDs from each scan
     scans = organize_subject_scans(scans_list)
-    print(scans)
+    max_subject_num = max(entry['subject_num'] for entry in scans.values())
 
-    # Randomly select one subject for test and one subject for validation
-    random_seed = 42
-    np.random.seed(random_seed)
+    # Randomly select subjects for test and subjects for validation
+    random.seed(42)
 
-    test_subj = np.round(np.random.rand() * 7)
-    val_subj = np.round(np.random.rand() * 7)
-    while val_subj == test_subj:
-        val_subj = np.round(np.random.rand() * 7)
+    num_test_subj = 4
+    num_val_subj = 4
+
+    test_val_nums_ds1 = random.sample(range(8), 2)
+    test_val_nums_ds2 = random.sample(range(8, max_subject_num), 4)
+
+    test_subj_nums = [test_val_nums_ds1[0], test_val_nums_ds2[0], test_val_nums_ds2[1]]
+    val_subj_nums = [test_val_nums_ds1[1], test_val_nums_ds2[2], test_val_nums_ds2[3]]
 
     # Save these images in one combined folder
-    train_scans = [entry["scan"] for entry in scans.values() if (entry['subject_num'] != test_subj and entry['subject_num'] != val_subj)]
-    test_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == test_subj]
-    val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == val_subj]
+    train_scans = [entry["scan"] for entry in scans.values() if (entry['subject_num'] not in test_subj_nums and entry['subject_num'] not in val_subj_nums)]
+    test_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] in test_subj_nums]
+    val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] in val_subj_nums]
 
-    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP2/train"
-    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP2/test"
-    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP2/val"
+    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_LK/train"
+    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_LK/test"
+    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_LK/val"
 
     for scan in scans.keys():
 
