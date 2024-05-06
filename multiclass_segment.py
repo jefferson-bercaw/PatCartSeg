@@ -27,7 +27,6 @@ class RecordHistory(tf.keras.callbacks.Callback):
 
 if __name__ == "__main__":
     # GPUs
-    task_id = int(os.environ['SLURM_ARRAY_TASK_ID'])
     strategy = tf.distribute.MirroredStrategy()
 
     with strategy.scope():
@@ -59,10 +58,10 @@ if __name__ == "__main__":
                                                                    min_delta=min_delta,
                                                                    verbose=1)
 
-        checkpoint_filepath = f"./checkpoints/task{task_id}/tmp/checkpoint"
+        checkpoint_filepath = f"./checkpoints/tmp/checkpoint"
 
         # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./checkpoints/task{task_id}/tmp/checkpoint",
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./checkpoints/tmp/checkpoint",
                                                          monitor='val_loss',
                                                          verbose=1,
                                                          save_best_only=True,
@@ -79,14 +78,14 @@ if __name__ == "__main__":
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_name = f"unet_{current_time}_task{task_id}.h5"
+        model_name = f"unet_{current_time}.h5"
         unet_model.save(f"./models/{model_name}")
 
         # Save best model
         unet_model.load_weights(checkpoint_filepath)
-        unet_model.save(f"./models/best_{model_name}")
+        unet_model.save(f"./models/{model_name}_lowest_val_loss.h5")
 
         # Save history
-        hist_name = f"unet_{current_time}_task{task_id}.pkl"
+        hist_name = f"unet_{current_time}.pkl"
         with open(f"./history/{hist_name}", "wb") as f:
             pickle.dump(history.history, f)
