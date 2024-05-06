@@ -2,6 +2,7 @@ import os
 import numpy as np
 from PIL import Image
 import random
+from get_data_path import get_data_path
 
 
 def get_all_scan_names(directory):
@@ -110,9 +111,11 @@ if __name__ == "__main__":
     test_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] in test_subj_nums]
     val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] in val_subj_nums]
 
-    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_LK/train"
-    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_LK/test"
-    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_LK/val"
+    # Get destinations of where we're saving each group
+    dataset_path = get_data_path(dataset="HT")
+    dest_train = dataset_path + "/train"
+    dest_test = dataset_path + "/test"
+    dest_val = dataset_path + "/val"
 
     for scan in scans.keys():
 
@@ -126,7 +129,7 @@ if __name__ == "__main__":
         image_files = get_bmp_files(source_mri)
 
         # Open files, assemble 3d masks, save mri and mask as npz files
-        print(f"Saving for scan {scan}")
+        print(f"Saving scan {scan}")
 
         for file in image_files:
 
