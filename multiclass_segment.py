@@ -5,10 +5,16 @@ import tensorflow as tf
 import numpy as np
 import pickle
 import time
+import argparse
 
 from unet import build_unet
 from dice_loss_function import dice_loss
 from create_dataset import get_dataset
+
+
+parser = argparse.ArgumentParser(description="Training Options")
+parser.add_argument("-d", "--dataset", help="Dataset is either H or HT")
+args = parser.parse_args(["dataset"])
 
 
 class RecordHistory(tf.keras.callbacks.Callback):
@@ -49,8 +55,8 @@ if __name__ == "__main__":
                                     tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
 
         # Get datasets
-        train_dataset = get_dataset(batch_size=batch_size, dataset_type='train')
-        val_dataset = get_dataset(batch_size=batch_size, dataset_type='val')
+        train_dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset=args.dataset)
+        val_dataset = get_dataset(batch_size=batch_size, dataset_type='val', dataset=args.dataset)
 
         # Early stopping callback
         early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -78,14 +84,14 @@ if __name__ == "__main__":
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_name = f"unet_{current_time}.h5"
-        unet_model.save(f"./models/{model_name}")
+        model_name = f"unet_{current_time}_{args.dataset}.h5"
+        unet_model.save(f"./models/{model_name}_{args.dataset}")
 
         # Save best model
         unet_model.load_weights(checkpoint_filepath)
-        unet_model.save(f"./models/{model_name}_lowest_val_loss.h5")
+        unet_model.save(f"./models/{model_name}_{args.dataset}_lowest_val_loss.h5")
 
         # Save history
-        hist_name = f"unet_{current_time}.pkl"
+        hist_name = f"unet_{current_time}_{args.dataset}.pkl"
         with open(f"./history/{hist_name}", "wb") as f:
             pickle.dump(history.history, f)
