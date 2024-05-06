@@ -69,9 +69,9 @@ def create_dataset(image_dir, mask_dir, dataset_type):
     return dataset
 
 
-def get_dataset(batch_size, dataset_type):
+def get_dataset(batch_size, dataset_type, dataset):
 
-    data_path = get_data_path()
+    data_path = get_data_path(dataset)
 
     if dataset_type == 'train':
         images_dir = data_path + "/train/mri"
@@ -111,7 +111,7 @@ def get_dataset(batch_size, dataset_type):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 32
-    dataset = get_dataset(batch_size=batch_size, dataset_type='train')
+    dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset="HT")
     iterable = iter(dataset)
     out = next(iterable)
 
