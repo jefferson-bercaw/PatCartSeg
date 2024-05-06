@@ -1,5 +1,6 @@
 import os
 
+
 def get_data_path(dataset):
     cur_dir = os.getcwd()
 
