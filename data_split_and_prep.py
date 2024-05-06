@@ -36,6 +36,9 @@ def organize_subject_scans(scans_list):
         if num <= 47:
             subj_num = int(np.floor(num / 6))
 
+        elif num <= 77:
+            subj_num = int(np.floor((num-48) / 2)) + 9
+
         d[scan] = {
             "scan": scan,
             "scan_num": num,
