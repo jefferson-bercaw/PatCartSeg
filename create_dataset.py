@@ -95,51 +95,11 @@ def create_dataset(image_dir, mask_dir, dataset_type):
 
     if dataset_type == 'train':
         dataset = dataset.map(load_data)
-        dataset = dataset.map(rand_trans_rot)  # Implement random rotations and translations
     elif dataset_type == 'validation' or dataset_type == 'val':
         dataset = dataset.map(load_data)
     elif dataset_type == 'test':
         dataset = dataset.map(load_test_data)
     return dataset
-
-
-def rand_trans_rot(mri, mask):
-    """Rotates and Translates the MRI and Mask by a randomly-generated amount"""
-    # Convert MRI and mask to numpy arrays
-    mri_np = mri.numpy()
-    mask_np = mask.numpy()
-
-    # Generate random translation (up to 20 pixels in x and y dimensions)
-    translation_x = np.random.randint(-20, 20)
-    translation_y = np.random.randint(-20, 20)
-
-    # Generate random rotation (+/- 30 degrees)
-    rotation_angle = np.random.uniform(-30, 30)
-
-    # Apply translation and rotation to MRI
-    mri_translated_rotated = ndimage.shift(mri_np, (translation_y, translation_x), mode='nearest')
-    mri_translated_rotated = ndimage.rotate(mri_translated_rotated, rotation_angle, reshape=False, mode='nearest')
-
-    # Apply translation and rotation to each channel of the mask
-    mask_translated_rotated = []
-    for i in range(mask_np.shape[-1]):
-        mask_channel_trans_rot = ndimage.shift(mask_np[..., i], (translation_y, translation_x), mode='nearest')
-        mask_channel_trans_rot = ndimage.rotate(mask_channel_trans_rot, rotation_angle, reshape=False, mode='nearest')
-        mask_translated_rotated.append(mask_channel_trans_rot)
-
-    # Convert the translated/rotated MRI and mask back to TensorFlow tensors
-    mri_translated_rotated = tf.convert_to_tensor(mri_translated_rotated, dtype=tf.float64)
-    mask_translated_rotated = tf.convert_to_tensor(mask_translated_rotated, dtype=tf.float64)
-
-    # Add a batch dimension to the translated/rotated MRI and mask
-    mri_batch = tf.expand_dims(mri_translated_rotated, axis=0)
-    mask_batch = tf.expand_dims(mask_translated_rotated, axis=0)
-
-    # Concatenate the original and translated/rotated MRI and mask on the batch dimension
-    mri_concatenated = tf.concat([mri[tf.newaxis, ...], mri_batch], axis=0)
-    mask_concatenated = tf.concat([mask[tf.newaxis, ...], mask_batch], axis=0)
-
-    return mri_concatenated, mask_concatenated
 
 
 def get_dataset(batch_size, dataset_type, dataset):
@@ -191,7 +151,9 @@ def get_dataset(batch_size, dataset_type, dataset):
 
 if __name__ == '__main__':
     # Hyperparameters
-    batch_size = 32
+    batch_size = 12
     dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset="HT")
     iterable = iter(dataset)
     out = next(iterable)
+
+    print(out)
