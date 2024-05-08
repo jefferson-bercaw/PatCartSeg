@@ -7,4 +7,5 @@
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
 
-python multiclass_segment.py -d H
+python multiclass_segment.py -d HT
+python evaluate.py
