@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     files = os.listdir(mri_path)
 
-    for file in files:
+    for file_num, file in enumerate(files):
         mri_file = os.path.join(mri_path, file)
         mask_file = os.path.join(mask_path, file)
 
@@ -100,20 +100,5 @@ if __name__ == "__main__":
             # Save
             save_images(trans_mri, trans_mask, save_data_path, f"a{idx}{file}")
 
-            # Plot
-            plt.imshow(trans_mri)
-            plt.show()
-
-            plt.imshow(trans_mask)
-            plt.show()
-
-            plt.imshow(mri)
-            plt.show()
-
-            plt.imshow(mask)
-            plt.show()
-
-            print(f"Tran: {tran}")
-            print(f"Deg: {deg}")
-
-    print("Pause")
+        if file_num % (50 * (args.naug+1)):
+            print(f"File {file_num * (args.naug+1)} of {len(files) * (args.naug+1)}")
