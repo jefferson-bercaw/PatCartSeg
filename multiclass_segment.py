@@ -85,12 +85,12 @@ if __name__ == "__main__":
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_name = f"unet_{current_time}_{args.dataset}.h5"
-        unet_model.save(f"./models/{model_name}_{args.dataset}")
+        model_name = f"unet_{current_time}_{args.dataset}"
+        unet_model.save(f"./models/{model_name}_{args.dataset}.h5")
 
         # Save best model
         unet_model.load_weights(checkpoint_filepath)
-        unet_model.save(f"./models/{model_name}_{args.dataset}_lowest_val_loss.h5")
+        unet_model.save(f"./models/{model_name}_lowest_val_loss_{args.dataset}.h5")
 
         # Save history
         hist_name = f"unet_{current_time}_{args.dataset}.pkl"
