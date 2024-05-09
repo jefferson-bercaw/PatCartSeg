@@ -96,7 +96,7 @@ def prep_results_filepath(results_filename):
     if not os.path.exists(results_filename):
         os.mkdir(results_filename)
 
-    examples_filename = results_filename + "\\examples"
+    examples_filename = os.path.join(results_filename, "examples")
     if not os.path.exists(examples_filename):
         os.mkdir(examples_filename)
 
@@ -120,8 +120,8 @@ def save_result(filename, date_time, pat, pat_cart):
     filename_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
-    pat_filepath = results_filename + "\\pat"
-    pat_cart_filepath = results_filename + "\\pat_cart"
+    pat_filepath = os.path.join(results_filename, "pat")
+    pat_cart_filepath = os.path.join(results_filename, "pat_cart")
 
     # Make directories if they don't exist
     if not os.path.exists(pat_filepath):
@@ -129,8 +129,8 @@ def save_result(filename, date_time, pat, pat_cart):
     if not os.path.exists(pat_cart_filepath):
         os.mkdir(pat_cart_filepath)
 
-    pat_filepath = pat_filepath + "\\" + filename_str
-    pat_cart_filepath = pat_cart_filepath + "\\" + filename_str
+    pat_filepath = os.path.join(pat_filepath, filename_str)
+    pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
 
     pat_img = Image.fromarray(pat)
     pat_cart_img = Image.fromarray(pat_cart)
@@ -162,7 +162,7 @@ def calculate_dice(positives):
 
 def save_metrics(date_time, metrics):
     results_filename = get_results_filename(date_time)
-    with open(results_filename + "\\metrics.pkl", 'wb') as f:
+    with open(os.path.join(results_filename, "metrics.pkl"), 'wb') as f:
         pickle.dump(metrics, f)
     return
 
@@ -195,12 +195,12 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filen
 
     # Saving figure
     image_filename = image_filename.numpy()[0].decode()
-    plot_filename = comp_filename + "\\" + tissue
+    plot_filename = os.path.join(comp_filename, tissue)
 
     if not os.path.exists(plot_filename):
         os.mkdir(plot_filename)
 
-    plot_filename = plot_filename + "\\" + image_filename
+    plot_filename = os.path.join(plot_filename, image_filename)
 
     # Go to .png format
     plot_filename = plot_filename[:-3] + "png"
