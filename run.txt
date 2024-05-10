@@ -6,7 +6,7 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
-#SBATCH -a 1,3,5,7,9
+#SBATCH -a 1
 
 python rotate_and_translate.py -d HT -n $SLURM_ARRAY_TASK_ID
 
