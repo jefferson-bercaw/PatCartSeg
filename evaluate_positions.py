@@ -66,7 +66,7 @@ if __name__ == "__main__":
     PC_size = [max_cols[1] - min_cols[1] + 1, max_rows[1] - min_rows[1] + 1]
     size_info = ["X_pixels", "Y_pixels"]
 
-    with open("size_info_HT.pkl", "wb") as f:
+    with open("results/size_info_HT.pkl", "wb") as f:
         pickle.dump((P_box, PC_box, box_info, P_size, PC_size, size_info), f)
 
 
