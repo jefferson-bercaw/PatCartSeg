@@ -74,5 +74,5 @@ if __name__ == "__main__":
             save_images(mri_crop, mask_crop, save_data_path, file)
 
             # Output status
-            if int(50 * idx) % len(files) == 0
+            if int(50 * idx) % len(files) == 0:
                 print(f"File {idx} of {len(files)} in {dataset_type} set")
