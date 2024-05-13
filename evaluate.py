@@ -450,4 +450,3 @@ if __name__ == "__main__":
                    "pat_cart_positive_counts": pat_cart_positives,
                    "positive_count_info": ["intersection", "predicted", "true"]}
         save_metrics(date_time, metrics)
-
