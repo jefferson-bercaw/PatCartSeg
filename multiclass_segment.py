@@ -15,8 +15,7 @@ from create_dataset import get_dataset
 parser = argparse.ArgumentParser(description="Training Options")
 parser.add_argument("-d", "--dataset", help="Enter the suffix of the dataset we're testing")
 args = parser.parse_args()
-print(args.dataset)
-
+print(f"Dataset argument: {args.dataset}")
 
 class RecordHistory(tf.keras.callbacks.Callback):
     def __init__(self, validation_dataset):
