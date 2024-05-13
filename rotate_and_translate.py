@@ -41,7 +41,7 @@ def save_images(trans_mri, trans_mask, save_data_path, new_file_name):
     return
 
 
-def set_up_dataset_directory(dataset_path):
+def set_up_dataset_directory(save_data_path):
     if not os.path.exists(save_data_path):
         os.mkdir(save_data_path)
         os.mkdir(os.path.join(save_data_path, "test"))
