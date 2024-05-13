@@ -1,9 +1,12 @@
 import pickle
 import numpy as np
 from get_data_path import get_data_path
+from rotate_and_translate import set_up_dataset_directory, save_images
 import os
 from PIL import Image
 import matplotlib.pyplot as plt
+import argparse
+
 
 if __name__ == "__main__":
     with open("results/size_info_HT.pkl", "rb") as f:
@@ -40,10 +43,15 @@ if __name__ == "__main__":
     x_end = x_start + xy_dim
     y_end = y_start + xy_dim
 
-    # iterate through each image and crop
+    # Get current dataset we're cropping
     data_path = get_data_path("HT")
     dataset_types = ["test", "train", "val"]
 
+    # Get saving dataset and setup
+    save_data_path = get_data_path("cHT")
+    set_up_dataset_directory(save_data_path)
+
+    # iterate through each image and crop
     for dataset_type in dataset_types:
         file_path = os.path.join(data_path, dataset_type, "mask")
         files = os.listdir(file_path)
@@ -58,11 +66,13 @@ if __name__ == "__main__":
             mri_img = Image.open(mri_name)
             mri = np.array(mri_img)
 
-            # Crop
+            # Cropped image
             mask_crop = mask[y_start:y_end, x_start:x_end]
             mri_crop = mri[y_start:y_end, x_start:x_end]
 
-            plt.imshow(mask_crop, cmap='gray')
-            plt.show()
+            # Save image
+            save_images(mri_crop, mask_crop, save_data_path, file)
 
-            print()
+            # Output status
+            if int(50 * idx) % len(files) == 0
+                print(f"File {idx} of {len(files)} in {dataset_type} set")
