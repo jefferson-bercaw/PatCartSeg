@@ -119,9 +119,9 @@ def get_dataset(batch_size, dataset_type, dataset):
         mask_dir = os.path.join(data_path, "train", "mask")
     elif dataset_type == 'test':
         images_dir = os.path.join(data_path, "test", "mri")
-        mask_dir = os.path.join(data_path + "test", "mask")
+        mask_dir = os.path.join(data_path, "test", "mask")
     elif dataset_type == 'val' or dataset_type == 'validation':
-        images_dir = os.path.join(data_path + "val", "mri")
+        images_dir = os.path.join(data_path, "val", "mri")
         mask_dir = os.path.join(data_path, "val", "mask")
     else:
         raise(ValueError, f"The value {dataset_type} for the variable dataset_type is not one of 'train', 'test', "
