@@ -41,16 +41,7 @@ def save_images(trans_mri, trans_mask, save_data_path, new_file_name):
     return
 
 
-if __name__ == "__main__":
-    # Set random seed
-    np.random.seed(42)
-
-    # Load in image path
-    data_path = get_data_path(args.dataset)
-    train_path = os.path.join(data_path, "train")
-
-    # Save data path: make it if it doesn't exist
-    save_data_path = get_data_path(f"{args.dataset}{args.naug}")
+def set_up_dataset_directory(dataset_path):
     if not os.path.exists(save_data_path):
         os.mkdir(save_data_path)
         os.mkdir(os.path.join(save_data_path, "test"))
@@ -64,6 +55,19 @@ if __name__ == "__main__":
         os.mkdir(os.path.join(save_data_path, "test", "mask"))
         os.mkdir(os.path.join(save_data_path, "train", "mask"))
         os.mkdir(os.path.join(save_data_path, "val", "mask"))
+
+
+if __name__ == "__main__":
+    # Set random seed
+    np.random.seed(42)
+
+    # Load in image path
+    data_path = get_data_path(args.dataset)
+    train_path = os.path.join(data_path, "train")
+
+    # Save data path: make it if it doesn't exist
+    save_data_path = get_data_path(f"{args.dataset}{args.naug}")
+    set_up_dataset_directory(save_data_path)
 
     # List images
     mri_path = os.path.join(train_path, "mri")
