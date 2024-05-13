@@ -1,11 +1,23 @@
 import pickle
 import numpy as np
 from get_data_path import get_data_path
-from rotate_and_translate import set_up_dataset_directory, save_images
+from rotate_and_translate import set_up_dataset_directory
 import os
 from PIL import Image
-import matplotlib.pyplot as plt
-import argparse
+
+
+def save_images(trans_mri, trans_mask, save_data_path, dataset_type, new_file_name):
+    # Save file full paths
+    mri_file_path = os.path.join(save_data_path, dataset_type, "mri", new_file_name)
+    mask_file_path = os.path.join(save_data_path, dataset_type, "mask", new_file_name)
+
+    # Save images
+    mri_img = Image.fromarray(trans_mri)
+    mask_img = Image.fromarray(trans_mask)
+
+    mri_img.save(mri_file_path)
+    mask_img.save(mask_file_path)
+    return
 
 
 if __name__ == "__main__":
@@ -71,7 +83,7 @@ if __name__ == "__main__":
             mri_crop = mri[y_start:y_end, x_start:x_end]
 
             # Save image
-            save_images(mri_crop, mask_crop, save_data_path, file)
+            save_images(mri_crop, mask_crop, save_data_path, dataset_type, file)
 
             # Output status
             if int(50 * idx) % len(files) == 0:
