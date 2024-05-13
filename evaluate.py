@@ -247,7 +247,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Greens', alpha=alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
 
     plt.tight_layout()
-    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_and_pc_windows.png", dpi=600)))
+    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_and_pc_windows.png")), dpi=600)
     plt.show()
 
     # Patella only
@@ -264,7 +264,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
 
     plt.tight_layout()
-    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_windows.png", dpi=600)))
+    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_windows.png")), dpi=600)
     plt.show()
 
     # Patellar Cartilage Only
@@ -281,7 +281,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
 
     plt.tight_layout()
-    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_pc_windows.png", dpi=600)))
+    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_pc_windows.png")), dpi=600)
     plt.show()
 
 
