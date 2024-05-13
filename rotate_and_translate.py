@@ -5,7 +5,7 @@ from get_data_path import get_data_path
 import argparse
 import scipy
 import matplotlib.pyplot as plt
-
+import shutil
 
 parser = argparse.ArgumentParser(description="Training Options")
 parser.add_argument("-d", "--dataset", help="Dataset is either H or HT")
@@ -57,17 +57,36 @@ def set_up_dataset_directory(save_data_path):
         os.mkdir(os.path.join(save_data_path, "val", "mask"))
 
 
+def move_test_and_val(data_path, save_data_path):
+    """Moving all contents from the data_path to the save_data_path"""
+    val_src = os.path.join(data_path, "val")
+    test_src = os.path.join(data_path, "test")
+
+    val_dest = os.path.join(save_data_path, "val")
+    test_dest = os.path.join(save_data_path, "test")
+
+    # Copy
+    shutil.copytree(val_src, val_dest)
+    shutil.copytree(test_src, test_dest)
+    return
+
+
 if __name__ == "__main__":
+
     # Set random seed
     np.random.seed(42)
 
     # Load in image path
     data_path = get_data_path(args.dataset)
+
     train_path = os.path.join(data_path, "train")
+
 
     # Save data path: make it if it doesn't exist
     save_data_path = get_data_path(f"{args.dataset}{args.naug}")
     set_up_dataset_directory(save_data_path)
+
+    move_test_and_val(data_path, save_data_path)
 
     # List images
     mri_path = os.path.join(train_path, "mri")
