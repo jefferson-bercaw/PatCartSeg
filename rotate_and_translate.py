@@ -65,6 +65,12 @@ def move_test_and_val(data_path, save_data_path):
     val_dest = os.path.join(save_data_path, "val")
     test_dest = os.path.join(save_data_path, "test")
 
+    # Remove destination directory if it already exists
+    if os.path.exists(val_dest):
+        shutil.rmtree(val_dest)
+    if os.path.exists(test_dest):
+        shutil.rmtree(test_dest)
+
     # Copy
     shutil.copytree(val_src, val_dest)
     shutil.copytree(test_src, test_dest)
