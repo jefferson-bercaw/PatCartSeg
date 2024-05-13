@@ -115,21 +115,21 @@ def get_dataset(batch_size, dataset_type, dataset):
     data_path = get_data_path(dataset)
 
     if dataset_type == 'train':
-        images_dir = data_path + "/train/mri"
-        mask_dir = data_path + "/train/mask"
+        images_dir = os.path.join(data_path, "train", "mri")
+        mask_dir = os.path.join(data_path, "train", "mask")
     elif dataset_type == 'test':
-        images_dir = data_path + "/test/mri"
-        mask_dir = data_path + "/test/mask"
+        images_dir = os.path.join(data_path, "test", "mri")
+        mask_dir = os.path.join(data_path + "test", "mask")
     elif dataset_type == 'val' or dataset_type == 'validation':
-        images_dir = data_path + "/val/mri"
-        mask_dir = data_path + "/val/mask"
+        images_dir = os.path.join(data_path + "val", "mri")
+        mask_dir = os.path.join(data_path, "val", "mask")
     else:
         raise(ValueError, f"The value {dataset_type} for the variable dataset_type is not one of 'train', 'test', "
                           f"or 'val'")
 
     # Add bmp wildcard
-    images_dir = images_dir + "/*.bmp"
-    mask_dir = mask_dir + "/*.bmp"
+    images_dir = os.path.join(images_dir, "*.bmp")
+    mask_dir = os.path.join(mask_dir, "*.bmp")
 
     # Create dataset
     dataset = create_dataset(images_dir, mask_dir, dataset_type)
