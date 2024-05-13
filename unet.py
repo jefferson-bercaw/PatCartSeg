@@ -42,8 +42,8 @@ def upsample_block(lyr, conv_features, n_filt, kernel_size, dropout_rate):
 def build_unet(dropout_rate):
 
     # inputs
-    inputs = layers.Input(shape=(512, 512, 1))
-    start_filt = 32
+    inputs = layers.Input(shape=(256, 256, 1))
+    start_filt = 64
 
     # encoder
     f1, p1 = downsample_block(inputs, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
