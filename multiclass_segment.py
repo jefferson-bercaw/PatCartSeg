@@ -13,7 +13,7 @@ from create_dataset import get_dataset
 
 
 parser = argparse.ArgumentParser(description="Training Options")
-parser.add_argument("-d", "--dataset", help="Dataset is either H or HT")
+parser.add_argument("-d", "--dataset", help="Enter the suffix of the dataset we're testing")
 args = parser.parse_args()
 print(args.dataset)
 
@@ -65,10 +65,10 @@ if __name__ == "__main__":
                                                                    min_delta=min_delta,
                                                                    verbose=1)
 
-        checkpoint_filepath = f"./checkpoints/tmp/checkpoint"
+        checkpoint_filepath = os.path.join("checkpoints", "tmp", "checkpoint")
 
         # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=f"./checkpoints/tmp/checkpoint",
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath,
                                                          monitor='val_loss',
                                                          verbose=1,
                                                          save_best_only=True,
@@ -86,13 +86,13 @@ if __name__ == "__main__":
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         model_name = f"unet_{current_time}_{args.dataset}"
-        unet_model.save(f"./models/{model_name}_{args.dataset}.h5")
+        unet_model.save(os.path.join("models", f"{model_name}_{args.dataset}.h5"))
 
         # Save best model
         unet_model.load_weights(checkpoint_filepath)
-        unet_model.save(f"./models/{model_name}_lowest_val_loss_{args.dataset}.h5")
+        unet_model.save(os.path.join("models", f"{model_name}_lowest_val_loss_{args.dataset}.h5"))
 
         # Save history
-        hist_name = f"unet_{current_time}_{args.dataset}.pkl"
-        with open(f"./history/{hist_name}", "wb") as f:
+        hist_name = f"{model_name}_{args.dataset}.pkl"
+        with open(os.path.join("history", hist_name), "wb") as f:
             pickle.dump(history.history, f)
