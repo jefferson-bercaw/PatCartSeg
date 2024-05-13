@@ -1,23 +1,11 @@
 import os
 
 
-def get_data_path():
+def get_data_path(dataset):
     cur_dir = os.getcwd()
-    try:
-        task_id = int(os.environ['SLURM_ARRAY_TASK_ID'])
-    except KeyError:
-        print("No SLURM array task ID found--> Manual task ID employed")
-        task_id = 5
-
-    if cur_dir[0:2] == "R:" or cur_dir[0:2] == "C:":  # If on local machine
-        if task_id == 5:
-            data_path = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP2"
-        elif task_id < 5:
-            data_path = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Augmentations/sig" + str(task_id)
+    sep = os.sep
+    if cur_dir[0:2] == "R:" or cur_dir[0:2] == "C:" or "DefratePrivate" in cur_dir:  # If on local machine
+        data_path = "R:" + sep + "DefratePrivate" + sep + "Bercaw" + sep + "Patella_Autoseg" + sep + f"Split_Data_{dataset}"
     else:  # If on cluster
-        if task_id == 5:
-            data_path = "/hpc/group/ldefratelab/jrb187/PatCartSeg/Split_Data_BMP2"
-        elif task_id < 5:
-            data_path = "/hpc/group/ldefratelab/jrb187/PatCartSeg/Augmentations/sig" + str(task_id)
-
+        data_path = sep + "hpc" + sep + "group" + sep + "ldefratelab" + sep + "jrb187" + sep + "PatCartSeg" + sep + f"Split_Data_{dataset}"
     return data_path

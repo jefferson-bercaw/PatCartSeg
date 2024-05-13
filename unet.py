@@ -42,22 +42,23 @@ def upsample_block(lyr, conv_features, n_filt, kernel_size, dropout_rate):
 def build_unet(dropout_rate):
 
     # inputs
-    inputs = layers.Input(shape=(512, 512, 1))
+    inputs = layers.Input(shape=(256, 256, 1))
+    start_filt = 64
 
     # encoder
-    f1, p1 = downsample_block(inputs, n_filt=64, kernel_size=3, dropout_rate=dropout_rate)
-    f2, p2 = downsample_block(p1, n_filt=128, kernel_size=3, dropout_rate=dropout_rate)
-    f3, p3 = downsample_block(p2, n_filt=256, kernel_size=3, dropout_rate=dropout_rate)
-    f4, p4 = downsample_block(p3, n_filt=512, kernel_size=3, dropout_rate=dropout_rate)
+    f1, p1 = downsample_block(inputs, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
+    f2, p2 = downsample_block(p1, n_filt=2*start_filt, kernel_size=3, dropout_rate=dropout_rate)
+    f3, p3 = downsample_block(p2, n_filt=4*start_filt, kernel_size=3, dropout_rate=dropout_rate)
+    f4, p4 = downsample_block(p3, n_filt=8*start_filt, kernel_size=3, dropout_rate=dropout_rate)
 
     # bottleneck
-    bottleneck = double_conv_block(p4, n_filt=1024, kernel_size=3)
+    bottleneck = double_conv_block(p4, n_filt=16*start_filt, kernel_size=3)
 
     # decoder
-    u6 = upsample_block(bottleneck, conv_features=f4, n_filt=512, kernel_size=3, dropout_rate=dropout_rate)
-    u7 = upsample_block(u6, conv_features=f3, n_filt=256, kernel_size=3, dropout_rate=dropout_rate)
-    u8 = upsample_block(u7, conv_features=f2, n_filt=128, kernel_size=3, dropout_rate=dropout_rate)
-    u9 = upsample_block(u8, conv_features=f1, n_filt=64, kernel_size=3, dropout_rate=dropout_rate)
+    u6 = upsample_block(bottleneck, conv_features=f4, n_filt=8*start_filt, kernel_size=3, dropout_rate=dropout_rate)
+    u7 = upsample_block(u6, conv_features=f3, n_filt=4*start_filt, kernel_size=3, dropout_rate=dropout_rate)
+    u8 = upsample_block(u7, conv_features=f2, n_filt=2*start_filt, kernel_size=3, dropout_rate=dropout_rate)
+    u9 = upsample_block(u8, conv_features=f1, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
 
     # outputs
     outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u9)

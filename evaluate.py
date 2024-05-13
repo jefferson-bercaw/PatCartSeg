@@ -20,18 +20,18 @@ def get_date_and_hour():
 
 
 def get_history_filename(date_time):
-    files = os.listdir("./history")
+    files = os.listdir("history")
     for filename in files:
-        if date_time in filename:
-            history_filename = os.path.abspath(os.path.join('./history', filename))
+        if date_time[0:23] in filename:
+            history_filename = os.path.abspath(os.path.join('history', filename))
             return history_filename
 
 
 def get_model_filename(date_time):
-    files = os.listdir("./models")
+    files = os.listdir("models")
     for filename in files:
-        if date_time in filename:
-            model_filename = os.path.abspath(os.path.join('./models', filename))
+        if date_time[0:23] in filename:
+            model_filename = os.path.abspath(os.path.join('models', filename))
             return model_filename
 
 
@@ -72,20 +72,6 @@ def get_hist_and_model(date_time):
     return history, model
 
 
-def get_model(date_time):
-    model = build_unet(dropout_rate=0.3)
-    model.compile(optimizer='adam',
-                       loss=dice_loss,
-                       metrics=['accuracy',
-                                tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
-                                tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
-                                tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),
-                                tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
-    model_new = keras.models.load_model("C:/Users/jrb187/PycharmProjects/PatCartSeg/models/unet_temp_task5.keras",
-                                        custom_objects={'dice_loss': dice_loss})
-    return model
-
-
 def get_results_filename(date_time):
     model_filename = get_model_filename(date_time)
     results_filename = build_results_filename(model_filename)
@@ -96,7 +82,7 @@ def prep_results_filepath(results_filename):
     if not os.path.exists(results_filename):
         os.mkdir(results_filename)
 
-    examples_filename = results_filename + "\\examples"
+    examples_filename = os.path.join(results_filename, "examples")
     if not os.path.exists(examples_filename):
         os.mkdir(examples_filename)
 
@@ -120,8 +106,8 @@ def save_result(filename, date_time, pat, pat_cart):
     filename_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
-    pat_filepath = results_filename + "\\pat"
-    pat_cart_filepath = results_filename + "\\pat_cart"
+    pat_filepath = os.path.join(results_filename, "pat")
+    pat_cart_filepath = os.path.join(results_filename, "pat_cart")
 
     # Make directories if they don't exist
     if not os.path.exists(pat_filepath):
@@ -129,8 +115,8 @@ def save_result(filename, date_time, pat, pat_cart):
     if not os.path.exists(pat_cart_filepath):
         os.mkdir(pat_cart_filepath)
 
-    pat_filepath = pat_filepath + "\\" + filename_str
-    pat_cart_filepath = pat_cart_filepath + "\\" + filename_str
+    pat_filepath = os.path.join(pat_filepath, filename_str)
+    pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
 
     pat_img = Image.fromarray(pat)
     pat_cart_img = Image.fromarray(pat_cart)
@@ -162,7 +148,7 @@ def calculate_dice(positives):
 
 def save_metrics(date_time, metrics):
     results_filename = get_results_filename(date_time)
-    with open(results_filename + "\\metrics.pkl", 'wb') as f:
+    with open(os.path.join(results_filename, "metrics.pkl"), 'wb') as f:
         pickle.dump(metrics, f)
     return
 
@@ -195,12 +181,12 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filen
 
     # Saving figure
     image_filename = image_filename.numpy()[0].decode()
-    plot_filename = comp_filename + "\\" + tissue
+    plot_filename = os.path.join(comp_filename, tissue)
 
     if not os.path.exists(plot_filename):
         os.mkdir(plot_filename)
 
-    plot_filename = plot_filename + "\\" + image_filename
+    plot_filename = os.path.join(plot_filename, image_filename)
 
     # Go to .png format
     plot_filename = plot_filename[:-3] + "png"
@@ -261,7 +247,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Greens', alpha=alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
 
     plt.tight_layout()
-    plt.savefig(f"R:/DefratePrivate/Bercaw/Patella_Autoseg/results/{model_name}/{subj_name}_p_and_pc_windows.png", dpi=600)
+    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_and_pc_windows.png")), dpi=600)
     plt.show()
 
     # Patella only
@@ -278,7 +264,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
 
     plt.tight_layout()
-    plt.savefig(f"R:/DefratePrivate/Bercaw/Patella_Autoseg/results/{model_name}/{subj_name}_p_windows.png", dpi=600)
+    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_windows.png")), dpi=600)
     plt.show()
 
     # Patellar Cartilage Only
@@ -295,39 +281,50 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
 
     plt.tight_layout()
-    plt.savefig(f"R:/DefratePrivate/Bercaw/Patella_Autoseg/results/{model_name}/{subj_name}_pc_windows.png", dpi=600)
+    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_pc_windows.png")), dpi=600)
     plt.show()
 
 
 def get_comparison_plot_filename(date_time):
     model_filename = get_model_filename(date_time)
     results_filename = build_results_filename(model_filename)
-    comp_filename = results_filename + "\\comparisons"
+    comp_filename = os.path.join(results_filename, "comparisons")
     if not os.path.exists(comp_filename):
         os.mkdir(comp_filename)
     return comp_filename
 
 
+def parse_dataset_name(model_name):
+    """Returns dataset_name from the model name"""
+    no_ext = model_name[:-3]  # Removes .h5
+    dataset_name = no_ext.split("_")[-1]  # Last element before extension (dataset_name)
+    return dataset_name
+
+
 def return_volumes(subj_name, model_name):
     """Returns volumes for a given subject and a given model"""
+    # Get the dataset_name from model name
+    dataset_name = parse_dataset_name(model_name)
+
     # Point to predictions
-    pred_folder = f"./results/{model_name}"
-    p_pred_folder = f"{pred_folder}/pat"
-    pc_pred_folder = f"{pred_folder}/pat_cart"
+    cwd = os.getcwd()
+    pred_folder = os.path.join(cwd, "results", model_name)
+    p_pred_folder = os.path.join(pred_folder, "pat")
+    pc_pred_folder = os.path.join(pred_folder, "pat_cart")
 
     # Point to Ground Truth
-    truth_folder = get_data_path()
-    mri_folder = f"{truth_folder}/test/mri"
-    p_and_pc_truth_folder = f"{truth_folder}/test/mask"
+    truth_folder = get_data_path(dataset_name)
+    mri_folder = os.path.join(truth_folder, "test", "mri")
+    p_and_pc_truth_folder = os.path.join(truth_folder, "test", "mask")
 
     # Get list of images in each folder for this subject
     image_list = [f"{subj_name}-{four_digit_number(i)}.bmp" for i in range(1, 120)]
 
     # Append image list to all absolute paths to load
-    p_pred_names = [f"{p_pred_folder}/{image_name}" for image_name in image_list]
-    pc_pred_names = [f"{pc_pred_folder}/{image_name}" for image_name in image_list]
-    mri_names = [f"{mri_folder}/{image_name}" for image_name in image_list]
-    p_and_pc_truth_names = [f"{p_and_pc_truth_folder}/{image_name}" for image_name in image_list]
+    p_pred_names = [os.path.join(p_pred_folder, image_name) for image_name in image_list]
+    pc_pred_names = [os.path.join(pc_pred_folder, image_name) for image_name in image_list]
+    mri_names = [os.path.join(mri_folder, image_name) for image_name in image_list]
+    p_and_pc_truth_names = [os.path.join(p_and_pc_truth_folder, image_name) for image_name in image_list]
 
     # Load volumes
     p_pred_volume = assemble_mri_volume(p_pred_names)
@@ -338,50 +335,69 @@ def return_volumes(subj_name, model_name):
     return mri_volume, p_truth_volume, p_pred_volume, pc_truth_volume, pc_pred_volume
 
 
+def get_most_recent_models():
+    folder_path = os.getcwd()
+    model_path = os.path.join(folder_path, 'models')
+
+    models = os.listdir(model_path)
+
+    # Sort files by modification time
+    models.sort(key=lambda x: os.path.getmtime(os.path.join(model_path, x)), reverse=True)
+
+    date_times = list()
+
+    if len(models) > 1:
+        date_times.append(models[0])  # Lowest validation loss
+        date_times.append(models[1])  # End (after early stopping condition)
+        return date_times
+    else:
+        print("There are not enough files in the 'models' subfolder.")
+
+
 if __name__ == "__main__":
 
     # # date_time pattern to identify model we just trained
-    # date_time = get_date_and_hour()
-    # print(f"Date_time: {date_time}")
-    # date_times = ["temp_task0", "temp_task1", "temp_task2", "temp_task3", "temp_task4", "temp_task5"]
-    date_times = ["04-30_02"]
-    # model_name = "unet_2024-04-17_08-06-28"
-    # subj_name = "AS_018"
-    # plot_mri_with_both_masks(subj_name, model_name)
+    date_times = get_most_recent_models()
 
+    # date_time = get_date_and_hour()
+    # plot_mri_with_both_masks(subj_name, model_name)
     for date_time in date_times:
+
+        print(f"Evaluating model {date_time}")
+        dataset_name = parse_dataset_name(date_time)
+
         # Get results filename
         results_filename = get_results_filename(date_time)
         prep_results_filepath(results_filename)
 
         # get the history and model
         history, model = get_hist_and_model(date_time)
-        # model = get_model(date_time)
-        test_dataset = get_dataset(batch_size=1, dataset_type='test')
+
+        test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset=dataset_name)
 
         # Output plots
         plt.plot(history["FN"])
         plt.xlabel('Epoch')
         plt.title("False Negatives")
-        plt.savefig(results_filename + "\\fn.png")
+        plt.savefig(os.path.join(results_filename, "fn.png"))
         plt.show()
 
         plt.plot(history["FP"])
         plt.xlabel('Epoch')
         plt.title("False Positives")
-        plt.savefig(results_filename + "\\fp.png")
+        plt.savefig(os.path.join(results_filename, "fp.png"))
         plt.show()
 
         plt.plot(history["TN"])
         plt.xlabel('Epoch')
         plt.title("True Negatives")
-        plt.savefig(results_filename + "\\tn.png")
+        plt.savefig(os.path.join(results_filename, "tn.png"))
         plt.show()
 
         plt.plot(history["TP"])
         plt.xlabel('Epoch')
         plt.title("True Positives")
-        plt.savefig(results_filename + "\\tp.png")
+        plt.savefig(os.path.join(results_filename, "tp.png"))
         plt.show()
 
         plt.plot(history["val_loss"], label='val_loss')
@@ -390,7 +406,7 @@ if __name__ == "__main__":
         plt.ylabel('Dice Loss')
         plt.legend()
         plt.title("Loss")
-        plt.savefig(results_filename + "\\loss.png")
+        plt.savefig(os.path.join(results_filename, "loss.png"))
         plt.show()
 
         iterable = iter(test_dataset)
@@ -434,4 +450,3 @@ if __name__ == "__main__":
                    "pat_cart_positive_counts": pat_cart_positives,
                    "positive_count_info": ["intersection", "predicted", "true"]}
         save_metrics(date_time, metrics)
-

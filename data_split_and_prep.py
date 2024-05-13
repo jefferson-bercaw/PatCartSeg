@@ -1,6 +1,9 @@
 import os
 import numpy as np
 from PIL import Image
+import random
+from get_data_path import get_data_path
+
 
 def get_all_scan_names(directory):
     folders = []
@@ -36,6 +39,9 @@ def organize_subject_scans(scans_list):
         if num <= 47:
             subj_num = int(np.floor(num / 6))
 
+        elif num <= 77:
+            subj_num = int(np.floor((num-48) / 2)) + 9
+
         d[scan] = {
             "scan": scan,
             "scan_num": num,
@@ -51,13 +57,10 @@ def read_bmp(image_path, image_name):
     return np_image
 
 
-def assemble_3d_mask(P_mask, PC_mask):
-    mask = np.zeros((512, 512, 3))
-    any_mask = P_mask | PC_mask
-
-    mask[:, :, 0] = 1 - any_mask
-    mask[:, :, 1] = P_mask
-    mask[:, :, 2] = PC_mask
+def assemble_2d_mask(P_mask, PC_mask):
+    mask = np.zeros((512, 512))
+    mask[P_mask > 0] = 1
+    mask[PC_mask > 0] = 2
 
     return mask
 
@@ -89,25 +92,30 @@ if __name__ == "__main__":
 
     # Get Subject IDs from each scan
     scans = organize_subject_scans(scans_list)
-    print(scans)
+    max_subject_num = max(entry['subject_num'] for entry in scans.values())
 
-    # Randomly select one subject for test and one subject for validation
-    random_seed = 42
-    np.random.seed(random_seed)
+    # Randomly select subjects for test and subjects for validation
+    random.seed(42)
 
-    test_subj = np.round(np.random.rand() * 7)
-    val_subj = np.round(np.random.rand() * 7)
-    while val_subj == test_subj:
-        val_subj = np.round(np.random.rand() * 7)
+    num_test_subj = 4
+    num_val_subj = 4
+
+    test_val_nums_ds1 = random.sample(range(8), 2)
+    test_val_nums_ds2 = random.sample(range(8, max_subject_num), 4)
+
+    test_subj_nums = [test_val_nums_ds1[0], test_val_nums_ds2[0], test_val_nums_ds2[1]]
+    val_subj_nums = [test_val_nums_ds1[1], test_val_nums_ds2[2], test_val_nums_ds2[3]]
 
     # Save these images in one combined folder
-    train_scans = [entry["scan"] for entry in scans.values() if (entry['subject_num'] != test_subj and entry['subject_num'] != val_subj)]
-    test_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == test_subj]
-    val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] == val_subj]
+    train_scans = [entry["scan"] for entry in scans.values() if (entry['subject_num'] not in test_subj_nums and entry['subject_num'] not in val_subj_nums)]
+    test_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] in test_subj_nums]
+    val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] in val_subj_nums]
 
-    dest_train = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/train"
-    dest_test = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/test"
-    dest_val = "R:/DefratePrivate/Bercaw/Patella_Autoseg/Split_Data_BMP/val"
+    # Get destinations of where we're saving each group
+    dataset_path = get_data_path(dataset="HT")
+    dest_train = dataset_path + "/train"
+    dest_test = dataset_path + "/test"
+    dest_val = dataset_path + "/val"
 
     for scan in scans.keys():
 
@@ -121,7 +129,7 @@ if __name__ == "__main__":
         image_files = get_bmp_files(source_mri)
 
         # Open files, assemble 3d masks, save mri and mask as npz files
-        print(f"Saving for scan {scan}")
+        print(f"Saving scan {scan}")
 
         for file in image_files:
 
@@ -129,21 +137,20 @@ if __name__ == "__main__":
             P = read_bmp(source_P, file)
             PC = read_bmp(source_PC, file)
 
+            mask = assemble_2d_mask(P, PC)
+            mask = mask.astype(np.uint8)
             file_to_save = file.split(".")[0] + ".bmp"
 
             # Save .bmp files
             if save_opt:
                 if scan in train_scans:
                     save_bmp(mri, str(dest_train + "/mri/" + file_to_save))
-                    save_bmp(P, str(dest_train + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_train + "/mask_PC/" + file_to_save))
+                    save_bmp(mask, str(dest_train + "/mask/" + file_to_save))
 
                 elif scan in test_scans:
                     save_bmp(mri, str(dest_test + "/mri/" + file_to_save))
-                    save_bmp(P, str(dest_test + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_test + "/mask_PC/" + file_to_save))
+                    save_bmp(mask, str(dest_test + "/mask/" + file_to_save))
 
                 elif scan in val_scans:
                     save_bmp(mri, str(dest_val + "/mri/" + file_to_save))
-                    save_bmp(P, str(dest_val + "/mask_P/" + file_to_save))
-                    save_bmp(PC, str(dest_val + "/mask_PC/" + file_to_save))
+                    save_bmp(mask, str(dest_val + "/mask/" + file_to_save))
