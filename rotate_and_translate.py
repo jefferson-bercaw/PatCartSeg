@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description="Training Options")
 parser.add_argument("-d", "--dataset", help="Dataset is either H or HT")
 parser.add_argument("-n", "--naug", help="Number of Augmentations to Make", type=int)
-args = parser.parse_args(["-d", "HT", "-n", "5"])
+args = parser.parse_args()
 print(args.dataset)
 print(args.naug)
 
