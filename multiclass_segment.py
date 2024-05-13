@@ -14,7 +14,7 @@ from create_dataset import get_dataset
 
 parser = argparse.ArgumentParser(description="Training Options")
 parser.add_argument("-d", "--dataset", help="Dataset is either H or HT")
-args = parser.parse_args(["-d", "HT"])
+args = parser.parse_args()
 print(args.dataset)
 
 
