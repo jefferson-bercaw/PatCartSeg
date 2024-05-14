@@ -380,25 +380,25 @@ if __name__ == "__main__":
         plt.xlabel('Epoch')
         plt.title("False Negatives")
         plt.savefig(os.path.join(results_filename, "fn.png"))
-        plt.show()
+        # plt.show()
 
         plt.plot(history["FP"])
         plt.xlabel('Epoch')
         plt.title("False Positives")
         plt.savefig(os.path.join(results_filename, "fp.png"))
-        plt.show()
+        # plt.show()
 
         plt.plot(history["TN"])
         plt.xlabel('Epoch')
         plt.title("True Negatives")
         plt.savefig(os.path.join(results_filename, "tn.png"))
-        plt.show()
+        # plt.show()
 
         plt.plot(history["TP"])
         plt.xlabel('Epoch')
         plt.title("True Positives")
         plt.savefig(os.path.join(results_filename, "tp.png"))
-        plt.show()
+        # plt.show()
 
         plt.plot(history["val_loss"], label='val_loss')
         plt.plot(history["loss"], label='train_loss')
@@ -407,7 +407,7 @@ if __name__ == "__main__":
         plt.legend()
         plt.title("Loss")
         plt.savefig(os.path.join(results_filename, "loss.png"))
-        plt.show()
+        # plt.show()
 
         iterable = iter(test_dataset)
         n_test_images = len(test_dataset)
