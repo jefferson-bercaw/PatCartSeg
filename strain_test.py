@@ -114,12 +114,13 @@ def visualize_thickness_map(p_thick_map):
         value = p_thick_map[x, y, z]
         coords_array[i] = [x*voxel_lengths[0], y*voxel_lengths[1], z*voxel_lengths[2], value]
 
-    grid = pv.StructuredGrid(coords_array[:, 0], coords_array[:, 1], coords_array[:, 2])
-    grid.point_data["Values"] = coords_array[:, 3]
+    point_cloud = pv.PolyData(np.transpose([coords_array[:,0], coords_array[:,1], coords_array[:,2]]))
+    point_cloud['thickness'] = coords_array[:,3]
 
     plotter = pv.Plotter()
-    plotter.add_mesh(grid, scalars="Values", show_scalar_bar=True)
+    plotter.add_points(point_cloud, point_size=20)
     plotter.show()
+
     return
 
 
