@@ -105,28 +105,21 @@ def remove_zero_slices(pc_thick_map):
 
 
 def visualize_thickness_map(p_thick_map):
+    inds = np.nonzero(p_thick_map)
+    voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
 
-    p_thick_trunc = remove_zero_slices(p_thick_map)
+    coords_array = np.zeros((len(inds[0]), 4))
+    for i in range(len(inds[0])):
+        x, y, z = inds[0][i], inds[1][i], inds[2][i]
+        value = p_thick_map[x, y, z]
+        coords_array[i] = [x*voxel_lengths[0], y*voxel_lengths[1], z*voxel_lengths[2], value]
 
-    cmap = plt.colormaps['viridis']
-    norm = plt.Normalize(p_thick_trunc.min(), p_thick_trunc.max())
+    grid = pv.StructuredGrid(coords_array[:, 0], coords_array[:, 1], coords_array[:, 2])
+    grid.point_data["Values"] = coords_array[:, 3]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    for x in range(p_thick_trunc.shape[0]):
-        for y in range(p_thick_trunc.shape[1]):
-            for z in range(p_thick_trunc.shape[2]):
-                thickness = p_thick_trunc[x, y, z]
-                if thickness > 0:  # Only plot non-zero thickness values
-                    color = cmap(norm(thickness))  # Map thickness value to color
-                    ax.voxels(x, y, z, filled=p_thick_trunc > 0, color=color, edgecolor='k')  # Plot the voxel
-
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-    sm.set_array(p_thick_trunc)
-    plt.colorbar(sm, label='Thickness')
-
-    plt.show()
+    plotter = pv.Plotter()
+    plotter.add_mesh(grid, scalars="Values", show_scalar_bar=True)
+    plotter.show()
     return
 
 
@@ -151,11 +144,10 @@ if __name__ == '__main__':
     #         plt.show()
     #         plt.close()
 
+    # For each cartilage surface point, calculate nearest patellar point, calculate distance, store in patella coord.
     p_thick_map = calculate_thickness(p_vol, pc_surf_mask)
 
+    # Visualize the map
     visualize_thickness_map(p_thick_map)
 
-    # For each cartilage surface point, calculate nearest patellar point, calculate distance, store in location of patellar cartilage
 
-
-    print("HEHE")
