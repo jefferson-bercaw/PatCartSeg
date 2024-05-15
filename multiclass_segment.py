@@ -92,6 +92,6 @@ if __name__ == "__main__":
         unet_model.save(os.path.join("models", f"lowest_val_loss_{model_name}.h5"))
 
         # Save history
-        hist_name = f"{model_name}_{args.dataset}.pkl"
+        hist_name = f"{model_name}.pkl"
         with open(os.path.join("history", hist_name), "wb") as f:
             pickle.dump(history.history, f)
