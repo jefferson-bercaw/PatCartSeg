@@ -134,8 +134,9 @@ def get_dataset(batch_size, dataset_type, dataset):
     # Create dataset
     dataset = create_dataset(images_dir, mask_dir, dataset_type)
 
-    # randomly shuffle
-    dataset = dataset.shuffle(buffer_size=min([tf.data.experimental.cardinality(dataset).numpy() // 2, 4000]), seed=42)
+    # randomly shuffle if training
+    if dataset_type == "train":
+        dataset = dataset.shuffle(buffer_size=min([tf.data.experimental.cardinality(dataset).numpy() // 2, 4000]), seed=42)
 
     # Parallelize Data Loading Step
     # dataset = dataset.interleave(num_parallel_calls=tf.data.AUTOTUNE)
