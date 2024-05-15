@@ -33,8 +33,8 @@ def get_image_names_for_subj(subj, train_path_labels, train_path_imgs, image_nam
     return label_names, mri_names
 
 
-def assemble_mri_volume(image_names):
-    volume = np.zeros((512, 512, 120))
+def assemble_mri_volume(image_names, xy_dim=256):
+    volume = np.zeros((xy_dim, xy_dim, 120))
     for slice, image_name in enumerate(image_names):
         image_here = Image.open(image_name)
         image_np = np.asarray(image_here)
@@ -43,9 +43,9 @@ def assemble_mri_volume(image_names):
     return volume
 
 
-def assemble_mask_volume(image_names):
-    pat_vol = np.zeros((512, 512, 120))
-    pat_cart_vol = np.zeros((512, 512, 120))
+def assemble_mask_volume(image_names, xy_dim=256):
+    pat_vol = np.zeros((xy_dim, xy_dim, 120))
+    pat_cart_vol = np.zeros((xy_dim, xy_dim, 120))
     for slice, image_name in enumerate(image_names):
         image_here = Image.open(image_name)
         image_np = np.asarray(image_here)
