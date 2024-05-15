@@ -30,7 +30,7 @@ def get_history_filename(date_time):
 def get_model_filename(date_time):
     files = os.listdir("models")
     for filename in files:
-        if date_time[0:23] in filename:
+        if date_time in filename:
             model_filename = os.path.abspath(os.path.join('models', filename))
             return model_filename
 
