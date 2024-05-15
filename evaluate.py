@@ -65,9 +65,13 @@ def build_results_filename(model_filename):
 
 
 def get_hist_and_model(date_time):
-    history_filename = get_history_filename(date_time)
+    if "lowest_val" not in date_time:
+        history_filename = get_history_filename(date_time)
+        history = load_history(history_filename)
+    else:
+        history = None
+
     model_filename = get_model_filename(date_time)
-    history = load_history(history_filename)
     model = load_model(model_filename)
     return history, model
 
@@ -381,39 +385,40 @@ if __name__ == "__main__":
 
             test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset=dataset_name)
 
-            # Output plots
-            plt.plot(history["FN"])
-            plt.xlabel('Epoch')
-            plt.title("False Negatives")
-            plt.savefig(os.path.join(results_filename, "fn.png"))
-            # plt.show()
+            if history is not None:
+                # Output plots
+                plt.plot(history["FN"])
+                plt.xlabel('Epoch')
+                plt.title("False Negatives")
+                plt.savefig(os.path.join(results_filename, "fn.png"))
+                # plt.show()
 
-            plt.plot(history["FP"])
-            plt.xlabel('Epoch')
-            plt.title("False Positives")
-            plt.savefig(os.path.join(results_filename, "fp.png"))
-            # plt.show()
+                plt.plot(history["FP"])
+                plt.xlabel('Epoch')
+                plt.title("False Positives")
+                plt.savefig(os.path.join(results_filename, "fp.png"))
+                # plt.show()
 
-            plt.plot(history["TN"])
-            plt.xlabel('Epoch')
-            plt.title("True Negatives")
-            plt.savefig(os.path.join(results_filename, "tn.png"))
-            # plt.show()
+                plt.plot(history["TN"])
+                plt.xlabel('Epoch')
+                plt.title("True Negatives")
+                plt.savefig(os.path.join(results_filename, "tn.png"))
+                # plt.show()
 
-            plt.plot(history["TP"])
-            plt.xlabel('Epoch')
-            plt.title("True Positives")
-            plt.savefig(os.path.join(results_filename, "tp.png"))
-            # plt.show()
+                plt.plot(history["TP"])
+                plt.xlabel('Epoch')
+                plt.title("True Positives")
+                plt.savefig(os.path.join(results_filename, "tp.png"))
+                # plt.show()
 
-            plt.plot(history["val_loss"], label='val_loss')
-            plt.plot(history["loss"], label='train_loss')
-            plt.xlabel('Epoch')
-            plt.ylabel('Dice Loss')
-            plt.legend()
-            plt.title("Loss")
-            plt.savefig(os.path.join(results_filename, "loss.png"))
-            # plt.show()
+                plt.plot(history["val_loss"], label='val_loss')
+                plt.plot(history["loss"], label='train_loss')
+                plt.xlabel('Epoch')
+                plt.ylabel('Dice Loss')
+                plt.legend()
+                plt.title("Loss")
+                plt.savefig(os.path.join(results_filename, "loss.png"))
+                # plt.show()
 
             iterable = iter(test_dataset)
             n_test_images = len(test_dataset)
