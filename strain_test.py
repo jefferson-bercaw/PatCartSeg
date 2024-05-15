@@ -104,7 +104,8 @@ def remove_zero_slices(pc_thick_map):
     return pc_thick_trunc
 
 
-def visualize_thickness_map(p_thick_map):
+def organize_coordinate_array(p_thick_map):
+    """Turns (xy_dim, xy_dim, n_slices) ndarray into (n, 4) array of [x, y, z, thick] values for each PC coord on P"""
     inds = np.nonzero(p_thick_map)
     voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
 
@@ -112,43 +113,65 @@ def visualize_thickness_map(p_thick_map):
     for i in range(len(inds[0])):
         x, y, z = inds[0][i], inds[1][i], inds[2][i]
         value = p_thick_map[x, y, z]
-        coords_array[i] = [x*voxel_lengths[0], y*voxel_lengths[1], z*voxel_lengths[2], value]
+        coords_array[i] = [x * voxel_lengths[0], y * voxel_lengths[1], z * voxel_lengths[2], value]
+    return coords_array
 
-    point_cloud = pv.PolyData(np.transpose([coords_array[:,0], coords_array[:,1], coords_array[:,2]]))
-    point_cloud['thickness'] = coords_array[:,3]
 
-    plotter = pv.Plotter()
-    plotter.add_points(point_cloud, point_size=20)
-    plotter.show()
+def visualize_thickness_map(p_thick_map):
+    coords_array = organize_coordinate_array(p_thick_map)
+    point_cloud = pv.PolyData(np.transpose([coords_array[:, 0], coords_array[:, 1], coords_array[:, 2]]))
+    surf = point_cloud.delaunay_2d()
+    surf['Cart. Thickness (mm)'] = coords_array[:, 3]
 
+    # Plot 3d triangle-ized surface
+    surf.plot(show_edges=False)
+
+    # Plot point cloud
+    # plotter = pv.Plotter()
+    # plotter.add_points(point_cloud, point_size=20)
+    # plotter.show()
+    thickness_values = coords_array[:, 2]
+    return thickness_values
+
+
+def plot_thickness_distributions(thickness_values, model_name):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.boxplot(thickness_values)
+    ax.set_xticklabels(["Pre1", "Post 3mi", "Rec1", "Pre2", "Post 10mi", "Rec2"])
+    ax.set_ylabel("Patellar Cartilage Thickness (mm)")
+    ax.set_title(f"{model_name}: PC Thickness without Post-Processing")
+    plt.show()
     return
 
 
 if __name__ == '__main__':
 
-    subj_name = "AS_018"
+    # Specify model name and subject name(s)
+    subj_names = ["AS_018", "AS_019", "AS_020", "AS_021", "AS_022", "AS_023"]
     model_name = "unet_2024-04-17_08-06-28"
 
-    # Load in patella and patellar cartilage volumes
-    p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
+    thickness_values = list()
 
-    # Post-processing: Fill holes, remove stray pixels, in both volumes
+    for subj_name in subj_names:
 
-    # Edit mask to get the right most pixels for the patellar cartilage
-    pc_surf_mask = return_pc_surface(pc_vol)
+        # Load in patella and patellar cartilage volumes
+        p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
 
-    # Visualize
-    # for slice_num in range(pc_surf_mask.shape[2]):
-    #     pc_surf_slice = pc_surf_mask[:, :, slice_num]
-    #     if np.max(pc_surf_slice) > 0:
-    #         plt.imshow(pc_surf_slice, cmap='gray')
-    #         plt.show()
-    #         plt.close()
+        # Post-processing: Fill holes, remove stray pixels, in both volumes
 
-    # For each cartilage surface point, calculate nearest patellar point, calculate distance, store in patella coord.
-    p_thick_map = calculate_thickness(p_vol, pc_surf_mask)
+        # Edit mask to get the right most pixels for the patellar cartilage
+        pc_surf_mask = return_pc_surface(pc_vol)
 
-    # Visualize the map
-    visualize_thickness_map(p_thick_map)
+        # For each cartilage surface point, calculate nearest patellar point, calculate distance, store in patella coord.
+        p_thick_map = calculate_thickness(p_vol, pc_surf_mask)
 
+        # Calculate coord array and store thickness values for this scan
+        coords_array = organize_coordinate_array(p_thick_map)
+        thickness_values.append(coords_array[:, 3])
 
+        # Visualize the map
+        # visualize_thickness_map(p_thick_map)
+
+    plot_thickness_distributions(thickness_values, model_name)
