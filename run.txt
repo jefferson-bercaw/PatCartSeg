@@ -9,3 +9,5 @@
 #SBATCH -a 3, 7, 10, 15, 20
 
 python rotate_and_translate.py -d cHT -n $SLURM_ARRAY_TASK_ID
+python multiclass_segment.py -d cHT$SLURM_ARRAY_TASK_ID
+python evaluate.py
