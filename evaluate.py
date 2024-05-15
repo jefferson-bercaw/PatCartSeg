@@ -30,7 +30,7 @@ def get_history_filename(date_time):
 def get_model_filename(date_time):
     files = os.listdir("models")
     for filename in files:
-        if date_time[0:23] in filename:
+        if date_time in filename:
             model_filename = os.path.abspath(os.path.join('models', filename))
             return model_filename
 
@@ -65,9 +65,13 @@ def build_results_filename(model_filename):
 
 
 def get_hist_and_model(date_time):
-    history_filename = get_history_filename(date_time)
+    if "lowest_val" not in date_time:
+        history_filename = get_history_filename(date_time)
+        history = load_history(history_filename)
+    else:
+        history = None
+
     model_filename = get_model_filename(date_time)
-    history = load_history(history_filename)
     model = load_model(model_filename)
     return history, model
 
@@ -148,6 +152,8 @@ def calculate_dice(positives):
 
 def save_metrics(date_time, metrics):
     results_filename = get_results_filename(date_time)
+    print(f"Saving metrics to {os.path.join(results_filename, 'metrics.pkl')}")
+
     with open(os.path.join(results_filename, "metrics.pkl"), 'wb') as f:
         pickle.dump(metrics, f)
     return
@@ -356,97 +362,106 @@ def get_most_recent_models():
 
 if __name__ == "__main__":
 
-    # # date_time pattern to identify model we just trained
-    date_times = get_most_recent_models()
+    # Mirrored strategy
+    strategy = tf.distribute.MirroredStrategy()
+    with strategy.scope():
 
-    # date_time = get_date_and_hour()
-    # plot_mri_with_both_masks(subj_name, model_name)
-    for date_time in date_times:
+        # # date_time pattern to identify model we just trained
+        date_times = get_most_recent_models()
+        print(f"Most recent models being analyzed: {date_times}")
+        # date_time = get_date_and_hour()
+        # plot_mri_with_both_masks(subj_name, model_name)
+        for date_time in date_times:
 
-        print(f"Evaluating model {date_time}")
-        dataset_name = parse_dataset_name(date_time)
+            print(f"Evaluating model {date_time}")
+            dataset_name = parse_dataset_name(date_time)
 
-        # Get results filename
-        results_filename = get_results_filename(date_time)
-        prep_results_filepath(results_filename)
+            # Get results filename
+            results_filename = get_results_filename(date_time)
+            prep_results_filepath(results_filename)
 
-        # get the history and model
-        history, model = get_hist_and_model(date_time)
+            # get the history and model
+            history, model = get_hist_and_model(date_time)
 
-        test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset=dataset_name)
+            test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset=dataset_name)
 
-        # Output plots
-        plt.plot(history["FN"])
-        plt.xlabel('Epoch')
-        plt.title("False Negatives")
-        plt.savefig(os.path.join(results_filename, "fn.png"))
-        plt.show()
+            if history is not None:
+                # Output plots
+                plt.plot(history["FN"])
+                plt.xlabel('Epoch')
+                plt.title("False Negatives")
+                plt.savefig(os.path.join(results_filename, "fn.png"))
+                # plt.show()
 
-        plt.plot(history["FP"])
-        plt.xlabel('Epoch')
-        plt.title("False Positives")
-        plt.savefig(os.path.join(results_filename, "fp.png"))
-        plt.show()
+                plt.plot(history["FP"])
+                plt.xlabel('Epoch')
+                plt.title("False Positives")
+                plt.savefig(os.path.join(results_filename, "fp.png"))
+                # plt.show()
 
-        plt.plot(history["TN"])
-        plt.xlabel('Epoch')
-        plt.title("True Negatives")
-        plt.savefig(os.path.join(results_filename, "tn.png"))
-        plt.show()
+                plt.plot(history["TN"])
+                plt.xlabel('Epoch')
+                plt.title("True Negatives")
+                plt.savefig(os.path.join(results_filename, "tn.png"))
+                # plt.show()
 
-        plt.plot(history["TP"])
-        plt.xlabel('Epoch')
-        plt.title("True Positives")
-        plt.savefig(os.path.join(results_filename, "tp.png"))
-        plt.show()
+                plt.plot(history["TP"])
+                plt.xlabel('Epoch')
+                plt.title("True Positives")
+                plt.savefig(os.path.join(results_filename, "tp.png"))
+                # plt.show()
 
-        plt.plot(history["val_loss"], label='val_loss')
-        plt.plot(history["loss"], label='train_loss')
-        plt.xlabel('Epoch')
-        plt.ylabel('Dice Loss')
-        plt.legend()
-        plt.title("Loss")
-        plt.savefig(os.path.join(results_filename, "loss.png"))
-        plt.show()
+                plt.plot(history["val_loss"], label='val_loss')
+                plt.plot(history["loss"], label='train_loss')
+                plt.xlabel('Epoch')
+                plt.ylabel('Dice Loss')
+                plt.legend()
+                plt.title("Loss")
+                plt.savefig(os.path.join(results_filename, "loss.png"))
+                # plt.show()
 
-        iterable = iter(test_dataset)
-        n_test_images = len(test_dataset)
+            iterable = iter(test_dataset)
+            n_test_images = len(test_dataset)
 
-        # Get comparison plots filename
-        comp_filename = get_comparison_plot_filename(date_time)
+            # Get comparison plots filename
+            comp_filename = get_comparison_plot_filename(date_time)
 
-        # Count true pixels [intersection, predicted, true]
-        pat_positives = [0, 0, 0]
-        pat_cart_positives = [0, 0, 0]
+            # Count true pixels [intersection, predicted, true]
+            pat_positives = [0, 0, 0]
+            pat_cart_positives = [0, 0, 0]
 
-        for i in range(n_test_images):
-            filename, mri, label = next(iterable)
+            for i in range(n_test_images):
+                filename, mri, label = next(iterable)
 
-            pred_label = model.predict(mri)
+                pred_label = model.predict(mri)
 
-            mri = process_mri(mri)
-            pat, pat_cart = process_predicted_label(pred_label)
-            pat_true, pat_cart_true = process_true_label(label)
+                mri = process_mri(mri)
+                pat, pat_cart = process_predicted_label(pred_label)
+                pat_true, pat_cart_true = process_true_label(label)
 
-            pat_positives = count_positives(pat, pat_true, pat_positives)
-            pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
+                pat_positives = count_positives(pat, pat_true, pat_positives)
+                pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
 
-            # Plot examples of true masks that have predictions on them
-            plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
-            plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
+                # Plot examples of true masks that have predictions on them
+                plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
+                plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
-            # save_result(filename, date_time, pat, pat_cart)
-            print(f"Img {i} of {n_test_images}")
+                # Output predictions
+                save_result(filename, date_time, pat, pat_cart)
 
-        pat_dsc = calculate_dice(pat_positives)
-        pat_cart_dsc = calculate_dice(pat_cart_positives)
+                print(f"Img {i} of {n_test_images}")
 
-        print(f"Patellar Dice Score: {pat_dsc}")
-        print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
+            pat_dsc = calculate_dice(pat_positives)
+            pat_cart_dsc = calculate_dice(pat_cart_positives)
 
-        metrics = {"patellar_dice": pat_dsc,
-                   "patellar_cartilage_dice": pat_cart_dsc,
-                   "pat_positive_counts": pat_positives,
-                   "pat_cart_positive_counts": pat_cart_positives,
-                   "positive_count_info": ["intersection", "predicted", "true"]}
-        save_metrics(date_time, metrics)
+            print(f"Model: {date_time}")
+            print(f"Patellar Dice Score: {pat_dsc}")
+            print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
+
+            metrics = {"patellar_dice": pat_dsc,
+                       "patellar_cartilage_dice": pat_cart_dsc,
+                       "pat_positive_counts": pat_positives,
+                       "pat_cart_positive_counts": pat_cart_positives,
+                       "positive_count_info": ["intersection", "predicted", "true"]}
+
+            save_metrics(date_time, metrics)
