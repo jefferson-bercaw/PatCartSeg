@@ -72,6 +72,8 @@ def calculate_thickness(p_vol, pc_surf_mask):
     pc_pos = pc_inds * voxel_lengths
     p_pos = p_inds * voxel_lengths
 
+    p_pos = interpolate_patella(p_pos)
+
     distances = scipy.spatial.distance.cdist(pc_pos, p_pos)
     closest_indices = np.argmin(distances, axis=1)
 
@@ -151,6 +153,21 @@ def plot_thickness_distributions(thickness_values, model_name):
     return
 
 
+def interpolate_patella(p_pos):
+    """Takes in nx3 ndarray of patella positions, and interpolates them"""
+    p_point_cloud = pv.PolyData(np.transpose([p_pos[:, 0], p_pos[:, 1], p_pos[:, 2]]))
+    p_point_cloud["Slice"] = p_pos[:, 1]
+
+    # plotter = pv.Plotter()
+    # plotter.add_points(p_point_cloud, point_size=4)
+    # plotter.show()
+    p_surf = p_point_cloud.reconstruct_surface()
+    p_surf.plot()
+
+    # p_surf.plot(show_edges=True, line_width=0.2)
+    return
+
+
 if __name__ == '__main__':
 
     # Specify model name and subject name(s)
@@ -167,29 +184,22 @@ if __name__ == '__main__':
         # Load in patella and patellar cartilage volumes
         p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
 
-        # Post-processing: Fill holes, remove stray pixels, in both volumes
+        # Post-processing: Fill holes, remove stray pixels, in both volumes?
 
         # Edit mask to get the right most pixels for the patellar cartilage
         pc_surf_mask = return_pc_surface(pc_vol)
         num_cart_points = np.sum(pc_surf_mask)
 
-        # for slice_num in range(pc_surf_mask.shape[2]):
-        #     pc_surf_slice = pc_surf_mask[:, :, slice_num]
-        #     if np.max(pc_surf_slice) > 0:
-        #         plt.imshow(pc_surf_slice, cmap='gray')
-        #         plt.show()
-        #         plt.close()
-
-        # For each cartilage surface point, calculate nearest patellar point, calculate distance, store in patella coord.
-        p_thick_map = calculate_thickness(p_vol, pc_surf_mask)
+        # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
+        pc_thick_map = calculate_thickness(p_vol, pc_surf_mask)
 
         # Calculate coord array and store thickness values for this scan
-        coords_array = organize_coordinate_array(p_thick_map)
-        num_cart_vox = len(coords_array)
+        pc_coords_array = organize_coordinate_array(pc_thick_map)
+        num_cart_vox = len(pc_coords_array)
 
-        thickness_values.append(coords_array[:, 3])
+        thickness_values.append(pc_coords_array[:, 3])
 
         # Visualize the map
-        visualize_thickness_map(p_thick_map)
+        visualize_thickness_map(pc_thick_map)
 
     plot_thickness_distributions(thickness_values, model_name)
