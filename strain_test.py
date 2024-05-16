@@ -64,7 +64,7 @@ def get_outer_surface(pc_slice):
 def calculate_thickness(p_vol, pc_surf_mask):
     voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
 
-    p_thick_map = np.zeros_like(pc_surf_mask)
+    pc_thick_map = np.zeros_like(pc_surf_mask)
 
     pc_inds = np.argwhere(pc_surf_mask)
     p_inds = np.argwhere(p_vol)
@@ -79,9 +79,9 @@ def calculate_thickness(p_vol, pc_surf_mask):
         pc_coord = tuple(pc_inds[i])
         p_coord = tuple(p_inds[closest_indices[i]])
         dist = calculate_distance(p_coord, pc_coord)
-        p_thick_map[p_coord] = dist
+        pc_thick_map[pc_coord] = dist
 
-    return p_thick_map
+    return pc_thick_map
 
 
 def calculate_distance(p_coord, pc_coord):
@@ -131,7 +131,7 @@ def visualize_thickness_map(p_thick_map):
     surf['Cart. Thickness (mm)'] = coords_array[:, 3]
 
     # Plot 3d triangle-ized surface
-    surf.plot(show_edges=True)
+    surf.plot(show_edges=True, line_width=0.2)
 
     # Plot point cloud
     # plotter = pv.Plotter()
