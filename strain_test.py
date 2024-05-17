@@ -105,26 +105,40 @@ def get_outer_surface(pc_slice):
 
 
 def calculate_thickness(p_vol, pc_surf_mask):
+    """Takes in a patella binary volume and a patellar cartilage surface binary volume, and returns the same patellar
+     cartilage volume, with cartilage thickness values in the location of the patellar cartilage surface"""
+
     voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
 
+    # Initialize the patellar cartilage thickness map that will be returned
     pc_thick_map = np.zeros_like(pc_surf_mask)
 
+    # Find the indices of the patella and patellar cartilage
     pc_inds = np.argwhere(pc_surf_mask)
     p_inds = np.argwhere(p_vol)
 
+    # Find the x, y, and z coordinates of the patella and patellar cartilage
     pc_pos = pc_inds * voxel_lengths
     p_pos = p_inds * voxel_lengths
 
+    # Add points to the patella along the surface for a finer mesh
     p_pos = interpolate_patella(p_pos)
 
+    # Calculate distance matrix between pc and p, and find the closest patella point for each patellar cartilage point
     distances = scipy.spatial.distance.cdist(pc_pos, p_pos)
     closest_indices = np.argmin(distances, axis=1)
 
     for i in range(len(pc_inds)):
-        pc_coord = tuple(pc_inds[i])
-        p_coord = tuple(p_inds[closest_indices[i]])
-        dist = calculate_distance(p_coord, pc_coord)
-        pc_thick_map[pc_coord] = dist
+        # Get x, y, z coordinates of the PC point and the nearest patella point
+        pc_coord = pc_pos[i]
+        p_coord = p_pos[closest_indices[i]]
+
+        # Calculate the distance between the two
+        dist = np.linalg.norm(p_coord-pc_coord)
+
+        # Store in thickness map (256, 256, 120)
+        pc_ind_here = pc_inds[i]
+        pc_thick_map[pc_ind_here[0], pc_ind_here[1], pc_ind_here[2]] = dist
 
     return pc_thick_map
 
@@ -177,7 +191,7 @@ def visualize_thickness_map(pc_thick_map):
 
     # Plot 3d triangle-ized surface
     surf.plot(show_edges=False)
-
+    return
     # Plot point cloud
     # plotter = pv.Plotter()
     # plotter.add_points(point_cloud, point_size=20)
@@ -201,14 +215,14 @@ def interpolate_patella(p_pos):
     p_point_cloud = pv.PolyData(np.transpose([p_pos[:, 0], p_pos[:, 1], p_pos[:, 2]]))
     p_point_cloud["Slice"] = p_pos[:, 1]
 
-    # plotter = pv.Plotter()
-    # plotter.add_points(p_point_cloud, point_size=4)
-    # plotter.show()
+    # Construct patella surface and resample
     p_surf = p_point_cloud.reconstruct_surface()
-    p_surf.plot()
+    p_surf = p_surf.subdivide(nsub=2)
+    # p_surf.plot(show_edges=True)
 
-    # p_surf.plot(show_edges=True, line_width=0.2)
-    return
+    # Get new points
+    p_pos = p_surf.points
+    return p_pos
 
 
 if __name__ == '__main__':
@@ -240,7 +254,6 @@ if __name__ == '__main__':
 
         # Calculate coord array and store thickness values for this scan
         pc_coords_array = organize_coordinate_array(pc_thick_map)
-        num_cart_vox = len(pc_coords_array)
 
         thickness_values.append(pc_coords_array[:, 3])
 
