@@ -5,6 +5,8 @@ import os
 import matplotlib.pyplot as plt
 import scipy
 import pyvista as pv
+import open3d as o3d
+import pickle
 
 # Workflow
 # For each cartilage surface point, calculate nearest patellar point, calculate distance, store in location of patellar cartilage
@@ -13,7 +15,7 @@ import pyvista as pv
 
 def return_predicted_volumes(subj_name, model_name):
     cwd = os.getcwd()
-    pred_folder = os.path.join(cwd, "results", model_name)
+    pred_folder = os.path.join(cwd, "../results", model_name)
 
     p_pred_folder = os.path.join(pred_folder, "pat")
     pc_pred_folder = os.path.join(pred_folder, "pat_cart")
@@ -275,6 +277,7 @@ if __name__ == '__main__':
     # Initialize dictionary
     point_clouds = {}
 
+    # Thickness Loop
     for subj_name in subj_names:
 
         # Load in patella and patellar cartilage volumes
@@ -308,3 +311,6 @@ if __name__ == '__main__':
         # visualize_thickness_map(pc_thick_map)
 
     # plot_thickness_distributions(thickness_values, model_name)
+
+    with open("point_clouds.pkl", 'wb') as f:
+        pickle.dump(point_clouds, f)
