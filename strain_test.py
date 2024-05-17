@@ -73,13 +73,6 @@ def get_entire_surface(p_slice):
     for row, col in boundary_locs:
         p_surf[row, col] = 1
 
-    # Visualize
-    plt.imshow(p_slice)
-    plt.show()
-
-    plt.imshow(p_surf)
-    plt.show()
-
     return p_surf
 
 
@@ -122,7 +115,7 @@ def calculate_thickness(p_vol, pc_surf_mask):
     pc_pos = pc_inds * voxel_lengths
     p_pos = p_inds * voxel_lengths
 
-    # p_pos = interpolate_patella(p_pos)
+    p_pos = interpolate_patella(p_pos)
 
     distances = scipy.spatial.distance.cdist(pc_pos, p_pos)
     closest_indices = np.argmin(distances, axis=1)
