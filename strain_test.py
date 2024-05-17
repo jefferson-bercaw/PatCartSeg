@@ -181,6 +181,23 @@ def organize_coordinate_array(pc_thick_map):
     return coords_array
 
 
+def upsample_pc_coords_array(coords_array):
+    """Takes in patellar cartilage coords and thickness array (nx4), creates a surface using delaunay_2d, subdivides
+     this surface by a factor of 2, and returns the interpolated coords and thickness point clouds."""
+    point_cloud = pv.PolyData(np.transpose([coords_array[:, 0], coords_array[:, 1], coords_array[:, 2]]))
+    point_cloud['Cart. Thickness (mm)'] = coords_array[:, 3]
+
+    surf = point_cloud.delaunay_2d()
+    surf['Cart. Thickness (mm)'] = coords_array[:, 3]
+
+    # Upsample cartilage surface
+    surface_upsampled = surf.subdivide(nsub=2)
+    xyz_coords = surface_upsampled.points
+    thickness = surface_upsampled.point_data["Cart. Thickness (mm)"]
+    coords_array_upsampled = np.concatenate(xyz_coords, thickness)
+    return coords_array_upsampled
+
+
 def visualize_thickness_map(pc_thick_map):
     coords_array = organize_coordinate_array(pc_thick_map)
     point_cloud = pv.PolyData(np.transpose([coords_array[:, 0], coords_array[:, 1], coords_array[:, 2]]))
@@ -189,8 +206,11 @@ def visualize_thickness_map(pc_thick_map):
     surf = point_cloud.delaunay_2d()
     surf['Cart. Thickness (mm)'] = coords_array[:, 3]
 
+    # Upsample cartilage surface
+    surface_upsampled = surf.subdivide(nsub=2)
+
     # Plot 3d triangle-ized surface
-    surf.plot(show_edges=False)
+    surface_upsampled.plot(show_edges=True)
     return
     # Plot point cloud
     # plotter = pv.Plotter()
@@ -255,9 +275,12 @@ if __name__ == '__main__':
         # Calculate coord array and store thickness values for this scan
         pc_coords_array = organize_coordinate_array(pc_thick_map)
 
+        # Upsample the cartilage point cloud
+        pc_coords_array = upsample_pc_coords_array(pc_coords_array)
+        
         thickness_values.append(pc_coords_array[:, 3])
 
         # Visualize the map
-        visualize_thickness_map(pc_thick_map)
+        # visualize_thickness_map(pc_thick_map)
 
     plot_thickness_distributions(thickness_values, model_name)
