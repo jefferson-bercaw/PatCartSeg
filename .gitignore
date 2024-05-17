@@ -9,3 +9,4 @@ venv_new
 results
 augmentation
 /checkpoints/
+/strain_analysis/point_clouds.pkl
