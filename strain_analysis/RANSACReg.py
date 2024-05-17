@@ -10,11 +10,11 @@ source_pcd = o3d.io.read_point_cloud("R:\DefratePrivate\Otap\StrainAnalysisTesti
 print(type(source_pcd))
 
 # o3d.visualization.draw_geometries([source_pcd])
-#Voxel Size for down sampling (Adjust if the Ransac registration is poor)
+#Voxel Size for down sampling (Adjust if the Ransac strain_analysis is poor)
 voxel_size = 1
 
 
-#Downsampling and estimating normals, required for RANSAC registration
+#Downsampling and estimating normals, required for RANSAC strain_analysis
 def preprocess_point_cloud(pcd, voxel_size):
     print(":: Downsample with a voxel size %.3f." % voxel_size)
     pcd_down = pcd.voxel_down_sample(voxel_size)
@@ -31,11 +31,11 @@ def preprocess_point_cloud(pcd, voxel_size):
         o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100))
     return pcd_down, pcd_fpfh
 
-#Function for running RANSAC(initial) registration
+#Function for running RANSAC(initial) strain_analysis
 def execute_global_registration(source_down, target_down, source_fpfh,
                                 target_fpfh, voxel_size):
     distance_threshold = voxel_size * 1.5
-    print(":: RANSAC registration on downsampled point clouds.")
+    print(":: RANSAC strain_analysis on downsampled point clouds.")
     print("   Since the downsampling voxel size is %.3f," % voxel_size)
     print("   we use a liberal distance threshold %.3f." % distance_threshold)
     result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
@@ -53,7 +53,7 @@ def execute_global_registration(source_down, target_down, source_fpfh,
 #Point-to-Plan ICP Registration Function
 def refine_registration(source, target, source_fpfh, target_fpfh, voxel_size):
     distance_threshold = voxel_size * 0.5
-    print(":: Point-to-plane ICP registration is applied on original point")
+    print(":: Point-to-plane ICP strain_analysis is applied on original point")
     print("   clouds to refine the alignment. This time we use a strict")
     print("   distance threshold %.3f." % distance_threshold)
     source.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
