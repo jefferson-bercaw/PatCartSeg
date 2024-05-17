@@ -1,16 +1,10 @@
 import numpy as np
-from PIL import Image
 from evaluate import four_digit_number, assemble_mri_volume
 import os
 import matplotlib.pyplot as plt
 import scipy
 import pyvista as pv
-import open3d as o3d
 import pickle
-
-# Workflow
-# For each cartilage surface point, calculate nearest patellar point, calculate distance, store in location of patellar cartilage
-# Plot heat map of cartilage thickness
 
 
 def return_predicted_volumes(subj_name, model_name):
