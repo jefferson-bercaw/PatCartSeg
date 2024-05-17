@@ -33,6 +33,56 @@ def return_predicted_volumes(subj_name, model_name):
     return p_vol, pc_vol
 
 
+def return_p_surface(p_vol):
+    """Takes in a (256, 256, 120) binary mask for patella and returns (256, 256, 120) for patella surface"""
+    p_surf = np.zeros_like(p_vol)
+
+    for slice_num in range(p_vol.shape[2]):
+        p_slice = p_vol[:, :, slice_num]
+
+        if np.max(p_slice) > 0:
+            p_surf[:, :, slice_num] = get_entire_surface(p_slice)
+
+    return p_surf
+
+
+def get_entire_surface(p_slice):
+    """Takes in binary slice for entire patella and returns binary slice for just the surface"""
+    # Approach: Get max and min pixel locations for each column and row, and find the union of this
+    boundary_locs = list()
+    p_surf = np.zeros_like(p_slice)
+
+    for i, row in enumerate(p_slice):  # iterate through each row
+        nonzero_inds = np.nonzero(row)[0]
+        if len(nonzero_inds) > 0:
+            left_most_ind = nonzero_inds[0]
+            right_most_ind = nonzero_inds[-1]
+            boundary_locs.append([i, left_most_ind])  # list of row, col indices of surface pixels
+            boundary_locs.append([i, right_most_ind])  # list of row, col indices of surface pixels
+
+    for col in range(p_slice.shape[1]):  # iterate through each col
+        column = p_slice[:, col]
+        nonzero_inds = np.nonzero(column)[0]
+
+        if len(nonzero_inds) > 0:
+            top_most_ind = nonzero_inds[0]
+            bottom_most_ind = nonzero_inds[-1]
+            boundary_locs.append([top_most_ind, col])  # list of row, col indices of surface pixels
+            boundary_locs.append([bottom_most_ind, col])  # list of row, col indices of surface pixels
+
+    for row, col in boundary_locs:
+        p_surf[row, col] = 1
+
+    # Visualize
+    plt.imshow(p_slice)
+    plt.show()
+
+    plt.imshow(p_surf)
+    plt.show()
+
+    return p_surf
+
+
 def return_pc_surface(pc_vol):
     pc_surf = np.zeros_like(pc_vol)
 
@@ -72,7 +122,7 @@ def calculate_thickness(p_vol, pc_surf_mask):
     pc_pos = pc_inds * voxel_lengths
     p_pos = p_inds * voxel_lengths
 
-    p_pos = interpolate_patella(p_pos)
+    # p_pos = interpolate_patella(p_pos)
 
     distances = scipy.spatial.distance.cdist(pc_pos, p_pos)
     closest_indices = np.argmin(distances, axis=1)
@@ -111,21 +161,21 @@ def remove_zero_slices(pc_thick_map):
     return pc_thick_trunc
 
 
-def organize_coordinate_array(p_thick_map):
-    """Turns (xy_dim, xy_dim, n_slices) ndarray into (n, 4) array of [x, y, z, thick] values for each PC coord on P"""
-    inds = np.nonzero(p_thick_map)
+def organize_coordinate_array(pc_thick_map):
+    """Turns (xy_dim, xy_dim, n_slices) ndarray into (n, 4) array of [x, y, z, thick] values for each PC coord on PC"""
+    inds = np.nonzero(pc_thick_map)
     voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
 
     coords_array = np.zeros((len(inds[0]), 4))
     for i in range(len(inds[0])):
         x, y, z = inds[0][i], inds[1][i], inds[2][i]
-        value = p_thick_map[x, y, z]
+        value = pc_thick_map[x, y, z]
         coords_array[i] = [x * voxel_lengths[0], y * voxel_lengths[1], z * voxel_lengths[2], value]
     return coords_array
 
 
-def visualize_thickness_map(p_thick_map):
-    coords_array = organize_coordinate_array(p_thick_map)
+def visualize_thickness_map(pc_thick_map):
+    coords_array = organize_coordinate_array(pc_thick_map)
     point_cloud = pv.PolyData(np.transpose([coords_array[:, 0], coords_array[:, 1], coords_array[:, 2]]))
     point_cloud['Cart. Thickness (mm)'] = coords_array[:, 3]
 
@@ -133,7 +183,7 @@ def visualize_thickness_map(p_thick_map):
     surf['Cart. Thickness (mm)'] = coords_array[:, 3]
 
     # Plot 3d triangle-ized surface
-    surf.plot(show_edges=True, line_width=0.2)
+    surf.plot(show_edges=False)
 
     # Plot point cloud
     # plotter = pv.Plotter()
@@ -186,12 +236,14 @@ if __name__ == '__main__':
 
         # Post-processing: Fill holes, remove stray pixels, in both volumes?
 
+        # Edit mask to get the surface pixels (no middle pixels) for the patella
+        p_surf_mask = return_p_surface(p_vol)
+
         # Edit mask to get the right most pixels for the patellar cartilage
         pc_surf_mask = return_pc_surface(pc_vol)
-        num_cart_points = np.sum(pc_surf_mask)
 
         # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
-        pc_thick_map = calculate_thickness(p_vol, pc_surf_mask)
+        pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
 
         # Calculate coord array and store thickness values for this scan
         pc_coords_array = organize_coordinate_array(pc_thick_map)
