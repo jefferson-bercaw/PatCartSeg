@@ -104,6 +104,15 @@ def get_outer_surface(pc_slice):
     return surf_slice
 
 
+def get_patella_point_cloud(p_vol):
+    """Takes in a volume of the patella surface (256, 256, 120) and returns a (nx3) point cloud (interp)"""
+    voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
+    p_inds = np.argwhere(p_vol)
+    p_pos = p_inds * voxel_lengths
+    p_pos = interpolate_patella(p_pos)
+    return p_pos
+
+
 def calculate_thickness(p_vol, pc_surf_mask):
     """Takes in a patella binary volume and a patellar cartilage surface binary volume, and returns the same patellar
      cartilage volume, with cartilage thickness values in the location of the patellar cartilage surface"""
@@ -245,16 +254,24 @@ def interpolate_patella(p_pos):
     return p_pos
 
 
+def store_point_clouds(point_clouds, p_coords_array, pc_coords_array, subj_name):
+    """Stores point clouds in a dictionary to be dumped"""
+    point_clouds[subj_name]["p_coords_array"] = p_coords_array
+    point_clouds[subj_name]["pc_coords_array"] = pc_coords_array
+    return point_clouds
+
+
 if __name__ == '__main__':
 
     # Specify model name and subject name(s)
     # subj_names = ["AS_018", "AS_019", "AS_020", "AS_021", "AS_022", "AS_023"]
     # model_name = "unet_2024-04-17_08-06-28"
-
+    point_clouds = {}
     subj_names = ["AS_006", "AS_007", "AS_008", "AS_009", "AS_010", "AS_011"]
     model_name = "unet_2024-05-15_07-23-17_cHT5"
 
     thickness_values = list()
+    point_clouds = dict()
 
     for subj_name in subj_names:
 
@@ -263,8 +280,9 @@ if __name__ == '__main__':
 
         # Post-processing: Fill holes, remove stray pixels, in both volumes?
 
-        # Edit mask to get the surface pixels (no middle pixels) for the patella
+        # Edit mask to get the surface pixels (no middle pixels) for the patella and get the point cloud
         p_surf_mask = return_p_surface(p_vol)
+        p_coords_array = get_patella_point_cloud(p_surf_mask)
 
         # Edit mask to get the right most pixels for the patellar cartilage
         pc_surf_mask = return_pc_surface(pc_vol)
@@ -277,10 +295,14 @@ if __name__ == '__main__':
 
         # Upsample the cartilage point cloud
         pc_coords_array = upsample_pc_coords_array(pc_coords_array)
-        
-        thickness_values.append(pc_coords_array[:, 3])
+
+        # Store point clouds in a dictionary
+        point_clouds = store_point_clouds(point_clouds, p_coords_array, pc_coords_array, subj_name)
+
+        # Store thickness values for distribution analysis
+        # thickness_values.append(pc_coords_array[:, 3])
 
         # Visualize the map
         # visualize_thickness_map(pc_thick_map)
 
-    plot_thickness_distributions(thickness_values, model_name)
+    # plot_thickness_distributions(thickness_values, model_name)
