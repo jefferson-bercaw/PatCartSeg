@@ -203,7 +203,7 @@ def upsample_pc_coords_array(coords_array):
     surface_upsampled = surf.subdivide(nsub=2)
     xyz_coords = surface_upsampled.points
     thickness = surface_upsampled.point_data["Cart. Thickness (mm)"]
-    coords_array_upsampled = np.concatenate(xyz_coords, thickness)
+    coords_array_upsampled = np.concatenate((xyz_coords, thickness[:, np.newaxis]), axis=1)
     return coords_array_upsampled
 
 
@@ -256,6 +256,7 @@ def interpolate_patella(p_pos):
 
 def store_point_clouds(point_clouds, p_coords_array, pc_coords_array, subj_name):
     """Stores point clouds in a dictionary to be dumped"""
+    point_clouds[subj_name] = {}
     point_clouds[subj_name]["p_coords_array"] = p_coords_array
     point_clouds[subj_name]["pc_coords_array"] = pc_coords_array
     return point_clouds
@@ -266,12 +267,13 @@ if __name__ == '__main__':
     # Specify model name and subject name(s)
     # subj_names = ["AS_018", "AS_019", "AS_020", "AS_021", "AS_022", "AS_023"]
     # model_name = "unet_2024-04-17_08-06-28"
-    point_clouds = {}
     subj_names = ["AS_006", "AS_007", "AS_008", "AS_009", "AS_010", "AS_011"]
     model_name = "unet_2024-05-15_07-23-17_cHT5"
 
     thickness_values = list()
-    point_clouds = dict()
+
+    # Initialize dictionary
+    point_clouds = {}
 
     for subj_name in subj_names:
 
