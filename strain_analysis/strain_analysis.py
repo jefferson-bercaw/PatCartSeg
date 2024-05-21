@@ -28,12 +28,18 @@ def draw_registration_result(source, target, transformation):
                                       up=[-0.3402, -0.9189, -0.1996])
 
 
-def get_patella_ptcld(point_clouds, subj_name):
+def get_patella_ptclds(point_clouds, subj_name):
     # Get patella point cloud from point cloud dictionary
     p_points = point_clouds[subj_name]["p_coords_array"]
+    p_right_points = point_clouds[subj_name]["p_right_coords_array"]
+
     p_ptcld = o3d.geometry.PointCloud()
     p_ptcld.points = o3d.utility.Vector3dVector(p_points)
-    return p_ptcld
+
+    p_right_ptcld = o3d.geometry.PointCloud()
+    p_right_ptcld.points = o3d.utility.Vector3dVector(p_right_points)
+
+    return p_ptcld, p_right_ptcld
 
 
 def get_cartilage_ptcld(point_clouds, subj_name):
@@ -46,7 +52,7 @@ def get_cartilage_ptcld(point_clouds, subj_name):
 
 
 def get_transformations(fixed_p_ptcld, moving_p_ptcld):
-    voxel_size = 0.5
+    voxel_size = 2
 
     fixed_p_ptcld, fixed_fpfh = preprocess_point_cloud(fixed_p_ptcld, voxel_size)
     moving_p_ptcld, moving_fpfh = preprocess_point_cloud(moving_p_ptcld, voxel_size)
@@ -94,7 +100,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
 
 
 def visualize_strain_map(strain_map, idx):
-    titles = ["Strain following 3 mile run", "Strain following run and subsequent recovery"]
+    titles = ["None", "Strain following 3 mile run", "Strain following run and subsequent recovery"]
 
     coords = strain_map[:, 0:3]
     strain = strain_map[:, 3]
@@ -102,7 +108,7 @@ def visualize_strain_map(strain_map, idx):
     strain_cloud[titles[idx]] = strain
 
     surf = strain_cloud.delaunay_2d()
-    surf["Strain from 3mi run"] = strain
+    surf[titles[idx]] = strain
 
     surf.plot(show_edges=False, cmap="plasma", rng=[-0.3, 0.3])
     return
@@ -113,49 +119,49 @@ if __name__ == "__main__":
     transformations = {}
     point_clouds = load_point_cloud()
     subj_names = list(point_clouds.keys())
+    strain_vals = list()
 
-    # Fixed ptcld for patella
-    fixed_p_ptcld = get_patella_ptcld(point_clouds, subj_names[0])
-
-    for idx in range(1, len(subj_names)):
-        moving_p_ptcld = get_patella_ptcld(point_clouds, subj_names[idx])
-
-        result_ransac, result_icp = get_transformations(fixed_p_ptcld, moving_p_ptcld)
-
-        # moving_p_ptcld.paint_uniform_color([1, 0.706, 0])
-        # fixed_p_ptcld.paint_uniform_color([0, 0.651, 0.929])
-        # o3d.visualization.draw_geometries([moving_p_ptcld.transform(result_icp.transformation), fixed_p_ptcld])
-
-        transformations = store_transformations(transformations, subj_names[idx], result_ransac, result_icp)
-
-    #  Strain maps
-
-    # First pre point cloud
-    fixed_p_ptcld = get_patella_ptcld(point_clouds, subj_names[0])
+    # Fixed ptcld for patella and patellar cartilage
+    fixed_p_ptcld, fixed_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[0])
     fixed_pc_ptcld, fixed_thickness = get_cartilage_ptcld(point_clouds, subj_names[0])
 
-    # Keep strain values
-    strain_vals = list()
-    for idx, subj_name in enumerate(list(transformations.keys())):
-        if idx < 2:
-            # Point clouds that we're moving
-            p_ptcld = get_patella_ptcld(point_clouds, subj_name)
-            pc_ptcld, thickness = get_cartilage_ptcld(point_clouds, subj_name)
-            ransac = transformations[subj_name]["ransac"].transformation
+    for idx in range(1, len(subj_names)):
+        # Moving ptcld for patella and patellar cartilage
+        moving_p_ptcld, moving_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[idx])
+        moving_pc_ptcld, moving_thickness = get_cartilage_ptcld(point_clouds, subj_names[idx])
 
-            p_ptcld.transform(ransac)
-            pc_ptcld.transform(ransac)
+        # Get transformation matrices
+        result_ransac, result_icp = get_transformations(fixed_p_right_ptcld, moving_p_right_ptcld)
 
-            # Draw
-            pc_ptcld.paint_uniform_color([1, 0.706, 0])
-            fixed_p_ptcld.paint_uniform_color([0, 0.651, 0.929])
-            # o3d.visualization.draw_geometries([pc_ptcld, fixed_pc_ptcld])
+        # Transform moving structures
+        moving_p_ptcld.transform(result_ransac.transformation)
+        moving_p_right_ptcld.transform(result_ransac.transformation)
+        moving_pc_ptcld.transform(result_ransac.transformation)
 
-            strain_map = produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness)
-            strain_vals.append(strain_map[:, 3])
-            visualize_strain_map(strain_map, idx)
+        # View registered point clouds
+        # Registering-surface: Inner patellar points
+        moving_p_right_ptcld.paint_uniform_color([1, 0.706, 0])
+        fixed_p_right_ptcld.paint_uniform_color([0, 0.651, 0.929])
+        o3d.visualization.draw_geometries([moving_p_right_ptcld, fixed_p_right_ptcld])
 
-    # Visualize
+        # Resulting Patella registration
+        moving_p_ptcld.paint_uniform_color([1, 0.706, 0])
+        fixed_p_ptcld.paint_uniform_color([0, 0.651, 0.929])
+        o3d.visualization.draw_geometries([moving_p_ptcld, fixed_p_ptcld])
+
+        # Resulting Patellar cartilage surface registration
+        moving_pc_ptcld.paint_uniform_color([1, 0.706, 0])
+        fixed_pc_ptcld.paint_uniform_color([0, 0.651, 0.929])
+        o3d.visualization.draw_geometries([moving_pc_ptcld, fixed_pc_ptcld])
+
+        # Store transformations
+        transformations = store_transformations(transformations, subj_names[idx], result_ransac, result_icp)
+
+        # Create strain maps
+        strain_map = produce_strain_map(moving_pc_ptcld, moving_thickness, fixed_pc_ptcld, fixed_thickness)
+        strain_vals.append(strain_map[:, 3])
+        visualize_strain_map(strain_map, idx)
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
@@ -164,4 +170,5 @@ if __name__ == "__main__":
     ax.set_ylabel("Strain Distributions")
     ax.set_title("Patellar Cartilage Strain Distributions")
     plt.show()
+
 
