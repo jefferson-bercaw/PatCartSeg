@@ -28,11 +28,11 @@ def get_history_filename(date_time):
 
 
 def get_model_filename(date_time):
-    files = os.listdir("models")
-    for filename in files:
-        if date_time is filename:
-            model_filename = os.path.abspath(os.path.join('models', filename))
-            return model_filename
+    # files = os.listdir("models")
+    # for filename in files:
+    #     if date_time is filename:
+    model_filename = os.path.abspath(os.path.join('models', date_time))
+    return model_filename
 
 
 def load_history(history_filename):
