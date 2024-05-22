@@ -13,12 +13,12 @@ def voting_masks(pat, pat_cart):
     pat_soft = np.mean(pat, axis=2)
     pat_cart_soft = np.mean(pat_cart, axis=2)
 
-    pat_soft_mask = pat_soft >= 0.5
-    pat_cart_soft_mask = pat_cart_soft >= 0.5
+    pat_soft_mask = np.where(pat_soft >= 0.5, 1, 0)
+    pat_cart_soft_mask = np.where(pat_cart_soft >= 0.5, 1, 0)
 
     # Hard voting
-    pat_hard = pat >= 0.5
-    pat_cart_hard = pat_cart >= 0.5
+    pat_hard = np.where(pat >= 0.5, 1, 0)
+    pat_cart_hard = np.where(pat_cart >= 0.5, 1, 0)
 
     pat_hard = scipy.stats.mode(pat_hard, axis=2)
     pat_cart_hard = scipy.stats.mode(pat_cart_hard, axis=2)
