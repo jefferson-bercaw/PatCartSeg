@@ -28,6 +28,9 @@ def get_history_filename(date_time):
 
 
 def get_model_filename(date_time):
+    # files = os.listdir("models")
+    # for filename in files:
+    #     if date_time is filename:
     model_filename = os.path.abspath(os.path.join('models', date_time))
     return model_filename
 
@@ -89,13 +92,18 @@ def prep_results_filepath(results_filename):
 
 
 def process_predicted_label(pred_label):
+    # Predicted Masks
     thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
     pat = np.squeeze(binary_data[:, :, :, 0])
     pat_cart = np.squeeze(binary_data[:, :, :, 1])
 
-    return pat, pat_cart
+    # Probability masks
+    pat_prob = np.squeeze(pred_label[:, :, :, 0])
+    pat_cart_prob = np.squeeze(pred_label[:, :, :, 1])
+
+    return pat, pat_cart, pat_prob, pat_cart_prob
 
 
 def process_mri(mri):
@@ -103,28 +111,44 @@ def process_mri(mri):
     return mri
 
 
-def save_result(filename, date_time, pat, pat_cart):
+def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     filename_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
     pat_filepath = os.path.join(results_filename, "pat")
     pat_cart_filepath = os.path.join(results_filename, "pat_cart")
 
+    pat_prob_filepath = os.path.join(results_filename, "pat_prob")
+    pat_cart_prob_filepath = os.path.join(results_filename, "pat_cart_prob")
+
     # Make directories if they don't exist
     if not os.path.exists(pat_filepath):
         os.mkdir(pat_filepath)
     if not os.path.exists(pat_cart_filepath):
         os.mkdir(pat_cart_filepath)
+    if not os.path.exists(pat_prob_filepath):
+        os.mkdir(pat_prob_filepath)
+    if not os.path.exists(pat_cart_prob_filepath):
+        os.mkdir(pat_cart_prob_filepath)
+
+    filename_npy = filename_str.split('.')[0] + ".npy"
 
     pat_filepath = os.path.join(pat_filepath, filename_str)
     pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
+    pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
+    pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, filename_npy)
+    print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
+    # Save the masks as BMP files
     pat_img = Image.fromarray(pat)
     pat_cart_img = Image.fromarray(pat_cart)
-
-    # Save the image as a BMP file
     pat_img.save(pat_filepath)
     pat_cart_img.save(pat_cart_filepath)
+
+    # Save the probability masks as NPY files
+    np.save(pat_prob_filepath, pat_prob)
+    np.save(pat_cart_prob_filepath, pat_cart_prob)
+
     return
 
 
@@ -364,101 +388,111 @@ if __name__ == "__main__":
     with strategy.scope():
 
         # # date_time pattern to identify model we just trained
-        date_times = get_most_recent_models()
-        print(f"Most recent models being analyzed: {date_times}")
+        # date_times = get_most_recent_models()
+        # print(f"Most recent models being analyzed: {date_times}")
         # date_time = get_date_and_hour()
         # plot_mri_with_both_masks(subj_name, model_name)
-        for date_time in date_times:
 
-            print(f"Evaluating model {date_time}")
-            dataset_name = parse_dataset_name(date_time)
+        date_times = ["unet_2024-05-22_00-17-51_cHT5", "unet_2024-05-22_03-06-08_cHT5", "unet_2024-05-21_13-59-19_cHT5",
+                      "unet_2024-05-21_20-50-23_cHT5", "unet_2024-05-22_07-43-29_cHT5", "unet_2024-05-21_15-36-23_cHT5",
+                      "unet_2024-05-22_06-41-03_cHT5", "unet_2024-05-22_04-18-45_cHT5", "unet_2024-05-21_23-18-29_cHT5"]
 
-            # Get results filename
-            results_filename = get_results_filename(date_time)
-            prep_results_filepath(results_filename)
+        taskID = int(os.environ['SLURM_ARRAY_TASK_ID'])
 
-            # get the history and model
-            history, model = get_hist_and_model(date_time)
+        date_time = date_times[taskID] + ".h5"
 
-            test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset=dataset_name)
+        # for date_time in date_times:
 
-            if history is not None:
-                # Output plots
-                plt.plot(history["FN"])
-                plt.xlabel('Epoch')
-                plt.title("False Negatives")
-                plt.savefig(os.path.join(results_filename, "fn.png"))
-                # plt.show()
+        print(f"Evaluating model {date_time}")
+        dataset_name = parse_dataset_name(date_time)
 
-                plt.plot(history["FP"])
-                plt.xlabel('Epoch')
-                plt.title("False Positives")
-                plt.savefig(os.path.join(results_filename, "fp.png"))
-                # plt.show()
+        # Get results filename
+        results_filename = get_results_filename(date_time)
+        prep_results_filepath(results_filename)
+        print(f"Saving results to {results_filename}")
 
-                plt.plot(history["TN"])
-                plt.xlabel('Epoch')
-                plt.title("True Negatives")
-                plt.savefig(os.path.join(results_filename, "tn.png"))
-                # plt.show()
+        # get the history and model
+        history, model = get_hist_and_model(date_time)
 
-                plt.plot(history["TP"])
-                plt.xlabel('Epoch')
-                plt.title("True Positives")
-                plt.savefig(os.path.join(results_filename, "tp.png"))
-                # plt.show()
+        test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset=dataset_name)
 
-                plt.plot(history["val_loss"], label='val_loss')
-                plt.plot(history["loss"], label='train_loss')
-                plt.xlabel('Epoch')
-                plt.ylabel('Dice Loss')
-                plt.legend()
-                plt.title("Loss")
-                plt.savefig(os.path.join(results_filename, "loss.png"))
-                # plt.show()
+        if history is not None:
+            # Output plots
+            plt.plot(history["FN"])
+            plt.xlabel('Epoch')
+            plt.title("False Negatives")
+            plt.savefig(os.path.join(results_filename, "fn.png"))
+            # plt.show()
 
-            iterable = iter(test_dataset)
-            n_test_images = len(test_dataset)
+            plt.plot(history["FP"])
+            plt.xlabel('Epoch')
+            plt.title("False Positives")
+            plt.savefig(os.path.join(results_filename, "fp.png"))
+            # plt.show()
 
-            # Get comparison plots filename
-            comp_filename = get_comparison_plot_filename(date_time)
+            plt.plot(history["TN"])
+            plt.xlabel('Epoch')
+            plt.title("True Negatives")
+            plt.savefig(os.path.join(results_filename, "tn.png"))
+            # plt.show()
 
-            # Count true pixels [intersection, predicted, true]
-            pat_positives = [0, 0, 0]
-            pat_cart_positives = [0, 0, 0]
+            plt.plot(history["TP"])
+            plt.xlabel('Epoch')
+            plt.title("True Positives")
+            plt.savefig(os.path.join(results_filename, "tp.png"))
+            # plt.show()
 
-            for i in range(n_test_images):
-                filename, mri, label = next(iterable)
+            plt.plot(history["val_loss"], label='val_loss')
+            plt.plot(history["loss"], label='train_loss')
+            plt.xlabel('Epoch')
+            plt.ylabel('Dice Loss')
+            plt.legend()
+            plt.title("Loss")
+            plt.savefig(os.path.join(results_filename, "loss.png"))
+            # plt.show()
 
-                pred_label = model.predict(mri)
+        iterable = iter(test_dataset)
+        n_test_images = len(test_dataset)
 
-                mri = process_mri(mri)
-                pat, pat_cart = process_predicted_label(pred_label)
-                pat_true, pat_cart_true = process_true_label(label)
+        # Get comparison plots filename
+        comp_filename = get_comparison_plot_filename(date_time)
 
-                pat_positives = count_positives(pat, pat_true, pat_positives)
-                pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
+        # Count true pixels [intersection, predicted, true]
+        pat_positives = [0, 0, 0]
+        pat_cart_positives = [0, 0, 0]
 
-                # Plot examples of true masks that have predictions on them
-                plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
-                plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
+        for i in range(n_test_images):
+            filename, mri, label = next(iterable)
 
-                # Output predictions
-                save_result(filename, date_time, pat, pat_cart)
+            pred_label = model.predict(mri)
 
-                print(f"Img {i} of {n_test_images}")
+            mri = process_mri(mri)
+            pat, pat_cart, pat_prob, pat_cart_prob = process_predicted_label(pred_label)
+            pat_true, pat_cart_true = process_true_label(label)
 
-            pat_dsc = calculate_dice(pat_positives)
-            pat_cart_dsc = calculate_dice(pat_cart_positives)
+            pat_positives = count_positives(pat, pat_true, pat_positives)
+            pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
 
-            print(f"Model: {date_time}")
-            print(f"Patellar Dice Score: {pat_dsc}")
-            print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
+            # Plot examples of true masks that have predictions on them
+            plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
+            plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
-            metrics = {"patellar_dice": pat_dsc,
-                       "patellar_cartilage_dice": pat_cart_dsc,
-                       "pat_positive_counts": pat_positives,
-                       "pat_cart_positive_counts": pat_cart_positives,
-                       "positive_count_info": ["intersection", "predicted", "true"]}
+            # Output predictions
+            save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob)
 
-            save_metrics(date_time, metrics)
+            print(f"Img {i} of {n_test_images}")
+
+        pat_dsc = calculate_dice(pat_positives)
+        pat_cart_dsc = calculate_dice(pat_cart_positives)
+
+        print(f"Model: {date_time}")
+        print(f"Patellar Dice Score: {pat_dsc}")
+        print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
+
+        metrics = {"patellar_dice": pat_dsc,
+                   "patellar_cartilage_dice": pat_cart_dsc,
+                   "pat_positive_counts": pat_positives,
+                   "pat_cart_positive_counts": pat_cart_positives,
+                   "positive_count_info": ["intersection", "predicted", "true"]}
+
+        save_metrics(date_time, metrics)
