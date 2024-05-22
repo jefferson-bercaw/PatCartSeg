@@ -109,28 +109,41 @@ def process_mri(mri):
     return mri
 
 
-def save_result(filename, date_time, pat, pat_cart):
+def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     filename_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
     pat_filepath = os.path.join(results_filename, "pat")
     pat_cart_filepath = os.path.join(results_filename, "pat_cart")
 
+    pat_prob_filepath = os.path.join(results_filename, "pat_prob")
+    pat_cart_prob_filepath = os.path.join(results_filename, "pat_cart_prob")
+
     # Make directories if they don't exist
     if not os.path.exists(pat_filepath):
         os.mkdir(pat_filepath)
     if not os.path.exists(pat_cart_filepath):
         os.mkdir(pat_cart_filepath)
+    if not os.path.exists(pat_prob_filepath):
+        os.mkdir(pat_prob_filepath)
+    if not os.path.exists(pat_cart_prob_filepath):
+        os.mkdir(pat_cart_prob_filepath)
 
     pat_filepath = os.path.join(pat_filepath, filename_str)
     pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
+    pat_prob_filepath = os.path.join(pat_prob_filepath, filename_str)
+    pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, filename_str)
 
     pat_img = Image.fromarray(pat)
     pat_cart_img = Image.fromarray(pat_cart)
+    pat_prob_img = Image.fromarray(pat_prob)
+    pat_cart_prob_img = Image.fromarray(pat_cart_prob)
 
     # Save the image as a BMP file
     pat_img.save(pat_filepath)
     pat_cart_img.save(pat_cart_filepath)
+    pat_prob_img.save(pat_prob_filepath)
+    pat_cart_prob_img.save(pat_cart_prob_filepath)
     return
 
 
@@ -460,7 +473,7 @@ if __name__ == "__main__":
             plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
             # Output predictions
-            save_result(filename, date_time, pat, pat_cart)
+            save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob)
 
             print(f"Img {i} of {n_test_images}")
 
