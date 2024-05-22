@@ -388,6 +388,7 @@ if __name__ == "__main__":
         # Get results filename
         results_filename = get_results_filename(date_time)
         prep_results_filepath(results_filename)
+        print(f"Saving results to {results_filename}")
 
         # get the history and model
         history, model = get_hist_and_model(date_time)
