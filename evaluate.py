@@ -100,9 +100,8 @@ def process_predicted_label(pred_label):
     pat_cart = np.squeeze(binary_data[:, :, :, 1])
 
     # Probability masks
-    prob_data = pred_label.astype(np.uint16)
-    pat_prob = np.squeeze(prob_data[:, :, :, 0])
-    pat_cart_prob = np.squeeze(prob_data[:, :, :, 1])
+    pat_prob = np.squeeze(pred_label[:, :, :, 0])
+    pat_cart_prob = np.squeeze(pred_label[:, :, :, 1])
 
     return pat, pat_cart, pat_prob, pat_cart_prob
 
@@ -132,21 +131,23 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     if not os.path.exists(pat_cart_prob_filepath):
         os.mkdir(pat_cart_prob_filepath)
 
+    filename_npy = filename_str.split('.')[0] + ".npy"
+
     pat_filepath = os.path.join(pat_filepath, filename_str)
     pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
-    pat_prob_filepath = os.path.join(pat_prob_filepath, filename_str)
-    pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, filename_str)
+    pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
+    pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, filename_npy)
 
+    # Save the masks as BMP files
     pat_img = Image.fromarray(pat)
     pat_cart_img = Image.fromarray(pat_cart)
-    pat_prob_img = Image.fromarray(pat_prob)
-    pat_cart_prob_img = Image.fromarray(pat_cart_prob)
-
-    # Save the image as a BMP file
     pat_img.save(pat_filepath)
     pat_cart_img.save(pat_cart_filepath)
-    pat_prob_img.save(pat_prob_filepath)
-    pat_cart_prob_img.save(pat_cart_prob_filepath)
+
+    # Save the probability masks as NPY files
+    pat_prob.save(pat_prob_filepath)
+    pat_cart_prob.save(pat_cart_prob_filepath)
+
     return
 
 
