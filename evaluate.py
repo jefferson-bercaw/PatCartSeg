@@ -378,7 +378,7 @@ if __name__ == "__main__":
 
         taskID = int(os.environ['SLURM_ARRAY_TASK_ID'])
 
-        date_time = date_times[taskID]
+        date_time = date_times[taskID] + ".h5"
 
         # for date_time in date_times:
 
