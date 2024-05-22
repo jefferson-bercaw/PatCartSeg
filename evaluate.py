@@ -146,8 +146,8 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     pat_cart_img.save(pat_cart_filepath)
 
     # Save the probability masks as NPY files
-    pat_prob.save(pat_prob_filepath)
-    pat_cart_prob.save(pat_cart_prob_filepath)
+    np.save(pat_prob_filepath, pat_prob)
+    np.save(pat_cart_prob_filepath, pat_cart_prob)
 
     return
 
