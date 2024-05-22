@@ -29,7 +29,7 @@ def voting_masks(pat, pat_cart):
 
     # Convert all to uint8
     pat_soft_mask = pat_soft_mask.astype(np.uint8)
-    pat_cart_soft_mask = pat_cart_soft_mask(np.uint8)
+    pat_cart_soft_mask = pat_cart_soft_mask.astype(np.uint8)
     pat_hard_mask = pat_hard_mask.astype(np.uint8)
     pat_cart_hard_mask = pat_cart_hard_mask.astype(np.uint8)
 
