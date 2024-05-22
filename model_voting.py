@@ -3,6 +3,8 @@ import os
 from get_data_path import get_data_path
 import scipy
 from PIL import Image
+from create_dataset import get_dataset
+from evaluate import process_true_label, calculate_dice, count_positives, save_metrics
 
 
 def voting_masks(pat, pat_cart):
@@ -67,6 +69,7 @@ if __name__ == "__main__":
     files = os.listdir(os.path.join(os.getcwd(), "results", date_times[0], "pat_prob"))
     prep_save_path()
 
+    # Save data predictions
     for file in files:
         # Initialize probability maps
         pat = np.zeros((256, 256, 9))
@@ -85,3 +88,48 @@ if __name__ == "__main__":
 
         # Save result
         save_result(file, pat_hard, pat_cart_hard, pat_soft, pat_cart_soft)
+
+    # Evaluate predictions
+    predictions = ["model_voting_soft", "model_voting_hard"]
+
+    test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset="cHT")
+
+    for prediction in predictions:
+        # Count true pixels [intersection, predicted, true]
+        pat_positives = [0, 0, 0]
+        pat_cart_positives = [0, 0, 0]
+
+        iterable = iter(test_dataset)
+        n_test_images = len(iterable)
+
+        for i in range(n_test_images):
+            filename, mri, label = next(iterable)
+
+            # Predictions
+            pat = Image.open(os.path.join(os.getcwd(), "results", prediction, "pat", filename))
+            pat_cart = Image.open(os.path.join(os.getcwd(), "results", prediction, "pat_cart", filename))
+
+            # Truth
+            pat_true, pat_cart_true = process_true_label(label)
+
+            pat_positives = count_positives(pat, pat_true, pat_positives)
+            pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
+
+            print(f"Img {i} of {n_test_images}")
+
+        pat_dsc = calculate_dice(pat_positives)
+        pat_cart_dsc = calculate_dice(pat_cart_positives)
+
+        print(f"Model: {prediction}")
+        print(f"Patellar Dice Score: {pat_dsc}")
+        print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
+
+        metrics = {"patellar_dice": pat_dsc,
+                   "patellar_cartilage_dice": pat_cart_dsc,
+                   "pat_positive_counts": pat_positives,
+                   "pat_cart_positive_counts": pat_cart_positives,
+                   "positive_count_info": ["intersection", "predicted", "true"]}
+
+        print(f"Metrics: {metrics}")
+
+        save_metrics(prediction, metrics)
