@@ -98,7 +98,10 @@ def process_predicted_label(pred_label):
     pat = np.squeeze(binary_data[:, :, :, 0])
     pat_cart = np.squeeze(binary_data[:, :, :, 1])
 
-    return pat, pat_cart
+    pat_prob = np.squeeze(pred_label[:, :, :, 0])
+    pat_cart_prob = np.squeeze(pred_label[:, :, :, 1])
+
+    return pat, pat_cart, pat_prob, pat_cart_prob
 
 
 def process_mri(mri):
@@ -446,7 +449,7 @@ if __name__ == "__main__":
             pred_label = model.predict(mri)
 
             mri = process_mri(mri)
-            pat, pat_cart = process_predicted_label(pred_label)
+            pat, pat_cart, pat_prob, pat_cart_prob = process_predicted_label(pred_label)
             pat_true, pat_cart_true = process_true_label(label)
 
             pat_positives = count_positives(pat, pat_true, pat_positives)
