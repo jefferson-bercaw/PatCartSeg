@@ -74,7 +74,7 @@ if __name__ == "__main__":
         # Initialize probability maps
         pat = np.zeros((256, 256, 9))
         pat_cart = np.zeros((256, 256, 9))
-        for idx, date_time in date_times:
+        for idx, date_time in enumerate(date_times):
             # Filename
             pat_filepath = os.path.join(os.getcwd(), "results", date_time, "pat_prob", file)
             pat_cart_filepath = os.path.join(os.getcwd(), "results", date_time, "pat_cart_prob", file)
