@@ -1,19 +1,15 @@
 import numpy as np
-from PIL import Image
 from evaluate import four_digit_number, assemble_mri_volume
 import os
 import matplotlib.pyplot as plt
 import scipy
 import pyvista as pv
-
-# Workflow
-# For each cartilage surface point, calculate nearest patellar point, calculate distance, store in location of patellar cartilage
-# Plot heat map of cartilage thickness
+import pickle
 
 
 def return_predicted_volumes(subj_name, model_name):
     cwd = os.getcwd()
-    pred_folder = os.path.join(cwd, "results", model_name)
+    pred_folder = os.path.join(cwd, "../results", model_name)
 
     p_pred_folder = os.path.join(pred_folder, "pat")
     pc_pred_folder = os.path.join(pred_folder, "pat_cart")
@@ -73,6 +69,9 @@ def get_entire_surface(p_slice):
     for row, col in boundary_locs:
         p_surf[row, col] = 1
 
+    # plt.imshow(p_surf)
+    # plt.show()
+
     return p_surf
 
 
@@ -102,6 +101,15 @@ def get_outer_surface(pc_slice):
             surf_slice[i, right_most_ind] = 1
 
     return surf_slice
+
+
+def get_patella_point_cloud(p_vol):
+    """Takes in a volume of the patella surface (256, 256, 120) and returns a (nx3) point cloud (interp)"""
+    voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
+    p_inds = np.argwhere(p_vol)
+    p_pos = p_inds * voxel_lengths
+    p_pos = interpolate_patella(p_pos)
+    return p_pos
 
 
 def calculate_thickness(p_vol, pc_surf_mask):
@@ -181,6 +189,23 @@ def organize_coordinate_array(pc_thick_map):
     return coords_array
 
 
+def upsample_pc_coords_array(coords_array):
+    """Takes in patellar cartilage coords and thickness array (nx4), creates a surface using delaunay_2d, subdivides
+     this surface by a factor of 2, and returns the interpolated coords and thickness point clouds."""
+    point_cloud = pv.PolyData(np.transpose([coords_array[:, 0], coords_array[:, 1], coords_array[:, 2]]))
+    point_cloud['Cart. Thickness (mm)'] = coords_array[:, 3]
+
+    surf = point_cloud.delaunay_2d()
+    surf['Cart. Thickness (mm)'] = coords_array[:, 3]
+
+    # Upsample cartilage surface
+    surface_upsampled = surf.subdivide(nsub=2)
+    xyz_coords = surface_upsampled.points
+    thickness = surface_upsampled.point_data["Cart. Thickness (mm)"]
+    coords_array_upsampled = np.concatenate((xyz_coords, thickness[:, np.newaxis]), axis=1)
+    return coords_array_upsampled
+
+
 def visualize_thickness_map(pc_thick_map):
     coords_array = organize_coordinate_array(pc_thick_map)
     point_cloud = pv.PolyData(np.transpose([coords_array[:, 0], coords_array[:, 1], coords_array[:, 2]]))
@@ -189,8 +214,11 @@ def visualize_thickness_map(pc_thick_map):
     surf = point_cloud.delaunay_2d()
     surf['Cart. Thickness (mm)'] = coords_array[:, 3]
 
+    # Upsample cartilage surface
+    surface_upsampled = surf.subdivide(nsub=2)
+
     # Plot 3d triangle-ized surface
-    surf.plot(show_edges=False)
+    surface_upsampled.plot(show_edges=False)
     return
     # Plot point cloud
     # plotter = pv.Plotter()
@@ -225,29 +253,94 @@ def interpolate_patella(p_pos):
     return p_pos
 
 
+def store_point_clouds(point_clouds, p_coords_array, pc_coords_array, p_right_coords_array, subj_name):
+    """Stores point clouds in a dictionary to be dumped"""
+    point_clouds[subj_name] = {}
+    point_clouds[subj_name]["p_coords_array"] = p_coords_array
+    point_clouds[subj_name]["pc_coords_array"] = pc_coords_array
+    point_clouds[subj_name]["p_right_coords_array"] = p_right_coords_array
+    return point_clouds
+
+
+def remove_nocart_slices(p_vol, pc_vol):
+    """Removes slices in patella volume with no cartilage associated"""
+    for slice_num in range(p_vol.shape[2]):
+        p_slice = p_vol[:, :, slice_num]
+        pc_slice = pc_vol[:, :, slice_num]
+
+        if np.max(p_slice) > 0 and np.max(pc_slice) == 0:  # if there is patella here but no cartilage
+            p_vol[:, :, slice_num] = 0  # replace all pixels in this slice with zeros
+    return p_vol
+
+
+def extract_right_patellar_volume(p_vol, pc_vol):
+    """Extracts the patellar pixels at the patellar cartilage interface"""
+    p_right_vol = np.zeros_like(p_vol)
+
+    for slice_num in range(p_vol.shape[2]):
+        p_slice = p_vol[:, :, slice_num]
+        pc_slice = pc_vol[:, :, slice_num]
+
+        if np.max(p_slice) > 0 and np.max(pc_slice) > 0:  # if there are patella amd patellar cartilage slices
+            pc_true_inds = np.argwhere(pc_slice)
+
+            # Iterate through every true cartilage pixel
+            for row, col in pc_true_inds:
+
+                # Create distance map of all patella points from row, col
+                row_ind, col_ind = np.indices(p_slice.shape)  # indices of patella
+                distances = np.sqrt((row_ind - row) ** 2 + (col_ind - col) ** 2)
+                dist_map = np.zeros_like(pc_slice)
+                dist_map[p_slice > 0] = distances[p_slice > 0]
+
+                # Find the row and column location of the minimum non_zero distance
+                masked_distances = np.ma.masked_equal(dist_map, 0)
+                min_dist = masked_distances.min()
+                row_P, col_P = np.where(dist_map == min_dist)
+
+                # Assign true to the row_P and col_P location
+                p_right_vol[row_P, col_P, slice_num] = 1
+
+            # plt.imshow(p_right_vol[:, :, slice_num])
+            # plt.show()
+            # print("Slice")
+
+    return p_right_vol
+
+
 if __name__ == '__main__':
 
     # Specify model name and subject name(s)
     # subj_names = ["AS_018", "AS_019", "AS_020", "AS_021", "AS_022", "AS_023"]
     # model_name = "unet_2024-04-17_08-06-28"
-
     subj_names = ["AS_006", "AS_007", "AS_008", "AS_009", "AS_010", "AS_011"]
     model_name = "unet_2024-05-15_07-23-17_cHT5"
 
     thickness_values = list()
 
-    for subj_name in subj_names:
+    # Initialize dictionary
+    point_clouds = {}
 
+    # Thickness Loop
+    for subj_name in subj_names:
+        print(f"Subject {subj_name}")
         # Load in patella and patellar cartilage volumes
         p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
 
         # Post-processing: Fill holes, remove stray pixels, in both volumes?
+        p_vol = remove_nocart_slices(p_vol, pc_vol)
 
-        # Edit mask to get the surface pixels (no middle pixels) for the patella
+        # Get right patellar volume (at the cartilage interface)
+        p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
+
+        # Edit mask to get the surface pixels (no middle pixels) for the patella and get the point cloud
         p_surf_mask = return_p_surface(p_vol)
+        p_coords_array = get_patella_point_cloud(p_surf_mask)
 
-        # Edit mask to get the right most pixels for the patellar cartilage
+        # Edit mask to get the right most pixels for the patellar cartilage and patella surf
         pc_surf_mask = return_pc_surface(pc_vol)
+        p_right_surf_mask = return_pc_surface(p_right_vol)
+        p_right_coords_array = get_patella_point_cloud(p_right_surf_mask)
 
         # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
         pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
@@ -255,9 +348,19 @@ if __name__ == '__main__':
         # Calculate coord array and store thickness values for this scan
         pc_coords_array = organize_coordinate_array(pc_thick_map)
 
-        thickness_values.append(pc_coords_array[:, 3])
+        # Upsample the cartilage point cloud
+        pc_coords_array = upsample_pc_coords_array(pc_coords_array)
+
+        # Store point clouds in a dictionary
+        point_clouds = store_point_clouds(point_clouds, p_coords_array, pc_coords_array, p_right_coords_array, subj_name)
+
+        # Store thickness values for distribution analysis
+        # thickness_values.append(pc_coords_array[:, 3])
 
         # Visualize the map
-        visualize_thickness_map(pc_thick_map)
+        # visualize_thickness_map(pc_thick_map)
 
-    plot_thickness_distributions(thickness_values, model_name)
+    # plot_thickness_distributions(thickness_values, model_name)
+
+    with open("point_clouds.pkl", 'wb') as f:
+        pickle.dump(point_clouds, f)
