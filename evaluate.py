@@ -92,14 +92,17 @@ def prep_results_filepath(results_filename):
 
 
 def process_predicted_label(pred_label):
+    # Predicted Masks
     thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
     pat = np.squeeze(binary_data[:, :, :, 0])
     pat_cart = np.squeeze(binary_data[:, :, :, 1])
 
-    pat_prob = np.squeeze(pred_label[:, :, :, 0])
-    pat_cart_prob = np.squeeze(pred_label[:, :, :, 1])
+    # Probability masks
+    prob_data = pred_label.astype(np.uint16)
+    pat_prob = np.squeeze(prob_data[:, :, :, 0])
+    pat_cart_prob = np.squeeze(prob_data[:, :, :, 1])
 
     return pat, pat_cart, pat_prob, pat_cart_prob
 
