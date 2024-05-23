@@ -133,4 +133,5 @@ if __name__ == "__main__":
 
         print(f"Metrics: {metrics}")
 
+        prediction = prediction + ".h5" # To be removed in the following function
         save_metrics(prediction, metrics)
