@@ -14,10 +14,10 @@ parser.add_argument("-r", "--rot", help="Rotation Limit (degrees)", type=int)
 parser.add_argument("-t", "--trans", help="Translation Limit (pixels)", type=int)
 args = parser.parse_args()
 
-print(f"Input Dataset: {args.dataset})
-print(f"Number of Augmentations: {args.naug})
-print(f"Rotation Bounds: {args.rot})
-print(f"Translation Bounds: {args.trans})
+print(f"Input Dataset: {args.dataset}")
+print(f"Number of Augmentations: {args.naug}")
+print(f"Rotation Bounds: {args.rot}")
+print(f"Translation Bounds: {args.trans}")
 
 
 def rotate_images(mri, mask, deg):
