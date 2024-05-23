@@ -2,10 +2,11 @@
 #SBATCH --output=./outputs/%A_%a_slurm.out
 #SBATCH --error=./errors/%A_%a_slurm.err
 #SBATCH --nodes=1
-#SBATCH --mem=16G
-#SBATCH -p common
+#SBATCH --mem=64G
+#SBATCH -p scavenger-gpu
+#SBATCH --gres=gpu:1
+#SBATCH --exclusive
 #SBATCH -a 0-15
 
-echo "ARRAY ID: $SLURM_ARRAY_TASK_ID"
-
-python rotate_and_translate.py -d cHT -n 5 -a $SLURM_ARRAY_TASK_ID
+python multiclass_segment.py -a $SLURM_ARRAY_TASK_ID
+python evaluate.py
