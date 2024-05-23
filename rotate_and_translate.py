@@ -7,9 +7,11 @@ import scipy
 import matplotlib.pyplot as plt
 import shutil
 
-parser = argparse.ArgumentParser(description="Training Options")
+parser = argparse.ArgumentParser(description="Augmentation Options")
 parser.add_argument("-d", "--dataset", help="Recent dataset is cHT")
 parser.add_argument("-n", "--naug", help="Number of Augmentations to Make", type=int)
+parser.add_argument("-r", "--rot", help="Rotation Limit (degrees)")
+parser.add_argument("-t", "--trans", help="Translation Limit (pixels)")
 args = parser.parse_args()
 print(args.dataset)
 print(args.naug)
@@ -88,7 +90,7 @@ if __name__ == "__main__":
     train_path = os.path.join(data_path, "train")
 
     # Save data path: make it if it doesn't exist
-    save_data_path = get_data_path(f"{args.dataset}{args.naug}")
+    save_data_path = get_data_path(f"{args.dataset}{args.naug}_{args.rot}_{args.trans}")
     set_up_dataset_directory(save_data_path)
 
     move_test_and_val(data_path, save_data_path)
