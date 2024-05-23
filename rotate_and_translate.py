@@ -100,18 +100,18 @@ def rot_and_trans_bounds(a):
 
     combo = rot_trans_dict[a]
     rot = combo["rot"]
-    trans = combo["trans"]
-    return rot, trans
+    tran = combo["trans"]
+    return rot, tran
 
 
 if __name__ == "__main__":
     print(f"args.arr: {args.arr}")
 
     # Get rotation and translation bounds from slurm job task array
-    rot, trans = rot_and_trans_bounds(args.arr)
+    rot, t = rot_and_trans_bounds(args.arr)
 
     print(f"Rotation Bounds: +/- {rot} degrees")
-    print(f"Translation Bounds: +/- {trans} px")
+    print(f"Translation Bounds: +/- {t} px")
 
     # Set random seed
     np.random.seed(42)
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     train_path = os.path.join(data_path, "train")
 
     # Save data path: make it if it doesn't exist
-    save_data_path = get_data_path(f"{args.dataset}{args.naug}_{int(rot)}_{int(trans)}")
+    save_data_path = get_data_path(f"{args.dataset}{args.naug}_{int(rot)}_{int(t)}")
 
     print(f"Saving new images to {save_data_path}")
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
         # Generate random rotations/translations
         degs = np.random.uniform(-rot, rot, size=args.naug)
-        trans = np.random.randint(int(-1 * trans), int(trans+1), size=(args.naug, 2))
+        trans = np.random.randint(int(-1 * t), int(t+1), size=(args.naug, 2))
 
         for idx, deg in enumerate(degs):
             tran = trans[idx, :]
