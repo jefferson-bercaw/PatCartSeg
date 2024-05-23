@@ -6,4 +6,6 @@
 #SBATCH -p common
 #SBATCH -a 0-15
 
-python rotate_and_translate.py -d cHT -n 5 -a $SLURM_JOB_TASK_ID
+echo "ARRAY ID: $SLURM_ARRAY_TASK_ID"
+
+python rotate_and_translate.py -d cHT -n 5 -a $SLURM_ARRAY_TASK_ID
