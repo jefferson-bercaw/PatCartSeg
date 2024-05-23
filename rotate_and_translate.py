@@ -102,6 +102,7 @@ def rot_and_trans_bounds(a):
 
 
 if __name__ == "__main__":
+    print(f"args.arr: {args.arr.type}: {args.arr}")
 
     # Get rotation and translation bounds from slurm job task array
     rot, trans = rot_and_trans_bounds(args.arr)
