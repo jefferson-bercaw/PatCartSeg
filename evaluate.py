@@ -28,11 +28,11 @@ def get_history_filename(date_time):
 
 
 def get_model_filename(date_time):
-    files = os.listdir("models")
-    for filename in files:
-        if date_time in filename:
-            model_filename = os.path.abspath(os.path.join('models', filename))
-            return model_filename
+    # files = os.listdir("models")
+    # for filename in files:
+    #     if date_time is filename:
+    model_filename = os.path.abspath(os.path.join('models', date_time))
+    return model_filename
 
 
 def load_history(history_filename):
@@ -92,13 +92,18 @@ def prep_results_filepath(results_filename):
 
 
 def process_predicted_label(pred_label):
+    # Predicted Masks
     thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
     pat = np.squeeze(binary_data[:, :, :, 0])
     pat_cart = np.squeeze(binary_data[:, :, :, 1])
 
-    return pat, pat_cart
+    # Probability masks
+    pat_prob = np.squeeze(pred_label[:, :, :, 0])
+    pat_cart_prob = np.squeeze(pred_label[:, :, :, 1])
+
+    return pat, pat_cart, pat_prob, pat_cart_prob
 
 
 def process_mri(mri):
@@ -106,28 +111,44 @@ def process_mri(mri):
     return mri
 
 
-def save_result(filename, date_time, pat, pat_cart):
+def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     filename_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
     pat_filepath = os.path.join(results_filename, "pat")
     pat_cart_filepath = os.path.join(results_filename, "pat_cart")
 
+    pat_prob_filepath = os.path.join(results_filename, "pat_prob")
+    pat_cart_prob_filepath = os.path.join(results_filename, "pat_cart_prob")
+
     # Make directories if they don't exist
     if not os.path.exists(pat_filepath):
         os.mkdir(pat_filepath)
     if not os.path.exists(pat_cart_filepath):
         os.mkdir(pat_cart_filepath)
+    if not os.path.exists(pat_prob_filepath):
+        os.mkdir(pat_prob_filepath)
+    if not os.path.exists(pat_cart_prob_filepath):
+        os.mkdir(pat_cart_prob_filepath)
+
+    filename_npy = filename_str.split('.')[0] + ".npy"
 
     pat_filepath = os.path.join(pat_filepath, filename_str)
     pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
+    pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
+    pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, filename_npy)
+    print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
+    # Save the masks as BMP files
     pat_img = Image.fromarray(pat)
     pat_cart_img = Image.fromarray(pat_cart)
-
-    # Save the image as a BMP file
     pat_img.save(pat_filepath)
     pat_cart_img.save(pat_cart_filepath)
+
+    # Save the probability masks as NPY files
+    np.save(pat_prob_filepath, pat_prob)
+    np.save(pat_cart_prob_filepath, pat_cart_prob)
+
     return
 
 
@@ -371,6 +392,7 @@ if __name__ == "__main__":
         print(f"Most recent models being analyzed: {date_times}")
         # date_time = get_date_and_hour()
         # plot_mri_with_both_masks(subj_name, model_name)
+
         for date_time in date_times:
 
             print(f"Evaluating model {date_time}")
@@ -379,6 +401,7 @@ if __name__ == "__main__":
             # Get results filename
             results_filename = get_results_filename(date_time)
             prep_results_filepath(results_filename)
+            print(f"Saving results to {results_filename}")
 
             # get the history and model
             history, model = get_hist_and_model(date_time)
@@ -436,7 +459,7 @@ if __name__ == "__main__":
                 pred_label = model.predict(mri)
 
                 mri = process_mri(mri)
-                pat, pat_cart = process_predicted_label(pred_label)
+                pat, pat_cart, pat_prob, pat_cart_prob = process_predicted_label(pred_label)
                 pat_true, pat_cart_true = process_true_label(label)
 
                 pat_positives = count_positives(pat, pat_true, pat_positives)
@@ -447,7 +470,7 @@ if __name__ == "__main__":
                 plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
                 # Output predictions
-                save_result(filename, date_time, pat, pat_cart)
+                save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob)
 
                 print(f"Img {i} of {n_test_images}")
 
