@@ -107,6 +107,8 @@ if __name__ == "__main__":
             # Predictions
             pat = Image.open(os.path.join(os.getcwd(), "results", prediction, "pat", filename))
             pat_cart = Image.open(os.path.join(os.getcwd(), "results", prediction, "pat_cart", filename))
+            pat = np.array(pat)
+            pat_cart = np.array(pat_cart)
 
             # Truth
             pat_true, pat_cart_true = process_true_label(label)
