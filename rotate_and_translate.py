@@ -10,7 +10,7 @@ import shutil
 parser = argparse.ArgumentParser(description="Augmentation Options")
 parser.add_argument("-d", "--dataset", help="Recent dataset is cHT")
 parser.add_argument("-n", "--naug", help="Number of Augmentations to Make", type=int)
-parser.add_argument("-a", "--array", help="Slurm Task Array Number Controlling Rotation and Translation", type=int)
+parser.add_argument("-a", "--arr", help="Slurm Task Array Number Controlling Rotation and Translation", type=int)
 args = parser.parse_args()
 
 print(f"Input Dataset: {args.dataset}")
@@ -104,7 +104,7 @@ def rot_and_trans_bounds(a):
 if __name__ == "__main__":
 
     # Get rotation and translation bounds from slurm job task array
-    rot, trans = rot_and_trans_bounds(args.array)
+    rot, trans = rot_and_trans_bounds(args.arr)
 
     print(f"Rotation Bounds: +/- {rot} degrees")
     print(f"Translation Bounds: +/- {trans} px")
