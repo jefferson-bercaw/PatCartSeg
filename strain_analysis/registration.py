@@ -5,27 +5,7 @@ import open3d as o3d
 import copy
 
 
-if __name__ == "__main__":
-    filename = "point_clouds.pkl"
-    with open(filename, "rb") as f:
-        point_clouds = pickle.load(f)
-
-    subj_names = list(point_clouds.keys())
-
-    # Fixed and moving patella
-    p_points_fixed = point_clouds[subj_names[0]]["p_coords_array"]
-    p_fixed = o3d.geometry.PointCloud()
-    p_fixed.points = o3d.utility.Vector3dVector(p_points_fixed)
-
-    p_points_moving = point_clouds[subj_names[5]]["p_coords_array"]
-    p_moving = o3d.geometry.PointCloud()
-    p_moving.points = o3d.utility.Vector3dVector(p_points_moving)
-
-    # Visualize initial positioning
-    # p_fixed.paint_uniform_color([1, 0.706, 0])
-    # p_moving.paint_uniform_color([0, 0.651, 0.929])
-    # o3d.visualization.draw_geometries([p_fixed, p_moving])
-
+def move_patella(p_fixed, p_moving):
     # RANSAC
     # Downsample
     voxel_size_d = 1.5  # Downsample so every voxel is _mm
@@ -44,18 +24,25 @@ if __name__ == "__main__":
 
     # Compute fpfh features for each point
     search_radius_feature = voxel_size_d * 5
-    p_fixed_fpfh = o3d.pipelines.registration.compute_fpfh_feature(p_fixed_d, o3d.geometry.KDTreeSearchParamHybrid(radius=search_radius_feature, max_nn=100))
-    p_moving_fpfh = o3d.pipelines.registration.compute_fpfh_feature(p_moving_d, o3d.geometry.KDTreeSearchParamHybrid(radius=search_radius_feature, max_nn=100))
+    p_fixed_fpfh = o3d.pipelines.registration.compute_fpfh_feature(p_fixed_d, o3d.geometry.KDTreeSearchParamHybrid(
+        radius=search_radius_feature, max_nn=100))
+    p_moving_fpfh = o3d.pipelines.registration.compute_fpfh_feature(p_moving_d, o3d.geometry.KDTreeSearchParamHybrid(
+        radius=search_radius_feature, max_nn=100))
 
     # RANSAC Execution
     distance_threshold = voxel_size_d * 1.5
     result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(p_moving_d, p_fixed_d,
-                                                                                      p_moving_fpfh, p_fixed_fpfh, True, distance_threshold,
-                                                                                      o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+                                                                                      p_moving_fpfh, p_fixed_fpfh, True,
+                                                                                      distance_threshold,
+                                                                                      o3d.pipelines.registration.TransformationEstimationPointToPoint(
+                                                                                          False),
                                                                                       3,
-                                                                                      [o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)],
+                                                                                      [
+                                                                                          o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                                                                                              distance_threshold)],
 
-                                                                                      o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.9999))
+                                                                                      o3d.pipelines.registration.RANSACConvergenceCriteria(
+                                                                                          100000, 0.9999))
     # Moving the patella
     p_moved = copy.deepcopy(p_moving)
     p_moved.transform(result.transformation)
@@ -75,13 +62,6 @@ if __name__ == "__main__":
     threshold = voxel_size * 3
     initial_moving_to_fixed = result.transformation
 
-    # robust_kernel = o3d.t.pipelines.registration.robust_kernel.RobustKernel(method, scale, shape)
-    # method = robust_kernel.RobustKernelMethod.L2Loss
-
-    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=0.00001,
-                                                                 relative_rmse=0.000001,
-                                                                 max_iteration=50)
-
     icp = o3d.pipelines.registration.registration_icp(p_moving, p_fixed, threshold, initial_moving_to_fixed,
                                                       o3d.pipelines.registration.TransformationEstimationPointToPoint(),
                                                       o3d.pipelines.registration.ICPConvergenceCriteria(
@@ -96,3 +76,24 @@ if __name__ == "__main__":
     p_moved.paint_uniform_color([1, 0.706, 0])
     p_fixed.paint_uniform_color([0, 0.651, 0.929])
     o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="ICP Result")
+
+    return p_moved
+
+
+if __name__ == "__main__":
+    filename = "point_clouds.pkl"
+    with open(filename, "rb") as f:
+        point_clouds = pickle.load(f)
+
+    subj_names = list(point_clouds.keys())
+
+    # Fixed and moving patella
+    p_points_fixed = point_clouds[subj_names[0]]["p_coords_array"]
+    p_fixed = o3d.geometry.PointCloud()
+    p_fixed.points = o3d.utility.Vector3dVector(p_points_fixed)
+
+    p_points_moving = point_clouds[subj_names[5]]["p_coords_array"]
+    p_moving = o3d.geometry.PointCloud()
+    p_moving.points = o3d.utility.Vector3dVector(p_points_moving)
+
+    p_moved = move_patella(p_fixed, p_moving)
