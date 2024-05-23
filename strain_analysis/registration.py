@@ -46,11 +46,11 @@ def move_patella(p_fixed, p_moving):
     # Moving the patella
     p_moved = copy.deepcopy(p_moving)
     p_moved.transform(result.transformation)
-    #
-    # # Visualizing RANSAC transform
-    p_moved.paint_uniform_color([1, 0.706, 0])
-    p_fixed.paint_uniform_color([0, 0.651, 0.929])
-    o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="RANSAC Result")
+
+    # Visualizing RANSAC transform
+    # p_moved.paint_uniform_color([1, 0.706, 0])
+    # p_fixed.paint_uniform_color([0, 0.651, 0.929])
+    # o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="RANSAC Result")
 
     # ICP Registration
     # Figure out rough estimate of voxel size
@@ -73,11 +73,11 @@ def move_patella(p_fixed, p_moving):
     p_moved = p_moving.transform(icp.transformation)
 
     # Visualizing ICP transform
-    p_moved.paint_uniform_color([1, 0.706, 0])
-    p_fixed.paint_uniform_color([0, 0.651, 0.929])
-    o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="ICP Result")
+    # p_moved.paint_uniform_color([1, 0.706, 0])
+    # p_fixed.paint_uniform_color([0, 0.651, 0.929])
+    # o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="ICP Result")
 
-    return p_moved
+    return p_moved, icp.transformation
 
 
 if __name__ == "__main__":
