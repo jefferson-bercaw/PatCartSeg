@@ -322,9 +322,10 @@ def get_comparison_plot_filename(date_time):
 
 
 def parse_dataset_name(model_name):
-    """Returns dataset_name from the model name"""
+    """Returns dataset_name from the model name of rotation and translations"""
     no_ext = model_name[:-3]  # Removes .h5
-    dataset_name = no_ext.split("_")[-1]  # Last element before extension (dataset_name)
+    underscore_strs = no_ext.split("_")
+    dataset_name = underscore_strs[-3] + "_" + underscore_strs[-2] + "_" + underscore_strs[-1]
     return dataset_name
 
 
