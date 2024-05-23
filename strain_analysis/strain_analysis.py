@@ -7,6 +7,7 @@ import scipy
 import pyvista as pv
 from RANSACReg import preprocess_point_cloud, execute_global_registration, refine_registration
 import matplotlib.pyplot as plt
+from registration import move_patella
 
 
 def load_point_cloud():
@@ -65,9 +66,8 @@ def get_transformations(fixed_p_ptcld, moving_p_ptcld):
     return result_ransac, result_icp
 
 
-def store_transformations(transformations, subj_name, result_ransac, result_icp):
+def store_transformations(transformations, subj_name, result_icp):
     transformations[subj_name] = {}
-    transformations[subj_name]["ransac"] = result_ransac
     transformations[subj_name]["icp"] = result_icp
     return transformations
 
@@ -130,20 +130,14 @@ if __name__ == "__main__":
         moving_p_ptcld, moving_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[idx])
         moving_pc_ptcld, moving_thickness = get_cartilage_ptcld(point_clouds, subj_names[idx])
 
-        # Get transformation matrices
-        result_ransac, result_icp = get_transformations(fixed_p_right_ptcld, moving_p_right_ptcld)
+        # Perform Registration and get transformation
+        moving_p_ptcld, icp_transform = move_patella(fixed_p_ptcld, moving_p_ptcld)
 
-        # Transform moving structures
-        moving_p_ptcld.transform(result_ransac.transformation)
-        moving_p_right_ptcld.transform(result_ransac.transformation)
-        moving_pc_ptcld.transform(result_ransac.transformation)
+        # Transform other moving structures
+        moving_p_right_ptcld.transform(icp_transform)
+        moving_pc_ptcld.transform(icp_transform)
 
         # View registered point clouds
-        # Registering-surface: Inner patellar points
-        moving_p_right_ptcld.paint_uniform_color([1, 0.706, 0])
-        fixed_p_right_ptcld.paint_uniform_color([0, 0.651, 0.929])
-        o3d.visualization.draw_geometries([moving_p_right_ptcld, fixed_p_right_ptcld])
-
         # Resulting Patella registration
         moving_p_ptcld.paint_uniform_color([1, 0.706, 0])
         fixed_p_ptcld.paint_uniform_color([0, 0.651, 0.929])
@@ -155,7 +149,7 @@ if __name__ == "__main__":
         o3d.visualization.draw_geometries([moving_pc_ptcld, fixed_pc_ptcld])
 
         # Store transformations
-        transformations = store_transformations(transformations, subj_names[idx], result_ransac, result_icp)
+        transformations = store_transformations(transformations, subj_names[idx], icp_transform)
 
         # Create strain maps
         strain_map = produce_strain_map(moving_pc_ptcld, moving_thickness, fixed_pc_ptcld, fixed_thickness)
