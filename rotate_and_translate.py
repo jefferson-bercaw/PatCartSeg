@@ -118,7 +118,7 @@ if __name__ == "__main__":
     train_path = os.path.join(data_path, "train")
 
     # Save data path: make it if it doesn't exist
-    save_data_path = get_data_path(f"{args.dataset}{args.naug}_{args.rot}_{args.trans}")
+    save_data_path = get_data_path(f"{args.dataset}{args.naug}_{int(rot)}_{int(trans)}")
 
     print(f"Saving new images to {save_data_path}")
 
