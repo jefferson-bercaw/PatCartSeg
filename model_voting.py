@@ -58,34 +58,34 @@ def save_result(file, pat_hard, pat_cart_hard, pat_soft, pat_cart_soft):
 
 
 if __name__ == "__main__":
-    date_times = ["unet_2024-05-22_00-17-51_cHT5", "unet_2024-05-22_03-06-08_cHT5", "unet_2024-05-21_13-59-19_cHT5",
-                  "unet_2024-05-21_20-50-23_cHT5", "unet_2024-05-22_07-43-29_cHT5", "unet_2024-05-21_15-36-23_cHT5",
-                  "unet_2024-05-22_06-41-03_cHT5", "unet_2024-05-22_04-18-45_cHT5", "unet_2024-05-21_23-18-29_cHT5"]
-
-    files = os.listdir(os.path.join(os.getcwd(), "results", date_times[0], "pat_prob"))
-    prep_save_path()
-
-    # Save data predictions
-    for f_num, file in enumerate(files):
-        # Initialize probability maps
-        pat = np.zeros((256, 256, 9))
-        pat_cart = np.zeros((256, 256, 9))
-        for idx, date_time in enumerate(date_times):
-            # Filename
-            pat_filepath = os.path.join(os.getcwd(), "results", date_time, "pat_prob", file)
-            pat_cart_filepath = os.path.join(os.getcwd(), "results", date_time, "pat_cart_prob", file)
-
-            # Numpy Arrays
-            pat[:, :, idx] = np.load(pat_filepath)
-            pat_cart[:, :, idx] = np.load(pat_cart_filepath)
-
-        # Get predicted masks based on hard and soft voting
-        pat_hard, pat_cart_hard, pat_soft, pat_cart_soft = voting_masks(pat, pat_cart)
-
-        # Save result
-        save_result(file, pat_hard, pat_cart_hard, pat_soft, pat_cart_soft)
-
-        print(f"File {f_num} of {len(files)}")
+    # date_times = ["unet_2024-05-22_00-17-51_cHT5", "unet_2024-05-22_03-06-08_cHT5", "unet_2024-05-21_13-59-19_cHT5",
+    #               "unet_2024-05-21_20-50-23_cHT5", "unet_2024-05-22_07-43-29_cHT5", "unet_2024-05-21_15-36-23_cHT5",
+    #               "unet_2024-05-22_06-41-03_cHT5", "unet_2024-05-22_04-18-45_cHT5", "unet_2024-05-21_23-18-29_cHT5"]
+    #
+    # files = os.listdir(os.path.join(os.getcwd(), "results", date_times[0], "pat_prob"))
+    # prep_save_path()
+    #
+    # # Save data predictions
+    # for f_num, file in enumerate(files):
+    #     # Initialize probability maps
+    #     pat = np.zeros((256, 256, 9))
+    #     pat_cart = np.zeros((256, 256, 9))
+    #     for idx, date_time in enumerate(date_times):
+    #         # Filename
+    #         pat_filepath = os.path.join(os.getcwd(), "results", date_time, "pat_prob", file)
+    #         pat_cart_filepath = os.path.join(os.getcwd(), "results", date_time, "pat_cart_prob", file)
+    #
+    #         # Numpy Arrays
+    #         pat[:, :, idx] = np.load(pat_filepath)
+    #         pat_cart[:, :, idx] = np.load(pat_cart_filepath)
+    #
+    #     # Get predicted masks based on hard and soft voting
+    #     pat_hard, pat_cart_hard, pat_soft, pat_cart_soft = voting_masks(pat, pat_cart)
+    #
+    #     # Save result
+    #     save_result(file, pat_hard, pat_cart_hard, pat_soft, pat_cart_soft)
+    #
+    #     print(f"File {f_num} of {len(files)}")
 
     # Evaluate predictions
     predictions = ["model_voting_soft", "model_voting_hard"]
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         pat_cart_positives = [0, 0, 0]
 
         iterable = iter(test_dataset)
-        n_test_images = len(iterable)
+        n_test_images = 1200
 
         for i in range(n_test_images):
             filename, mri, label = next(iterable)
