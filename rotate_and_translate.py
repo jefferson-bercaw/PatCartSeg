@@ -109,6 +109,9 @@ if __name__ == "__main__":
     print(f"Rotation Bounds: +/- {rot} degrees")
     print(f"Translation Bounds: +/- {trans} px")
 
+    print(f"Lower Bounds Translation: {-1 * trans}")
+    print(f"Upper Bounds Translation: {trans + 1}")
+
     # Set random seed
     np.random.seed(42)
 
@@ -146,8 +149,10 @@ if __name__ == "__main__":
         save_images(mri, mask, save_data_path, file)
 
         # Generate random rotations/translations
+
+
         degs = np.random.uniform(-rot, rot, size=args.naug)
-        trans = np.random.randint(-trans, trans+1, size=(args.naug, 2))
+        trans = np.random.randint(-1 * trans, trans+1, size=(args.naug, 2))
 
         for idx, deg in enumerate(degs):
             tran = trans[idx, :]
