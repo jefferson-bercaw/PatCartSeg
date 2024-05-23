@@ -314,7 +314,7 @@ if __name__ == '__main__':
     # subj_names = ["AS_018", "AS_019", "AS_020", "AS_021", "AS_022", "AS_023"]
     # model_name = "unet_2024-04-17_08-06-28"
     subj_names = ["AS_006", "AS_007", "AS_008", "AS_009", "AS_010", "AS_011"]
-    model_name = "unet_2024-05-15_07-23-17_cHT5"
+    model_name = "unet_2024-05-22_00-17-51_cHT5"
 
     thickness_values = list()
 
