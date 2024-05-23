@@ -102,6 +102,7 @@ if __name__ == "__main__":
 
         for i in range(n_test_images):
             filename, mri, label = next(iterable)
+            filename = filename.numpy()[0].decode()
 
             # Predictions
             pat = Image.open(os.path.join(os.getcwd(), "results", prediction, "pat", filename))
