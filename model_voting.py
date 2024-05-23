@@ -20,12 +20,8 @@ def voting_masks(pat, pat_cart):
     pat_hard = np.where(pat >= 0.5, 1, 0)
     pat_cart_hard = np.where(pat_cart >= 0.5, 1, 0)
 
-    pat_hard = scipy.stats.mode(pat_hard, axis=2)
-    pat_cart_hard = scipy.stats.mode(pat_cart_hard, axis=2)
-
-    # Squeeze out last dimension
-    pat_hard_mask = np.squeeze(pat_hard)
-    pat_cart_hard_mask = np.squeeze(pat_cart_hard)
+    pat_hard_mask = scipy.stats.mode(pat_hard, axis=2).mode
+    pat_cart_hard_mask = scipy.stats.mode(pat_cart_hard, axis=2).mode
 
     # Convert all to uint8
     pat_soft_mask = pat_soft_mask.astype(np.uint8)
