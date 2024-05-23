@@ -97,12 +97,15 @@ def rot_and_trans_bounds(a):
                       {"rot": 40.0, "trans": 10.0},
                       {"rot": 40.0, "trans": 20.0},
                       {"rot": 40.0, "trans": 30.0}]
+
     combo = rot_trans_dict[a]
-    return combo["rot"], combo["trans"]
+    rot = combo["rot"]
+    trans = combo["trans"]
+    return rot, trans
 
 
 if __name__ == "__main__":
-    print(f"args.arr: {args.arr.type}: {args.arr}")
+    print(f"args.arr: {args.arr}")
 
     # Get rotation and translation bounds from slurm job task array
     rot, trans = rot_and_trans_bounds(args.arr)
