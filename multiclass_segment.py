@@ -14,7 +14,7 @@ from rotate_and_translate import rot_and_trans_bounds
 
 
 parser = argparse.ArgumentParser(description="Training Options")
-parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're testing")
+parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're testing", type=int)
 args = parser.parse_args()
 
 
