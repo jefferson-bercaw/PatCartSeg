@@ -17,6 +17,7 @@ parser.add_argument("-d", "--dataset", help="Enter the suffix of the dataset we'
 args = parser.parse_args()
 print(f"Dataset argument: {args.dataset}")
 
+
 class RecordHistory(tf.keras.callbacks.Callback):
     def __init__(self, validation_dataset):
         self.validation_dataset = validation_dataset
@@ -40,7 +41,7 @@ if __name__ == "__main__":
         batch_size = 20
         dropout_rate = 0.3
         epochs = 500
-        patience = 20
+        patience = 40
         min_delta = 0.0001
 
         # Build and compile model
