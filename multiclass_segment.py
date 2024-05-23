@@ -41,7 +41,7 @@ if __name__ == "__main__":
         batch_size = 20
         dropout_rate = 0.3
         epochs = 500
-        patience = 40
+        patience = 60
         min_delta = 0.0001
 
         # Build and compile model
