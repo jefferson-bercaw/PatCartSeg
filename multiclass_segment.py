@@ -60,8 +60,8 @@ if __name__ == "__main__":
                                     tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
 
         # Get datasets
-        train_dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset=args.dataset)
-        val_dataset = get_dataset(batch_size=batch_size, dataset_type='val', dataset=args.dataset)
+        train_dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset=dataset)
+        val_dataset = get_dataset(batch_size=batch_size, dataset_type='val', dataset=dataset)
 
         # Early stopping callback
         early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_name = f"unet_{current_time}_{args.dataset}"
+        model_name = f"unet_{current_time}_{dataset}"
         unet_model.save(os.path.join("models", f"{model_name}.h5"))
 
         # Save best model
