@@ -10,11 +10,14 @@ import shutil
 parser = argparse.ArgumentParser(description="Augmentation Options")
 parser.add_argument("-d", "--dataset", help="Recent dataset is cHT")
 parser.add_argument("-n", "--naug", help="Number of Augmentations to Make", type=int)
-parser.add_argument("-r", "--rot", help="Rotation Limit (degrees)")
-parser.add_argument("-t", "--trans", help="Translation Limit (pixels)")
+parser.add_argument("-r", "--rot", help="Rotation Limit (degrees)", type=int)
+parser.add_argument("-t", "--trans", help="Translation Limit (pixels)", type=int)
 args = parser.parse_args()
-print(args.dataset)
-print(args.naug)
+
+print(f"Input Dataset: {args.dataset})
+print(f"Number of Augmentations: {args.naug})
+print(f"Rotation Bounds: {args.rot})
+print(f"Translation Bounds: {args.trans})
 
 
 def rotate_images(mri, mask, deg):
@@ -115,8 +118,8 @@ if __name__ == "__main__":
         save_images(mri, mask, save_data_path, file)
 
         # Generate random rotations/translations
-        degs = np.random.uniform(-30.0, 30.0, size=args.naug)
-        trans = np.random.randint(-20, 21, size=(args.naug, 2))
+        degs = np.random.uniform(-args.rot, args.rot, size=args.naug)
+        trans = np.random.randint(-args.trans, args.trans, size=(args.naug, 2))
 
         for idx, deg in enumerate(degs):
             tran = trans[idx, :]
