@@ -2,7 +2,8 @@
 #SBATCH --output=./outputs/%A_%a_slurm.out
 #SBATCH --error=./errors/%A_%a_slurm.err
 #SBATCH --nodes=1
-#SBATCH --mem=32G
+#SBATCH --mem=16G
 #SBATCH -p common
+#SBATCH -a 0-15
 
-python model_voting.py
+python rotate_and_translate.py -d cHT -n 5 -a $SLURM_JOB_TASK_ARRAY

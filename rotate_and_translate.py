@@ -10,14 +10,11 @@ import shutil
 parser = argparse.ArgumentParser(description="Augmentation Options")
 parser.add_argument("-d", "--dataset", help="Recent dataset is cHT")
 parser.add_argument("-n", "--naug", help="Number of Augmentations to Make", type=int)
-parser.add_argument("-r", "--rot", help="Rotation Limit (degrees)", type=int)
-parser.add_argument("-t", "--trans", help="Translation Limit (pixels)", type=int)
+parser.add_argument("-a", "--array", help="Slurm Task Array Number Controlling Rotation and Translation", type=int)
 args = parser.parse_args()
 
 print(f"Input Dataset: {args.dataset}")
 print(f"Number of Augmentations: {args.naug}")
-print(f"Rotation Bounds: {args.rot}")
-print(f"Translation Bounds: {args.trans}")
 
 
 def rotate_images(mri, mask, deg):
@@ -82,7 +79,35 @@ def move_test_and_val(data_path, save_data_path):
     return
 
 
+def rot_and_trans_bounds(a):
+    """Returns the bounds for rotation and translation based on slurm job task array"""
+    rot_trans_dict = [{"rot": 10.0, "trans": 5.0},
+                      {"rot": 10.0, "trans": 10.0},
+                      {"rot": 10.0, "trans": 20.0},
+                      {"rot": 10.0, "trans": 30.0},
+                      {"rot": 20.0, "trans": 5.0},
+                      {"rot": 20.0, "trans": 10.0},
+                      {"rot": 20.0, "trans": 20.0},
+                      {"rot": 20.0, "trans": 30.0},
+                      {"rot": 30.0, "trans": 5.0},
+                      {"rot": 30.0, "trans": 10.0},
+                      {"rot": 30.0, "trans": 20.0},
+                      {"rot": 30.0, "trans": 30.0},
+                      {"rot": 40.0, "trans": 5.0},
+                      {"rot": 40.0, "trans": 10.0},
+                      {"rot": 40.0, "trans": 20.0},
+                      {"rot": 40.0, "trans": 30.0}]
+    combo = rot_trans_dict[a]
+    return combo["rot"], combo["trans"]
+
+
 if __name__ == "__main__":
+
+    # Get rotation and translation bounds from slurm job task array
+    rot, trans = rot_and_trans_bounds(args.array)
+
+    print(f"Rotation Bounds: +/- {rot} degrees")
+    print(f"Translation Bounds: +/- {trans} px")
 
     # Set random seed
     np.random.seed(42)
@@ -94,6 +119,9 @@ if __name__ == "__main__":
 
     # Save data path: make it if it doesn't exist
     save_data_path = get_data_path(f"{args.dataset}{args.naug}_{args.rot}_{args.trans}")
+
+    print(f"Saving new images to {save_data_path}")
+
     set_up_dataset_directory(save_data_path)
 
     move_test_and_val(data_path, save_data_path)
@@ -118,8 +146,8 @@ if __name__ == "__main__":
         save_images(mri, mask, save_data_path, file)
 
         # Generate random rotations/translations
-        degs = np.random.uniform(-args.rot, args.rot, size=args.naug)
-        trans = np.random.randint(-args.trans, args.trans, size=(args.naug, 2))
+        degs = np.random.uniform(-rot, rot, size=args.naug)
+        trans = np.random.randint(-trans, trans+1, size=(args.naug, 2))
 
         for idx, deg in enumerate(degs):
             tran = trans[idx, :]
