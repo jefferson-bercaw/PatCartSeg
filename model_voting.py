@@ -66,7 +66,7 @@ if __name__ == "__main__":
     prep_save_path()
 
     # Save data predictions
-    for file in files:
+    for f_num, file in enumerate(files):
         # Initialize probability maps
         pat = np.zeros((256, 256, 9))
         pat_cart = np.zeros((256, 256, 9))
@@ -84,6 +84,8 @@ if __name__ == "__main__":
 
         # Save result
         save_result(file, pat_hard, pat_cart_hard, pat_soft, pat_cart_soft)
+
+        print(f"File {f_num} of {len(files)}")
 
     # Evaluate predictions
     predictions = ["model_voting_soft", "model_voting_hard"]
