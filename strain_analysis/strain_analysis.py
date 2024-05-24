@@ -72,7 +72,82 @@ def store_transformations(transformations, subj_name, result_icp):
     return transformations
 
 
+def average_thickness_values(pc_ptcld, thickness):
+    # Iterate through every point
+    # Calculate indices of nearest points
+    # Average thickness values at that point and reassign this thickness value
+
+    pc_points = np.asarray(pc_ptcld.points)
+    radius_mm = 2.5  # radius of search
+    thickness_new = np.zeros_like(thickness)
+
+    for idx, coord in enumerate(pc_points):
+        distances = np.linalg.norm(coord - pc_points, axis=1)
+        inds = distances < radius_mm
+        thick_to_avg = thickness[inds]
+
+        # plt.hist(thick_to_avg)
+        # plt.show()
+
+        thickness_new[idx] = np.median(thick_to_avg)
+
+    return pc_points, thickness_new
+
+
+def remove_outer_boundaries(pc_ptcld, thickness):
+    # Distance to shave off:
+    offset = 2.0  # mm
+
+    # Estimate normals for the entire point cloud
+    pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+    normals = np.asarray(pc_ptcld.normals)
+
+    # Offset all points inward along the normals
+    points = np.asarray(pc_ptcld.points)
+    inset_points = points - offset * normals
+
+    # Compute the convex hull of the inset points
+    inset_hull = scipy.spatial.ConvexHull(inset_points)
+
+    # Filter the points to remove those outside the inset hull
+    def point_in_hull(point, hull):
+        return all((np.dot(eq[:-1], point) + eq[-1] <= 0) for eq in hull.equations)
+
+    filtered_points = []
+    filtered_thickness = []
+    for i, point in enumerate(points):
+        if point_in_hull(point, inset_hull):
+            filtered_points.append(point)
+            filtered_thickness.append(thickness[i])
+
+    # Create a new point cloud from the filtered points
+    filtered_pc_ptcld = o3d.geometry.PointCloud()
+    filtered_pc_ptcld.points = o3d.utility.Vector3dVector(np.array(filtered_points))
+
+    return filtered_pc_ptcld, np.array(filtered_thickness)
+
+
 def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
+    # Remove outer boundaries
+    pc_ptcld_full = copy.deepcopy(pc_ptcld)
+    fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
+
+    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness)
+    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness)
+
+    # Visualize removal
+    pc_ptcld.paint_uniform_color([1, 0, 0])
+    pc_ptcld_full.paint_uniform_color([0, 0, 1])
+    o3d.visualization.draw_geometries([pc_ptcld, pc_ptcld_full])
+
+    fixed_pc_ptcld.paint_uniform_color([1, 0, 0])
+    fixed_pc_ptcld_full.paint_uniform_color([0, 0, 1])
+    o3d.visualization.draw_geometries([fixed_pc_ptcld, fixed_pc_ptcld_full])
+
+    # Average thickness values over a certain area
+    moving_pc, thickness = average_thickness_values(pc_ptcld, thickness)
+    fixed_pc, fixed_thickness = average_thickness_values(fixed_pc_ptcld, fixed_thickness)
+
     # Get points arrays
     moving_pc = np.asarray(pc_ptcld.points)
     fixed_pc = np.asarray(fixed_pc_ptcld.points)
@@ -118,7 +193,7 @@ if __name__ == "__main__":
     # Load in point clouds for predicted subjects
     transformations = {}
     point_clouds = load_point_cloud()
-    subj_names = list(point_clouds.keys())
+    subj_names = list(point_clouds.keys())[0:3]
     strain_vals = list()
 
     # Fixed ptcld for patella and patellar cartilage
@@ -154,6 +229,7 @@ if __name__ == "__main__":
         # Create strain maps
         strain_map = produce_strain_map(moving_pc_ptcld, moving_thickness, fixed_pc_ptcld, fixed_thickness)
         strain_vals.append(strain_map[:, 3])
+
         visualize_strain_map(strain_map, idx)
 
     fig = plt.figure()
