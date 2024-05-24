@@ -96,4 +96,4 @@ if __name__ == "__main__":
     p_moving = o3d.geometry.PointCloud()
     p_moving.points = o3d.utility.Vector3dVector(p_points_moving)
 
-    p_moved = move_patella(p_fixed, p_moving)
+    p_moved, icp_transform = move_patella(p_fixed, p_moving)
