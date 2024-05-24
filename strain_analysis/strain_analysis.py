@@ -96,28 +96,29 @@ def average_thickness_values(pc_ptcld, thickness):
 
 def remove_outer_boundaries(pc_ptcld, thickness):
     # Distance to shave off:
-    offset = 2.0  # mm
+    radius = 4.0  # mm
 
     # Estimate normals for the entire point cloud
     pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
-    normals = np.asarray(pc_ptcld.normals)
 
-    # Offset all points inward along the normals
-    points = np.asarray(pc_ptcld.points)
-    inset_points = points - offset * normals
+    # Compute point density
+    kdtree = o3d.geometry.KDTreeFlann(pc_ptcld)
+    densities = np.zeros(len(pc_ptcld.points))
 
-    # Compute the convex hull of the inset points
-    inset_hull = scipy.spatial.ConvexHull(inset_points)
+    for i, point in enumerate(pc_ptcld.points):
+        [_, idx, _] = kdtree.search_radius_vector_3d(point, radius)
+        densities[i] = len(idx)
 
-    # Filter the points to remove those outside the inset hull
-    def point_in_hull(point, hull):
-        return all((np.dot(eq[:-1], point) + eq[-1] <= 0) for eq in hull.equations)
+    plt.hist(densities, bins=15)
+    plt.show()
+    density_threshold = round(np.max(densities) * 2 / 3)
 
+    # Filter points based on density
     filtered_points = []
     filtered_thickness = []
-    for i, point in enumerate(points):
-        if point_in_hull(point, inset_hull):
-            filtered_points.append(point)
+    for i, density in enumerate(densities):
+        if density >= density_threshold:
+            filtered_points.append(pc_ptcld.points[i])
             filtered_thickness.append(thickness[i])
 
     # Create a new point cloud from the filtered points
