@@ -387,16 +387,20 @@ if __name__ == "__main__":
     # Mirrored strategy
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
-
-        # # date_time pattern to identify model we just trained
+        # # date_time pattern to identify models we just trained
         date_times = get_most_recent_models()
-        print(f"Most recent models being analyzed: {date_times}")
+
+        # not analyzing lowest_val_loss model
+        date_times = [date_time for date_time in date_times if "lowest" not in date_time]
+
+        # print(f"Most recent models being analyzed: {date_times}")
         # date_time = get_date_and_hour()
         # plot_mri_with_both_masks(subj_name, model_name)
 
         for date_time in date_times:
 
             print(f"Evaluating model {date_time}")
+
             dataset_name = parse_dataset_name(date_time)
 
             # Get results filename
