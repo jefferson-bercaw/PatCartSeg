@@ -88,12 +88,12 @@ if __name__ == "__main__":
     subj_names = list(point_clouds.keys())
 
     # Fixed and moving patella
-    p_points_fixed = point_clouds[subj_names[0]]["p_coords_array"]
+    p_points_fixed = point_clouds[subj_names[3]]["p_coords_array"]
     p_fixed = o3d.geometry.PointCloud()
     p_fixed.points = o3d.utility.Vector3dVector(p_points_fixed)
 
-    p_points_moving = point_clouds[subj_names[5]]["p_coords_array"]
+    p_points_moving = point_clouds[subj_names[4]]["p_coords_array"]
     p_moving = o3d.geometry.PointCloud()
     p_moving.points = o3d.utility.Vector3dVector(p_points_moving)
 
-    p_moved = move_patella(p_fixed, p_moving)
+    p_moved, icp_transform = move_patella(p_fixed, p_moving)

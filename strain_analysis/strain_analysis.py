@@ -72,7 +72,83 @@ def store_transformations(transformations, subj_name, result_icp):
     return transformations
 
 
+def average_thickness_values(pc_ptcld, thickness):
+    # Iterate through every point
+    # Calculate indices of nearest points
+    # Average thickness values at that point and reassign this thickness value
+
+    pc_points = np.asarray(pc_ptcld.points)
+    radius_mm = 2.5  # radius of search
+    thickness_new = np.zeros_like(thickness)
+
+    for idx, coord in enumerate(pc_points):
+        distances = np.linalg.norm(coord - pc_points, axis=1)
+        inds = distances < radius_mm
+        thick_to_avg = thickness[inds]
+
+        # plt.hist(thick_to_avg)
+        # plt.show()
+
+        thickness_new[idx] = np.median(thick_to_avg)
+
+    return pc_points, thickness_new
+
+
+def remove_outer_boundaries(pc_ptcld, thickness):
+    # Distance to shave off:
+    radius = 4.0  # mm
+
+    # Estimate normals for the entire point cloud
+    pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+
+    # Compute point density
+    kdtree = o3d.geometry.KDTreeFlann(pc_ptcld)
+    densities = np.zeros(len(pc_ptcld.points))
+
+    for i, point in enumerate(pc_ptcld.points):
+        [_, idx, _] = kdtree.search_radius_vector_3d(point, radius)
+        densities[i] = len(idx)
+
+    plt.hist(densities, bins=15)
+    plt.show()
+    density_threshold = round(np.max(densities) * 2 / 3)
+
+    # Filter points based on density
+    filtered_points = []
+    filtered_thickness = []
+    for i, density in enumerate(densities):
+        if density >= density_threshold:
+            filtered_points.append(pc_ptcld.points[i])
+            filtered_thickness.append(thickness[i])
+
+    # Create a new point cloud from the filtered points
+    filtered_pc_ptcld = o3d.geometry.PointCloud()
+    filtered_pc_ptcld.points = o3d.utility.Vector3dVector(np.array(filtered_points))
+
+    return filtered_pc_ptcld, np.array(filtered_thickness)
+
+
 def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
+    # Remove outer boundaries
+    pc_ptcld_full = copy.deepcopy(pc_ptcld)
+    fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
+
+    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness)
+    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness)
+
+    # Visualize removal
+    pc_ptcld.paint_uniform_color([1, 0, 0])
+    pc_ptcld_full.paint_uniform_color([0, 0, 1])
+    o3d.visualization.draw_geometries([pc_ptcld, pc_ptcld_full])
+
+    fixed_pc_ptcld.paint_uniform_color([1, 0, 0])
+    fixed_pc_ptcld_full.paint_uniform_color([0, 0, 1])
+    o3d.visualization.draw_geometries([fixed_pc_ptcld, fixed_pc_ptcld_full])
+
+    # Average thickness values over a certain area
+    moving_pc, thickness = average_thickness_values(pc_ptcld, thickness)
+    fixed_pc, fixed_thickness = average_thickness_values(fixed_pc_ptcld, fixed_thickness)
+
     # Get points arrays
     moving_pc = np.asarray(pc_ptcld.points)
     fixed_pc = np.asarray(fixed_pc_ptcld.points)
@@ -122,10 +198,10 @@ if __name__ == "__main__":
     strain_vals = list()
 
     # Fixed ptcld for patella and patellar cartilage
-    fixed_p_ptcld, fixed_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[0])
-    fixed_pc_ptcld, fixed_thickness = get_cartilage_ptcld(point_clouds, subj_names[0])
+    fixed_p_ptcld, fixed_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[3])
+    fixed_pc_ptcld, fixed_thickness = get_cartilage_ptcld(point_clouds, subj_names[3])
 
-    for idx in range(1, len(subj_names)):
+    for idx in range(4, len(subj_names)):
         # Moving ptcld for patella and patellar cartilage
         moving_p_ptcld, moving_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[idx])
         moving_pc_ptcld, moving_thickness = get_cartilage_ptcld(point_clouds, subj_names[idx])
@@ -154,13 +230,14 @@ if __name__ == "__main__":
         # Create strain maps
         strain_map = produce_strain_map(moving_pc_ptcld, moving_thickness, fixed_pc_ptcld, fixed_thickness)
         strain_vals.append(strain_map[:, 3])
+
         visualize_strain_map(strain_map, idx)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
     ax.boxplot(strain_vals)
-    ax.set_xticklabels(["Post 3mi", "Recovery"])
+    ax.set_xticklabels(["Post 10mi", "Recovery"])
     ax.set_ylabel("Strain Distributions")
     ax.set_title("Patellar Cartilage Strain Distributions")
     plt.show()
