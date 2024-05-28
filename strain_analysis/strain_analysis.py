@@ -190,18 +190,42 @@ def visualize_strain_map(strain_map, idx):
     return
 
 
+def store_registered_points(registered_points, comp_type, strain_map, moving_pc_ptcld, fixed_pc_ptcld):
+    registered_points[comp_type] = {}
+
+    registered_points[comp_type]["strain_map"] = strain_map
+    registered_points[comp_type]["pre_pc_ptcld"] = fixed_pc_ptcld.points
+    registered_points[comp_type]["post_pc_ptcld"] = moving_pc_ptcld.points
+
+    return registered_points
+
+
+def save_registered_point_clouds(registered_points):
+    with open("registered_points.pkl", 'wb') as f:
+        pickle.dump(registered_points, f)
+
+
 if __name__ == "__main__":
     # Load in point clouds for predicted subjects
     transformations = {}
+    registered_points = {}
+
     point_clouds = load_point_cloud()
     subj_names = list(point_clouds.keys())
     strain_vals = list()
+    comp_types = ["pre1-post3mi", "pre1-rec1", "pre2-post10mi", "pre2-rec2"]
 
-    # Fixed ptcld for patella and patellar cartilage
-    fixed_p_ptcld, fixed_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[3])
-    fixed_pc_ptcld, fixed_thickness = get_cartilage_ptcld(point_clouds, subj_names[3])
+    for idx, comp_type in zip([1, 2, 4, 5], comp_types):
 
-    for idx in range(4, len(subj_names)):
+        if idx < 3:
+            fixed_idx = 0
+        else:
+            fixed_idx = 3
+
+        # Fixed ptcld for patella and patellar cartilage
+        fixed_p_ptcld, fixed_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[fixed_idx])
+        fixed_pc_ptcld, fixed_thickness = get_cartilage_ptcld(point_clouds, subj_names[fixed_idx])
+
         # Moving ptcld for patella and patellar cartilage
         moving_p_ptcld, moving_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[idx])
         moving_pc_ptcld, moving_thickness = get_cartilage_ptcld(point_clouds, subj_names[idx])
@@ -231,7 +255,13 @@ if __name__ == "__main__":
         strain_map = produce_strain_map(moving_pc_ptcld, moving_thickness, fixed_pc_ptcld, fixed_thickness)
         strain_vals.append(strain_map[:, 3])
 
+        # Store the strain and bone maps
+        registered_points = store_registered_points(registered_points, comp_type, strain_map, moving_pc_ptcld, fixed_pc_ptcld)
+
         visualize_strain_map(strain_map, idx)
+
+    # Save registered point clouds
+    save_registered_point_clouds(registered_points)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
