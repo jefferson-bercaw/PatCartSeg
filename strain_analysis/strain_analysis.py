@@ -124,13 +124,13 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
     fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness)
 
     # Visualize removal
-    pc_ptcld.paint_uniform_color([1, 0, 0])
-    pc_ptcld_full.paint_uniform_color([0, 0, 1])
-    o3d.visualization.draw_geometries([pc_ptcld, pc_ptcld_full])
-
-    fixed_pc_ptcld.paint_uniform_color([1, 0, 0])
-    fixed_pc_ptcld_full.paint_uniform_color([0, 0, 1])
-    o3d.visualization.draw_geometries([fixed_pc_ptcld, fixed_pc_ptcld_full])
+    # pc_ptcld.paint_uniform_color([1, 0, 0])
+    # pc_ptcld_full.paint_uniform_color([0, 0, 1])
+    # o3d.visualization.draw_geometries([pc_ptcld, pc_ptcld_full])
+    #
+    # fixed_pc_ptcld.paint_uniform_color([1, 0, 0])
+    # fixed_pc_ptcld_full.paint_uniform_color([0, 0, 1])
+    # o3d.visualization.draw_geometries([fixed_pc_ptcld, fixed_pc_ptcld_full])
 
     # Average thickness values over a certain area
     moving_pc, thickness = average_thickness_values(pc_ptcld, thickness)
@@ -154,7 +154,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
         moving_coord = moving_pc[i]  # post coord
         fixed_coord = fixed_pc[closest_indices[i]]  # pre coord
 
-        avg_coord[i, :] = moving_coord + fixed_coord / 2  # average coordinate location
+        avg_coord[i, :] = moving_coord  # average coordinate location
         strain[i] = (thickness[i] - fixed_thickness[closest_indices[i]]) / fixed_thickness[closest_indices[i]]
 
     strain_map = np.concatenate((avg_coord, strain[:, np.newaxis]), axis=1)
@@ -225,27 +225,26 @@ if __name__ == "__main__":
 
         # View registered point clouds
         # Resulting Patella registration
-        moving_p_ptcld.paint_uniform_color([1, 0.706, 0])
-        fixed_p_ptcld.paint_uniform_color([0, 0.651, 0.929])
-        o3d.visualization.draw_geometries([moving_p_ptcld, fixed_p_ptcld])
+        # moving_p_ptcld.paint_uniform_color([1, 0.706, 0])
+        # fixed_p_ptcld.paint_uniform_color([0, 0.651, 0.929])
+        # o3d.visualization.draw_geometries([moving_p_ptcld, fixed_p_ptcld])
 
         # Resulting Patellar cartilage surface registration
-        moving_pc_ptcld.paint_uniform_color([1, 0.706, 0])
-        fixed_pc_ptcld.paint_uniform_color([0, 0.651, 0.929])
-        o3d.visualization.draw_geometries([moving_pc_ptcld, fixed_pc_ptcld])
+        # moving_pc_ptcld.paint_uniform_color([1, 0.706, 0])
+        # fixed_pc_ptcld.paint_uniform_color([0, 0.651, 0.929])
+        # o3d.visualization.draw_geometries([moving_pc_ptcld, fixed_pc_ptcld])
 
         # Store transformations
         transformations = store_transformations(transformations, subj_names[idx], icp_transform)
 
         # Create strain maps
         strain_map = produce_strain_map(moving_pc_ptcld, moving_thickness, fixed_pc_ptcld, fixed_thickness)
-        strain_vals.append(strain_map[:, 3])
 
         # Store the strain and bone maps
         registered_points = store_registered_points(registered_points, comp_type, strain_map,
                                                     moving_p_ptcld, fixed_p_ptcld, moving_pc_ptcld, fixed_pc_ptcld)
 
-        visualize_strain_map(strain_map, comp_type)
+        # visualize_strain_map(strain_map, comp_type)
 
     # Save registered point clouds
     save_registered_point_clouds(registered_points)
