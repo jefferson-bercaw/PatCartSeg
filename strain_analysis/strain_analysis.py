@@ -16,19 +16,6 @@ def load_point_cloud():
     return point_clouds
 
 
-def draw_registration_result(source, target, transformation):
-    source_temp = copy.deepcopy(source)
-    target_temp = copy.deepcopy(target)
-    source_temp.paint_uniform_color([1, 0.706, 0])
-    target_temp.paint_uniform_color([0, 0.651, 0.929])
-    source_temp.transform(transformation)
-    o3d.visualization.draw_geometries([source_temp, target_temp],
-                                      zoom=0.4459,
-                                      front=[0.9288, -0.2951, -0.2242],
-                                      lookat=[1.6784, 2.0612, 1.4451],
-                                      up=[-0.3402, -0.9189, -0.1996])
-
-
 def get_patella_ptclds(point_clouds, subj_name):
     # Get patella point cloud from point cloud dictionary
     p_points = point_clouds[subj_name]["p_coords_array"]
@@ -109,8 +96,8 @@ def remove_outer_boundaries(pc_ptcld, thickness):
         [_, idx, _] = kdtree.search_radius_vector_3d(point, radius)
         densities[i] = len(idx)
 
-    plt.hist(densities, bins=15)
-    plt.show()
+    # plt.hist(densities, bins=15)
+    # plt.show()
     density_threshold = round(np.max(densities) * 2 / 3)
 
     # Filter points based on density
@@ -175,27 +162,26 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
     return strain_map
 
 
-def visualize_strain_map(strain_map, idx):
-    titles = ["None", "Strain following 3 mile run", "Strain following run and subsequent recovery"]
-
+def visualize_strain_map(strain_map, comp_type):
     coords = strain_map[:, 0:3]
     strain = strain_map[:, 3]
     strain_cloud = pv.PolyData(np.transpose([coords[:, 0], coords[:, 1], coords[:, 2]]))
-    strain_cloud[titles[idx]] = strain
 
     surf = strain_cloud.delaunay_2d()
-    surf[titles[idx]] = strain
+    surf[comp_type] = strain
 
     surf.plot(show_edges=False, cmap="plasma", rng=[-0.3, 0.3])
     return
 
 
-def store_registered_points(registered_points, comp_type, strain_map, moving_pc_ptcld, fixed_pc_ptcld):
+def store_registered_points(registered_points, comp_type, strain_map, moving_p_ptcld, fixed_p_ptcld, moving_pc_ptcld, fixed_pc_ptcld):
     registered_points[comp_type] = {}
 
     registered_points[comp_type]["strain_map"] = strain_map
-    registered_points[comp_type]["pre_pc_ptcld"] = fixed_pc_ptcld.points
-    registered_points[comp_type]["post_pc_ptcld"] = moving_pc_ptcld.points
+    registered_points[comp_type]["pre_p_ptcld"] = np.asarray(fixed_p_ptcld.points)
+    registered_points[comp_type]["post_p_ptcld"] = np.asarray(moving_p_ptcld.points)
+    registered_points[comp_type]["pre_pc_ptcld"] = np.asarray(fixed_pc_ptcld.points)
+    registered_points[comp_type]["post_pc_ptcld"] = np.asarray(moving_pc_ptcld.points)
 
     return registered_points
 
@@ -256,20 +242,10 @@ if __name__ == "__main__":
         strain_vals.append(strain_map[:, 3])
 
         # Store the strain and bone maps
-        registered_points = store_registered_points(registered_points, comp_type, strain_map, moving_pc_ptcld, fixed_pc_ptcld)
+        registered_points = store_registered_points(registered_points, comp_type, strain_map,
+                                                    moving_p_ptcld, fixed_p_ptcld, moving_pc_ptcld, fixed_pc_ptcld)
 
-        visualize_strain_map(strain_map, idx)
+        visualize_strain_map(strain_map, comp_type)
 
     # Save registered point clouds
     save_registered_point_clouds(registered_points)
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    ax.boxplot(strain_vals)
-    ax.set_xticklabels(["Post 10mi", "Recovery"])
-    ax.set_ylabel("Strain Distributions")
-    ax.set_title("Patellar Cartilage Strain Distributions")
-    plt.show()
-
-
