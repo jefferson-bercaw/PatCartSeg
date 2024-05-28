@@ -388,10 +388,19 @@ if __name__ == "__main__":
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # # date_time pattern to identify models we just trained
-        date_times = get_most_recent_models()
-
-        # not analyzing lowest_val_loss model
-        date_times = [date_time for date_time in date_times if "lowest" not in date_time]
+        # date_times = get_most_recent_models()
+        #
+        # # not analyzing lowest_val_loss model
+        # date_times = [date_time for date_time in date_times if "lowest" not in date_time]
+        date_times = ["unet_2024-05-24_07-10-34_cHT5_10_5",
+                      "unet_2024-05-24_04-35-12_cHT5_10_10",
+                      "unet_2024-05-24_21-29-30_cHT5_10_20",
+                      "unet_2024-05-25_10-50-17_cHT5_10_30",
+                      "unet_2024-05-25_07-09-40_cHT5_20_5",
+                      "unet_2024-05-24_18-28-16_cHT5_20_10",
+                      "unet_2024-05-24_11-43-25_cHT5_20_30",
+                      "unet_2024-05-25_10-23-16_cHT5_30_5",
+                      "unet_2024-05-25_03-50-51_cHT5_30_10"]
 
         # print(f"Most recent models being analyzed: {date_times}")
         # date_time = get_date_and_hour()
