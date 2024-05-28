@@ -194,14 +194,14 @@ if __name__ == "__main__":
     # Load in point clouds for predicted subjects
     transformations = {}
     point_clouds = load_point_cloud()
-    subj_names = list(point_clouds.keys())[0:3]
+    subj_names = list(point_clouds.keys())
     strain_vals = list()
 
     # Fixed ptcld for patella and patellar cartilage
-    fixed_p_ptcld, fixed_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[0])
-    fixed_pc_ptcld, fixed_thickness = get_cartilage_ptcld(point_clouds, subj_names[0])
+    fixed_p_ptcld, fixed_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[3])
+    fixed_pc_ptcld, fixed_thickness = get_cartilage_ptcld(point_clouds, subj_names[3])
 
-    for idx in range(1, len(subj_names)):
+    for idx in range(4, len(subj_names)):
         # Moving ptcld for patella and patellar cartilage
         moving_p_ptcld, moving_p_right_ptcld = get_patella_ptclds(point_clouds, subj_names[idx])
         moving_pc_ptcld, moving_thickness = get_cartilage_ptcld(point_clouds, subj_names[idx])
@@ -237,7 +237,7 @@ if __name__ == "__main__":
     ax = fig.add_subplot(111)
 
     ax.boxplot(strain_vals)
-    ax.set_xticklabels(["Post 3mi", "Recovery"])
+    ax.set_xticklabels(["Post 10mi", "Recovery"])
     ax.set_ylabel("Strain Distributions")
     ax.set_title("Patellar Cartilage Strain Distributions")
     plt.show()
