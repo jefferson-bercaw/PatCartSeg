@@ -6,7 +6,7 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
-#SBATCH -a 0-15
+#SBATCH -a 6,10-15
 
 python multiclass_segment.py -a $SLURM_ARRAY_TASK_ID
 python evaluate.py
