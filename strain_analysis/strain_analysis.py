@@ -154,7 +154,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
         moving_coord = moving_pc[i]  # post coord
         fixed_coord = fixed_pc[closest_indices[i]]  # pre coord
 
-        avg_coord[i, :] = moving_coord  # average coordinate location
+        avg_coord[i, :] = fixed_coord  # average coordinate location
         strain[i] = (thickness[i] - fixed_thickness[closest_indices[i]]) / fixed_thickness[closest_indices[i]]
 
     strain_map = np.concatenate((avg_coord, strain[:, np.newaxis]), axis=1)
