@@ -48,34 +48,41 @@ def move_patella(p_fixed, p_moving):
     p_moved.transform(result.transformation)
 
     # Visualizing RANSAC transform
-    # p_moved.paint_uniform_color([1, 0.706, 0])
-    # p_fixed.paint_uniform_color([0, 0.651, 0.929])
-    # o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="RANSAC Result")
+    p_moved.paint_uniform_color([1, 0.706, 0])
+    p_fixed.paint_uniform_color([0, 0.651, 0.929])
+    o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="RANSAC Result")
 
     # ICP Registration
     # Figure out rough estimate of voxel size
     distances = p_fixed.compute_nearest_neighbor_distance()
     avg_dist = np.mean(distances)
 
+    # Compute normals for the point clouds
+    p_fixed.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+    p_moving.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+
     # Parameters for icp
     voxel_size = 0.2
     threshold = voxel_size * 3
     initial_moving_to_fixed = result.transformation
 
+    # Robust Kernels
+    loss = o3d.pipelines.registration.TukeyLoss(k=100)
+    p21 = o3d.pipelines.registration.TransformationEstimationPointToPlane(loss)
     icp = o3d.pipelines.registration.registration_icp(p_moving, p_fixed, threshold, initial_moving_to_fixed,
-                                                      o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+                                                      p21,
                                                       o3d.pipelines.registration.ICPConvergenceCriteria(
-                                                          relative_fitness=0.000000001,
+                                                          relative_fitness=0.0000000001,
                                                           relative_rmse=0.0000000001,
-                                                          max_iteration=50000)
+                                                          max_iteration=500)
                                                       )
 
     p_moved = p_moving.transform(icp.transformation)
 
     # Visualizing ICP transform
-    # p_moved.paint_uniform_color([1, 0.706, 0])
-    # p_fixed.paint_uniform_color([0, 0.651, 0.929])
-    # o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="ICP Result")
+    p_moved.paint_uniform_color([1, 0.706, 0])
+    p_fixed.paint_uniform_color([0, 0.651, 0.929])
+    o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="ICP Result")
 
     return p_moved, icp.transformation
 
