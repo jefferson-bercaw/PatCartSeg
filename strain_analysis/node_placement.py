@@ -40,9 +40,9 @@ if __name__ == "__main__":
     strain_ptcld.points = o3d.utility.Vector3dVector(strain_coords_rot)
 
     # Visualize
-    pre_rot_ptcld.paint_uniform_color([1, 0, 0])
-    post_rot_ptcld.paint_uniform_color([0, 0, 1])
-    strain_ptcld.paint_uniform_color([0, 1, 0])
+    pre_rot_ptcld.paint_uniform_color([.7, .3, 0])
+    post_rot_ptcld.paint_uniform_color([0, .3, .7])
+    strain_ptcld.paint_uniform_color([0, .7, .3])
 
     mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=40, origin=[0, 0, 0])
     o3d.visualization.draw_geometries([pre_rot_ptcld, post_rot_ptcld, strain_ptcld, mesh_frame])
