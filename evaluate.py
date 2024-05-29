@@ -21,6 +21,7 @@ def get_date_and_hour():
 
 def get_history_filename(date_time):
     # Remove extension
+    date_time = date_time[0:-3]
     history_filename = os.path.abspath(os.path.join('history', date_time))
     return history_filename
 
