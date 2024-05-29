@@ -9,7 +9,7 @@ if __name__ == "__main__":
     with open("registered_points.pkl", 'rb') as f:
         registered_points = pickle.load(f)
 
-    comp_type = "pre1-post3mi"
+    comp_type = "pre2-post10mi"
 
     pre = registered_points[comp_type]["pre_p_ptcld"]
     post = registered_points[comp_type]["post_p_ptcld"]
