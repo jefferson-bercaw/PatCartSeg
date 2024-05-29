@@ -20,17 +20,11 @@ def get_date_and_hour():
 
 
 def get_history_filename(date_time):
-    files = os.listdir("history")
-    for filename in files:
-        if date_time in filename:
-            history_filename = os.path.abspath(os.path.join('history', filename))
-            return history_filename
+    history_filename = os.path.abspath(os.path.join('history', date_time))
+    return history_filename
 
 
 def get_model_filename(date_time):
-    # files = os.listdir("models")
-    # for filename in files:
-    #     if date_time is filename:
     model_filename = os.path.abspath(os.path.join('models', date_time))
     return model_filename
 
