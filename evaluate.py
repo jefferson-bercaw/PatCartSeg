@@ -22,7 +22,7 @@ def get_date_and_hour():
 def get_history_filename(date_time):
     files = os.listdir("history")
     for filename in files:
-        if date_time[0:23] in filename:
+        if date_time in filename:
             history_filename = os.path.abspath(os.path.join('history', filename))
             return history_filename
 
