@@ -21,7 +21,6 @@ def get_date_and_hour():
 
 def get_history_filename(date_time):
     # Remove extension
-    date_time = date_time[0:-3] + '.pkl'
     history_filename = os.path.abspath(os.path.join('history', date_time))
     return history_filename
 
@@ -318,10 +317,9 @@ def get_comparison_plot_filename(date_time):
 
 
 def parse_dataset_name(model_name):
-    """Returns dataset_name from the model name of rotation and translations"""
-    no_ext = model_name[:-3]  # Removes .h5
-    underscore_strs = no_ext.split("_")
-    dataset_name = underscore_strs[-3] + "_" + underscore_strs[-2] + "_" + underscore_strs[-1]
+    """Returns dataset_name from the model name"""
+    ending = model_name[25:-1]  # Everything but date in front
+    dataset_name = ending.split(".")[0]
     return dataset_name
 
 
