@@ -92,6 +92,9 @@ if __name__ == "__main__":
         model_name = f"unet_{current_time}_{dataset}"
         unet_model.save(os.path.join("models", f"{model_name}.h5"))
 
+        # Print saving model
+        print(f"Saving model to {model_name}.h5")
+
         # Save best model
         unet_model.load_weights(checkpoint_filepath)
         unet_model.save(os.path.join("models", f"lowest_val_loss_{model_name}.h5"))
