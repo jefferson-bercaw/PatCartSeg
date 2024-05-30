@@ -18,7 +18,6 @@ parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're t
 args = parser.parse_args()
 
 
-
 class RecordHistory(tf.keras.callbacks.Callback):
     def __init__(self, validation_dataset):
         self.validation_dataset = validation_dataset
@@ -69,15 +68,6 @@ if __name__ == "__main__":
                                                                    patience=patience,
                                                                    min_delta=min_delta,
                                                                    verbose=1)
-
-        checkpoint_filepath = os.path.join("checkpoints", "tmp", "checkpoint")
-
-        # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath,
-                                                         monitor='val_loss',
-                                                         verbose=1,
-                                                         save_best_only=True,
-                                                         save_weights_only=True)
 
         # Initialize recording history
         record_history_callback = RecordHistory(validation_dataset=val_dataset)
