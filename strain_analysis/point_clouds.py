@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import scipy
 import pyvista as pv
 import pickle
+import open3d as o3d
 
 
 def return_predicted_volumes(subj_name, model_name):
@@ -38,6 +39,10 @@ def return_p_surface(p_vol):
 
         if np.max(p_slice) > 0:
             p_surf[:, :, slice_num] = get_entire_surface(p_slice)
+
+            # Visualize
+            # plt.imshow(p_surf[:, :, slice_num])
+            # plt.show()
 
     return p_surf
 
@@ -108,7 +113,7 @@ def get_patella_point_cloud(p_vol):
     voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
     p_inds = np.argwhere(p_vol)
     p_pos = p_inds * voxel_lengths
-    p_pos = interpolate_patella(p_pos)
+    # p_pos = interpolate_patella(p_pos)
     return p_pos
 
 
@@ -130,7 +135,7 @@ def calculate_thickness(p_vol, pc_surf_mask):
     p_pos = p_inds * voxel_lengths
 
     # Add points to the patella along the surface for a finer mesh
-    p_pos = interpolate_patella(p_pos)
+    # p_pos = interpolate_patella(p_pos)
 
     # Calculate distance matrix between pc and p, and find the closest patella point for each patellar cartilage point
     distances = scipy.spatial.distance.cdist(pc_pos, p_pos)
@@ -245,7 +250,7 @@ def interpolate_patella(p_pos):
 
     # Construct patella surface and resample
     p_surf = p_point_cloud.reconstruct_surface()
-    p_surf = p_surf.subdivide(nsub=2)
+    p_surf = p_surf.subdivide(nsub=1)
     # p_surf.plot(show_edges=True)
 
     # Get new points
@@ -314,7 +319,7 @@ if __name__ == '__main__':
     # subj_names = ["AS_018", "AS_019", "AS_020", "AS_021", "AS_022", "AS_023"]
     # model_name = "unet_2024-04-17_08-06-28"
     subj_names = ["AS_006", "AS_007", "AS_008", "AS_009", "AS_010", "AS_011"]
-    model_name = "model_voting_hard"
+    model_name = "unet_2024-05-27_08-01-08_cHT5"
 
     thickness_values = list()
 
@@ -337,6 +342,11 @@ if __name__ == '__main__':
         p_surf_mask = return_p_surface(p_vol)
         p_coords_array = get_patella_point_cloud(p_surf_mask)
 
+        p_ptcld = o3d.geometry.PointCloud()
+        p_ptcld.points = o3d.utility.Vector3dVector(p_coords_array)
+        p_ptcld.paint_uniform_color([1, 0.706, 0])
+        o3d.visualization.draw_geometries([p_ptcld])
+
         # Edit mask to get the right most pixels for the patellar cartilage and patella surf
         pc_surf_mask = return_pc_surface(pc_vol)
         p_right_surf_mask = return_pc_surface(p_right_vol)
@@ -349,7 +359,7 @@ if __name__ == '__main__':
         pc_coords_array = organize_coordinate_array(pc_thick_map)
 
         # Upsample the cartilage point cloud
-        pc_coords_array = upsample_pc_coords_array(pc_coords_array)
+        # pc_coords_array = upsample_pc_coords_array(pc_coords_array)
 
         # Store point clouds in a dictionary
         point_clouds = store_point_clouds(point_clouds, p_coords_array, pc_coords_array, p_right_coords_array, subj_name)
@@ -358,7 +368,7 @@ if __name__ == '__main__':
         # thickness_values.append(pc_coords_array[:, 3])
 
         # Visualize the map
-        # visualize_thickness_map(pc_thick_map)
+        visualize_thickness_map(pc_thick_map)
 
     # plot_thickness_distributions(thickness_values, model_name)
 
