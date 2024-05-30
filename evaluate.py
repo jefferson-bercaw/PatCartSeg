@@ -387,7 +387,7 @@ if __name__ == "__main__":
         #
         # # not analyzing lowest_val_loss model
         # date_times = [date_time for date_time in date_times if "lowest" not in date_time]
-        date_times = ["unet_2024-05-29_17-21-09_cHT5"]
+        date_times = ["unet_2024-05-29_17-21-09_cHT5.h5"]
 
         # print(f"Most recent models being analyzed: {date_times}")
         # date_time = get_date_and_hour()
