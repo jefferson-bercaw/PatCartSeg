@@ -4,18 +4,21 @@ import datetime
 import tensorflow as tf
 import numpy as np
 import pickle
-import time
 import argparse
 
 from unet import build_unet
 from dice_loss_function import dice_loss
 from create_dataset import get_dataset
-from rotate_and_translate import rot_and_trans_bounds
 
 
 parser = argparse.ArgumentParser(description="Training Options")
 parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're testing", type=int)
 args = parser.parse_args()
+
+
+def array_to_metric(arr_num):
+    dropout = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+    return dropout[arr_num]
 
 
 if __name__ == "__main__":
@@ -25,14 +28,12 @@ if __name__ == "__main__":
     with strategy.scope():
         # Hyperparameters
         batch_size = 20
-        dropout_rate = 0.3
+        dropout_rate = array_to_metric(args.arr)
         epochs = 500
-        patience = 80
+        patience = 20
         min_delta = 0.0001
 
-        # Get Dataset Arg
-        rot, trans = rot_and_trans_bounds(args.arr)
-        dataset = f"cHT5_{int(rot)}_{int(trans)}"
+        dataset = f"cHT5_{int(args.arr)}"
 
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
@@ -58,7 +59,7 @@ if __name__ == "__main__":
         # Train model
         history = unet_model.fit(train_dataset,
                                  epochs=epochs,
-                                 callbacks=[early_stopping_callback],
+                                 callbacks=early_stopping_callback,
                                  validation_data=val_dataset)
 
         # Save model
