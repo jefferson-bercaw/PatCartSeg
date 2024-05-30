@@ -18,20 +18,6 @@ parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're t
 args = parser.parse_args()
 
 
-class RecordHistory(tf.keras.callbacks.Callback):
-    def __init__(self, validation_dataset):
-        self.validation_dataset = validation_dataset
-        self.history = {'loss': [], 'val_loss': []}
-
-    def on_batch_end(self, batch, logs=None):
-        # Calculate dice score for training data
-        self.history['loss'].append(logs['loss'])
-
-    def on_epoch_end(self, epoch, logs=None):
-        val_loss = self.model.evaluate(self.validation_dataset, verbose=0)
-        self.history['val_loss'].append(val_loss)
-
-
 if __name__ == "__main__":
     # GPUs
     strategy = tf.distribute.MirroredStrategy()
@@ -69,13 +55,10 @@ if __name__ == "__main__":
                                                                    min_delta=min_delta,
                                                                    verbose=1)
 
-        # Initialize recording history
-        record_history_callback = RecordHistory(validation_dataset=val_dataset)
-
         # Train model
         history = unet_model.fit(train_dataset,
                                  epochs=epochs,
-                                 callbacks=[cp_callback, record_history_callback, early_stopping_callback],
+                                 callbacks=[early_stopping_callback],
                                  validation_data=val_dataset)
 
         # Save model
@@ -86,11 +69,7 @@ if __name__ == "__main__":
         # Print saving model
         print(f"Saving model to {model_name}.h5")
 
-        # Save best model
-        unet_model.load_weights(checkpoint_filepath)
-        unet_model.save(os.path.join("models", f"lowest_val_loss_{model_name}.h5"))
-
         # Save history
         hist_name = f"{model_name}.pkl"
         with open(os.path.join("history", hist_name), "wb") as f:
-            pickle.dump(history.history, f)
+            pickle.dump(history, f)
