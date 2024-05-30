@@ -10,12 +10,13 @@ import argparse
 from unet import build_unet
 from dice_loss_function import dice_loss
 from create_dataset import get_dataset
+from rotate_and_translate import rot_and_trans_bounds
 
 
 parser = argparse.ArgumentParser(description="Training Options")
-parser.add_argument("-d", "--dataset", help="Enter the suffix of the dataset we're testing")
+parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're testing", type=int)
 args = parser.parse_args()
-print(f"Dataset argument: {args.dataset}")
+
 
 
 class RecordHistory(tf.keras.callbacks.Callback):
@@ -44,6 +45,10 @@ if __name__ == "__main__":
         patience = 80
         min_delta = 0.0001
 
+        # Get Dataset Arg
+        rot, trans = rot_and_trans_bounds(args.arr)
+        dataset = f"cHT5_{int(rot)}_{int(trans)}"
+
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
 
@@ -56,8 +61,8 @@ if __name__ == "__main__":
                                     tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
 
         # Get datasets
-        train_dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset=args.dataset)
-        val_dataset = get_dataset(batch_size=batch_size, dataset_type='val', dataset=args.dataset)
+        train_dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset=dataset)
+        val_dataset = get_dataset(batch_size=batch_size, dataset_type='val', dataset=dataset)
 
         # Early stopping callback
         early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -85,8 +90,11 @@ if __name__ == "__main__":
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_name = f"unet_{current_time}_{args.dataset}"
+        model_name = f"unet_{current_time}_{dataset}"
         unet_model.save(os.path.join("models", f"{model_name}.h5"))
+
+        # Print saving model
+        print(f"Saving model to {model_name}.h5")
 
         # Save best model
         unet_model.load_weights(checkpoint_filepath)

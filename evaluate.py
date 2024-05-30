@@ -20,17 +20,13 @@ def get_date_and_hour():
 
 
 def get_history_filename(date_time):
-    files = os.listdir("history")
-    for filename in files:
-        if date_time[0:23] in filename:
-            history_filename = os.path.abspath(os.path.join('history', filename))
-            return history_filename
+    # Remove extension
+    date_time = date_time[0:-3] + ".pkl"
+    history_filename = os.path.abspath(os.path.join('history', date_time))
+    return history_filename
 
 
 def get_model_filename(date_time):
-    # files = os.listdir("models")
-    # for filename in files:
-    #     if date_time is filename:
     model_filename = os.path.abspath(os.path.join('models', date_time))
     return model_filename
 
@@ -323,8 +319,8 @@ def get_comparison_plot_filename(date_time):
 
 def parse_dataset_name(model_name):
     """Returns dataset_name from the model name"""
-    no_ext = model_name[:-3]  # Removes .h5
-    dataset_name = no_ext.split("_")[-1]  # Last element before extension (dataset_name)
+    ending = model_name[25:-1]  # Everything but date in front
+    dataset_name = ending.split(".")[0]
     return dataset_name
 
 
@@ -386,16 +382,21 @@ if __name__ == "__main__":
     # Mirrored strategy
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
+        # # date_time pattern to identify models we just trained
+        # date_times = get_most_recent_models()
+        #
+        # # not analyzing lowest_val_loss model
+        # date_times = [date_time for date_time in date_times if "lowest" not in date_time]
+        date_times = ["unet_2024-05-29_10-02-20_cHT5_40_10.h5"]
 
-        # # date_time pattern to identify model we just trained
-        date_times = get_most_recent_models()
-        print(f"Most recent models being analyzed: {date_times}")
+        # print(f"Most recent models being analyzed: {date_times}")
         # date_time = get_date_and_hour()
         # plot_mri_with_both_masks(subj_name, model_name)
 
         for date_time in date_times:
 
             print(f"Evaluating model {date_time}")
+
             dataset_name = parse_dataset_name(date_time)
 
             # Get results filename
