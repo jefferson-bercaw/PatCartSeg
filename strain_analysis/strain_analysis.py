@@ -228,7 +228,7 @@ if __name__ == "__main__":
         # moving_p_ptcld.paint_uniform_color([1, 0.706, 0])
         # fixed_p_ptcld.paint_uniform_color([0, 0.651, 0.929])
         # o3d.visualization.draw_geometries([moving_p_ptcld, fixed_p_ptcld])
-
+        #
         # Resulting Patellar cartilage surface registration
         # moving_pc_ptcld.paint_uniform_color([1, 0.706, 0])
         # fixed_pc_ptcld.paint_uniform_color([0, 0.651, 0.929])
@@ -244,7 +244,7 @@ if __name__ == "__main__":
         registered_points = store_registered_points(registered_points, comp_type, strain_map,
                                                     moving_p_ptcld, fixed_p_ptcld, moving_pc_ptcld, fixed_pc_ptcld)
 
-        # visualize_strain_map(strain_map, comp_type)
+        visualize_strain_map(strain_map, comp_type)
 
     # Save registered point clouds
     save_registered_point_clouds(registered_points)
