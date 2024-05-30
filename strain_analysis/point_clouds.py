@@ -342,9 +342,10 @@ if __name__ == '__main__':
         p_surf_mask = return_p_surface(p_vol)
         p_coords_array = get_patella_point_cloud(p_surf_mask)
 
-        # p_ptcld = o3d.geometry.PointCloud()
-        # p_ptcld.points = o3d.utility.Vector3dVector(p_coords_array)
-        # o3d.visualization.draw_geometries([p_ptcld])
+        p_ptcld = o3d.geometry.PointCloud()
+        p_ptcld.points = o3d.utility.Vector3dVector(p_coords_array)
+        p_ptcld.paint_uniform_color([1, 0.706, 0])
+        o3d.visualization.draw_geometries([p_ptcld])
 
         # Edit mask to get the right most pixels for the patellar cartilage and patella surf
         pc_surf_mask = return_pc_surface(pc_vol)
@@ -367,7 +368,7 @@ if __name__ == '__main__':
         # thickness_values.append(pc_coords_array[:, 3])
 
         # Visualize the map
-        # visualize_thickness_map(pc_thick_map)
+        visualize_thickness_map(pc_thick_map)
 
     # plot_thickness_distributions(thickness_values, model_name)
 
