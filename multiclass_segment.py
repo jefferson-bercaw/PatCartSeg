@@ -33,7 +33,7 @@ if __name__ == "__main__":
         patience = 20
         min_delta = 0.0001
 
-        dataset = f"cHT5_{int(args.arr)}"
+        dataset = "cHT5"
 
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
