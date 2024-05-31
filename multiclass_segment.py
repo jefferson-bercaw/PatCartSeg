@@ -4,13 +4,11 @@ import datetime
 import tensorflow as tf
 import numpy as np
 import pickle
-import time
 import argparse
 
 from unet import build_unet
 from dice_loss_function import dice_loss
 from create_dataset import get_dataset
-from rotate_and_translate import rot_and_trans_bounds
 
 
 parser = argparse.ArgumentParser(description="Training Options")
@@ -18,19 +16,9 @@ parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're t
 args = parser.parse_args()
 
 
-
-class RecordHistory(tf.keras.callbacks.Callback):
-    def __init__(self, validation_dataset):
-        self.validation_dataset = validation_dataset
-        self.history = {'loss': [], 'val_loss': []}
-
-    def on_batch_end(self, batch, logs=None):
-        # Calculate dice score for training data
-        self.history['loss'].append(logs['loss'])
-
-    def on_epoch_end(self, epoch, logs=None):
-        val_loss = self.model.evaluate(self.validation_dataset, verbose=0)
-        self.history['val_loss'].append(val_loss)
+def array_to_metric(arr_num):
+    dropout = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+    return dropout[arr_num]
 
 
 if __name__ == "__main__":
@@ -40,14 +28,12 @@ if __name__ == "__main__":
     with strategy.scope():
         # Hyperparameters
         batch_size = 20
-        dropout_rate = 0.3
+        dropout_rate = array_to_metric(args.arr)
         epochs = 500
-        patience = 80
+        patience = 20
         min_delta = 0.0001
 
-        # Get Dataset Arg
-        rot, trans = rot_and_trans_bounds(args.arr)
-        dataset = f"cHT5_{int(rot)}_{int(trans)}"
+        dataset = "cHT5"
 
         # Build and compile model
         unet_model = build_unet(dropout_rate=dropout_rate)
@@ -70,22 +56,10 @@ if __name__ == "__main__":
                                                                    min_delta=min_delta,
                                                                    verbose=1)
 
-        checkpoint_filepath = os.path.join("checkpoints", "tmp", "checkpoint")
-
-        # Define model callbacks
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath,
-                                                         monitor='val_loss',
-                                                         verbose=1,
-                                                         save_best_only=True,
-                                                         save_weights_only=True)
-
-        # Initialize recording history
-        record_history_callback = RecordHistory(validation_dataset=val_dataset)
-
         # Train model
         history = unet_model.fit(train_dataset,
                                  epochs=epochs,
-                                 callbacks=[cp_callback, record_history_callback, early_stopping_callback],
+                                 callbacks=early_stopping_callback,
                                  validation_data=val_dataset)
 
         # Save model
@@ -95,10 +69,6 @@ if __name__ == "__main__":
 
         # Print saving model
         print(f"Saving model to {model_name}.h5")
-
-        # Save best model
-        unet_model.load_weights(checkpoint_filepath)
-        unet_model.save(os.path.join("models", f"lowest_val_loss_{model_name}.h5"))
 
         # Save history
         hist_name = f"{model_name}.pkl"

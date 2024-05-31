@@ -46,27 +46,17 @@ def load_model(model_filename):
 def build_results_filename(model_filename):
     results_directory = model_filename[:-3]  # remove extension on model name
 
-    if "\\" in results_directory:
-        files = results_directory.split("\\")
-        separator = "\\"
-    elif "/" in results_directory:
-        files = results_directory.split("/")
-        separator = "/"
-    else:
-        raise(SyntaxError, f"There are no single forward or double backward slashes in the results directory: {results_directory}")
-
+    # Change "model" to "results" in absolute path and join into a string
+    sep = os.sep
+    files = results_directory.split(sep)
     files[-2] = 'results'
-    results_filename = separator.join(files)
+    results_filename = sep.join(files)
     return results_filename
 
 
 def get_hist_and_model(date_time):
-    if "lowest_val" not in date_time:
-        history_filename = get_history_filename(date_time)
-        history = load_history(history_filename)
-    else:
-        history = None
-
+    history_filename = get_history_filename(date_time)
+    history = load_history(history_filename)
     model_filename = get_model_filename(date_time)
     model = load_model(model_filename)
     return history, model
@@ -358,7 +348,7 @@ def return_volumes(subj_name, model_name):
     return mri_volume, p_truth_volume, p_pred_volume, pc_truth_volume, pc_pred_volume
 
 
-def get_most_recent_models():
+def get_most_recent_model():
     folder_path = os.getcwd()
     model_path = os.path.join(folder_path, 'models')
 
@@ -370,11 +360,23 @@ def get_most_recent_models():
     date_times = list()
 
     if len(models) > 1:
-        date_times.append(models[0])  # Lowest validation loss
-        date_times.append(models[1])  # End (after early stopping condition)
+        date_times.append(models[0])  # Get most recent model
         return date_times
     else:
         print("There are not enough files in the 'models' subfolder.")
+
+
+def plot_loss(history, results_filename, show=False):
+    plt.plot(history["val_loss"], label='val_loss')
+    plt.plot(history["loss"], label='train_loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Dice Loss')
+    plt.legend()
+    plt.title("Loss")
+    plt.savefig(os.path.join(results_filename, "loss.png"))
+
+    if show:
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -382,16 +384,8 @@ if __name__ == "__main__":
     # Mirrored strategy
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
-        # # date_time pattern to identify models we just trained
-        # date_times = get_most_recent_models()
-        #
-        # # not analyzing lowest_val_loss model
-        # date_times = [date_time for date_time in date_times if "lowest" not in date_time]
-        date_times = ["unet_2024-05-29_10-02-20_cHT5_40_10.h5"]
-
-        # print(f"Most recent models being analyzed: {date_times}")
-        # date_time = get_date_and_hour()
-        # plot_mri_with_both_masks(subj_name, model_name)
+        # # date_time pattern to identify model we just trained
+        date_times = get_most_recent_model()
 
         for date_time in date_times:
 
@@ -407,42 +401,11 @@ if __name__ == "__main__":
             # get the history and model
             history, model = get_hist_and_model(date_time)
 
+            # Create training curves from model and save them to the results filename
+            plot_loss(history, results_filename, show=False)
+
+            # Load in test dataset and create iterable
             test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset=dataset_name)
-
-            if history is not None:
-                # Output plots
-                plt.plot(history["FN"])
-                plt.xlabel('Epoch')
-                plt.title("False Negatives")
-                plt.savefig(os.path.join(results_filename, "fn.png"))
-                # plt.show()
-
-                plt.plot(history["FP"])
-                plt.xlabel('Epoch')
-                plt.title("False Positives")
-                plt.savefig(os.path.join(results_filename, "fp.png"))
-                # plt.show()
-
-                plt.plot(history["TN"])
-                plt.xlabel('Epoch')
-                plt.title("True Negatives")
-                plt.savefig(os.path.join(results_filename, "tn.png"))
-                # plt.show()
-
-                plt.plot(history["TP"])
-                plt.xlabel('Epoch')
-                plt.title("True Positives")
-                plt.savefig(os.path.join(results_filename, "tp.png"))
-                # plt.show()
-
-                plt.plot(history["val_loss"], label='val_loss')
-                plt.plot(history["loss"], label='train_loss')
-                plt.xlabel('Epoch')
-                plt.ylabel('Dice Loss')
-                plt.legend()
-                plt.title("Loss")
-                plt.savefig(os.path.join(results_filename, "loss.png"))
-                # plt.show()
 
             iterable = iter(test_dataset)
             n_test_images = len(test_dataset)
@@ -473,7 +436,7 @@ if __name__ == "__main__":
                 # Output predictions
                 save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob)
 
-                print(f"Img {i} of {n_test_images}")
+                print(f"Img {i+1} of {n_test_images}")
 
             pat_dsc = calculate_dice(pat_positives)
             pat_cart_dsc = calculate_dice(pat_cart_positives)
