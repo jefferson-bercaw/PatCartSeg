@@ -4,12 +4,14 @@ import os
 import pickle
 import tensorflow as tf
 import itertools
+import open3d as o3d
 
 from dice_loss_function import dice_loss
 from get_data_path import get_data_path
 from evaluate import load_model
 from point_clouds import get_coordinate_arrays
-
+from registration import move_patella, move_point_cloud
+from strain_analysis import produce_strain_map
 
 def get_paranjape_dataset(image_dir, batch_size):
     """Returns a tf.data.Dataset object containing the filenames of the Paranjape dataset"""
@@ -101,13 +103,51 @@ def load_volumes(scan, volume_path):
 def save_coordinate_arrays(p_array, pc_array, pr_array, scan, point_cloud_path):
     """Writes ndarrays to point_cloud path"""
     np.savez(os.path.join(point_cloud_path, scan), p_array=p_array, pc_array=pc_array, pr_array=pr_array)
+    print(f"Saved {scan} point clouds")
     return
+
+
+def load_coordinate_arrays(scan, point_cloud_path):
+    """Loads in .npz volume predictions and returns p_vol and pc_vol"""
+    loaded_data = np.load(os.path.join(point_cloud_path, scan))
+    p_array = loaded_data["p_array"]
+    pc_array = loaded_data["pc_array"]
+    pr_array = loaded_data["pr_array"]
+
+    return p_array, pc_array, pr_array
+
+
+def scan_properties(scan2, scan1):
+    """Takes in two names of scans and asserts that they're pre and post, while extracting info from the scan name"""
+    assert "pre" in scan2.lower(), f"Scan {scan2} is not a pre scan"
+    assert "post" in scan1.lower(), f"Scan {scan1} is not a post scan"
+
+    # Extract informatoin from this pair of scans
+    subject_id = scan2[0:2]
+    froude = scan2[2:5]
+    duration = scan2[7:9]
+
+    info = {}
+    info["Subject ID"] = subject_id
+    info["Froude Number"] = froude
+    info["Duration"] = duration
+    return info
+
+
+def create_point_clouds(pre_pc_array, post_pc_array):
+    """Takes in (n, 3) cartilage surface point clouds and creates o3d point cloud objects"""
+    pre_pc_ptcld = o3d.geometry.PointCloud()
+    pre_pc_ptcld.points = o3d.utility.Vector3dVector(pre_pc_array)
+
+    post_pc_ptcld = o3d.geometry.PointCloud()
+    post_pc_ptcld.points = o3d.utility.Vector3dVector(post_pc_array)
+    return pre_pc_ptcld, post_pc_ptcld
 
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
-    create_point_clouds_option = True
+    predict_volumes_option = False
+    create_point_clouds_option = False
     register_point_clouds_option = True
 
     # Declarations
@@ -155,11 +195,11 @@ if __name__ == "__main__":
     # Create point clouds of the patella, patellar cartilage, and articulating surface of patella
     if create_point_clouds_option:
         # Get volume data path (what we're reading in)
-        volume_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name)
+        volume_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name[0:-3])
         scans = os.listdir(volume_path)
 
         # Create point cloud data path (what we're saving to)
-        point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name)
+        point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name[0:-3])
         if not os.path.exists(point_cloud_path):
             os.mkdir(point_cloud_path)
 
@@ -169,10 +209,41 @@ if __name__ == "__main__":
             p_array, pc_array, pr_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
             save_coordinate_arrays(p_array, pc_array, pr_array, scan, point_cloud_path)
 
-    # Load pre and post, register, calculate surface deviation of the articulating surface, save registered point clouds
-    # if register_point_clouds_option:
-    #     # Get point cloud data path (what we're reading in)
-    #     point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name)
-    #     scans = os.listdir(point_cloud_path)
-    #
-    #     # Create
+    # Load pre and post, register, calculate strain map, save registered point clouds and strain map
+    if register_point_clouds_option:
+        # Get point cloud data path (what we're reading in)
+        point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name[0:-3])
+        scans = os.listdir(point_cloud_path)
+
+        # Get strain data path (what we're saving to)
+        strain_path = os.path.join(get_data_path("Paranjape_PCs"), model_name[0:-3])
+        if not os.path.exists(strain_path):
+            os.mkdir(strain_path)
+
+        # Iterate through each scan and take in a pair of scans
+        for idx in range(len(scans)):
+            if idx % 2 != 0:
+                pre_p_array, pre_pc_array, pre_pr_array = load_coordinate_arrays(scans[idx], point_cloud_path)
+                post_p_array, post_pc_array, post_pr_array = load_coordinate_arrays(scans[idx-1], point_cloud_path)
+                info = scan_properties(scans[idx], scans[idx-1])
+
+                # Extract thicknesses
+                pre_thickness = pre_pc_array[:, 3]
+                post_thickness = post_pc_array[:, 3]
+
+                # Remove last column on pc_arrays
+                pre_pc_array = pre_pc_array[:, :-1]
+                post_pc_array = post_pc_array[:, -1]
+
+                # Register the patella
+                post_p_array, transform = move_patella(pre_p_array, post_p_array)
+
+                # Move other structures
+                post_pc_array = move_point_cloud(post_pc_array, transform)
+                post_pr_array = move_point_cloud(post_pr_array, transform)
+
+                # Create o3d point clouds
+                pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
+
+                # Calculate strain map
+                strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness)
