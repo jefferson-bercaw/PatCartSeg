@@ -5,6 +5,7 @@ import pickle
 import tensorflow as tf
 import itertools
 import open3d as o3d
+import matplotlib.pyplot as plt
 
 from dice_loss_function import dice_loss
 from get_data_path import get_data_path
@@ -118,20 +119,20 @@ def load_coordinate_arrays(scan, point_cloud_path):
     return p_array, pc_array, pr_array
 
 
-def scan_properties(scan2, scan1):
+def scan_properties(scan2, scan1, info, strain):
     """Takes in two names of scans and asserts that they're pre and post, while extracting info from the scan name"""
     assert "pre" in scan2.lower(), f"Scan {scan2} is not a pre scan"
     assert "post" in scan1.lower(), f"Scan {scan1} is not a post scan"
 
-    # Extract informatoin from this pair of scans
+    # Extract information from this pair of scans
     subject_id = scan2[0:2]
-    froude = scan2[2:5]
+    froude = scan2[3:6]
     duration = scan2[7:9]
 
-    info = {}
-    info["Subject ID"] = subject_id
-    info["Froude Number"] = froude
-    info["Duration"] = duration
+    info["Subject ID"].append(subject_id)
+    info["Froude"].append(froude)
+    info["Duration"].append(duration)
+    info["Mean Strain"].append(strain)
     return info
 
 
@@ -145,10 +146,53 @@ def create_point_clouds(pre_pc_array, post_pc_array):
     return pre_pc_ptcld, post_pc_ptcld
 
 
+def output_plots(info):
+    froude_categories = ["010", "025", "040"]
+    data_for_boxplot = {category: [] for category in froude_categories}
+
+    for froude, strain in zip(info["Froude"], info["Mean Strain"]):
+        data_for_boxplot[froude].append(strain)
+
+    # Convert the data to a list of lists for boxplot
+    data_to_plot = [data_for_boxplot[category] for category in froude_categories]
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(data_to_plot, labels=froude_categories)
+
+    # Customize the plot
+    plt.xlabel("Froude")
+    plt.ylabel("Mean Strain")
+    plt.title("Mean Strain vs Froude")
+
+    # Show the plot
+    plt.show()
+
+    duration_categories = ["10", "20", "30", "40", "60"]
+    data_for_boxplot = {category: [] for category in duration_categories}
+
+    for duration, strain in zip(info["Duration"], info["Mean Strain"]):
+        data_for_boxplot[duration].append(strain)
+
+    # Convert the data to a list of lists for boxplot
+    data_to_plot = [data_for_boxplot[category] for category in duration_categories]
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(data_to_plot, labels=duration_categories)
+
+    # Customize the plot
+    plt.xlabel("Duration (min)")
+    plt.ylabel("Mean Strain")
+    plt.title("Mean Strain vs Duration")
+
+    # Show the plot
+    plt.show()
+
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
-    create_point_clouds_option = True
+    predict_volumes_option = False
+    create_point_clouds_option = False
     register_point_clouds_option = True
 
     # Declarations
@@ -221,13 +265,19 @@ if __name__ == "__main__":
         if not os.path.exists(strain_path):
             os.mkdir(strain_path)
 
+        # Initialize info
+        info = {}
+        info["Subject ID"] = []
+        info["Froude"] = []
+        info["Duration"] = []
+        info["Mean Strain"] = []
+
         # Iterate through each scan and take in a pair of scans
         for idx in range(len(scans)):
             if idx % 2 != 0:
                 print(f"Current Scans: {scans[idx]} and {scans[idx-1]}")
                 pre_p_array, pre_pc_array, pre_pr_array = load_coordinate_arrays(scans[idx], point_cloud_path)
                 post_p_array, post_pc_array, post_pr_array = load_coordinate_arrays(scans[idx-1], point_cloud_path)
-                info = scan_properties(scans[idx], scans[idx-1])
 
                 # Extract thicknesses
                 pre_thickness = pre_pc_array[:, 3]
@@ -249,3 +299,8 @@ if __name__ == "__main__":
 
                 # Calculate strain map
                 strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness)
+                mean_strain = np.median(strain_map[:, 3])
+
+                info = scan_properties(scans[idx], scans[idx - 1], info, mean_strain)
+
+        output_plots(info)
