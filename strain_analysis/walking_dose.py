@@ -108,7 +108,7 @@ if __name__ == "__main__":
         model = load_model(model_filename)
 
         # Iterate through scans in dataset, make predictions, create volumes, save ndarrays
-        for i in range(len(dataset) // batches_per_scan):
+        for i in range(32, len(dataset) // batches_per_scan):
 
             for cur_batch_num in range(1, batches_per_scan + 1):
                 filename, mri = next(iterable)
