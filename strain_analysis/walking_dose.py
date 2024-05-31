@@ -8,6 +8,7 @@ import itertools
 from dice_loss_function import dice_loss
 from get_data_path import get_data_path
 from evaluate import load_model
+from point_clouds import get_coordinate_arrays
 
 
 def get_paranjape_dataset(image_dir, batch_size):
@@ -88,14 +89,33 @@ def save_volumes(pat_vol, pat_cart_vol, model_name, scan_name):
     return
 
 
+def load_volumes(volume, volume_path):
+    """Loads in .npz volume predictions and returns p_vol and pc_vol"""
+    loaded_data = np.load(os.path.join(volume_path, volume))
+    pat_vol = loaded_data["pat_vol"]
+    pat_cart_vol = loaded_data["pat_cart_vol"]
+
+    return pat_vol, pat_cart_vol
+
+
+def save_coordinate_arrays(p_array, pc_array, pr_array, volume, point_cloud_path):
+    """Writes ndarrays to point_cloud path"""
+    np.savez(os.path.join(point_cloud_path, volume), p_array=p_array, pc_array=pc_array, pr_array=pr_array)
+    return
+
+
 if __name__ == "__main__":
-    # Options/Declarations:
+    # Options:
     predict_volumes_option = True
+    create_point_clouds_option = True
+
+    # Declarations
     model_name = "unet_2024-05-29_17-21-09_cHT5.h5"
     batch_size = 12
     n_slices = 120
     batches_per_scan = n_slices // batch_size
 
+    # Predict patella and patellar cartilage volumes
     if predict_volumes_option:
         # Load in dataset
         image_dir = get_data_path("Paranjape_Cropped") + os.sep + "*.bmp"
@@ -131,3 +151,21 @@ if __name__ == "__main__":
                 if cur_batch_num == batches_per_scan:
                     save_volumes(pat_vol, pat_cart_vol, model_name, scan_name)
                     print(f"Saved {scan_name}, scan {i} of {(len(dataset) // batches_per_scan) - 1}")
+
+    # Create point clouds of the patella, patellar cartilage, and articulating surface of patella
+    if create_point_clouds_option:
+        # Get volume data path (what we're reading in)
+        volume_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name)
+        volumes = os.listdir(volume_path)
+
+        # Create point cloud data path (what we're saving to)
+        point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name)
+        if not os.path.exists(point_cloud_path):
+            os.mkdir(point_cloud_path)
+
+        # Iterate through each volume, calculate coordinate arrays, and save
+        for volume in volumes:
+            pat_vol, pat_cart_vol = load_volumes(volume, volume_path)
+            p_array, pc_array, pr_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
+            save_coordinate_arrays(p_array, pc_array, pr_array, volume, point_cloud_path)
+
