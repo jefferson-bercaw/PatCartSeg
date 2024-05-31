@@ -68,6 +68,9 @@ if __name__ == "__main__":
         mri_img = Image.open(mri_name)
         mri = np.array(mri_img)
 
+        if mri.shape == (512, 512, 3):
+            mri = mri[:, :, 0]
+
         # Cropped image
         mri_crop = mri[y_start:y_end, x_start:x_end]
 
