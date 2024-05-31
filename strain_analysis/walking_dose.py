@@ -3,6 +3,7 @@ import numpy as np
 import os
 import pickle
 import tensorflow as tf
+import itertools
 
 from dice_loss_function import dice_loss
 from get_data_path import get_data_path
@@ -21,7 +22,6 @@ def load_data(image_path):
     """Load in MRI slice and return the slice tensor and the filename"""
     image = tf.io.read_file(image_path)
     image = tf.image.decode_bmp(image)
-    image = tf.cast(image, tf.float64) / 255.0
 
     filename = tf.strings.split(image_path, os.path.sep)[-1]
 
@@ -62,6 +62,8 @@ def parse_scan_name(filename):
 
     scan_name = no_ext.split("-")[0]
 
+    print(f"Starting scan {scan_name}")
+
     return scan_name
 
 
@@ -99,6 +101,7 @@ if __name__ == "__main__":
         image_dir = get_data_path("Paranjape_Cropped") + os.sep + "*.bmp"
         dataset = get_paranjape_dataset(image_dir, batch_size=batch_size)
         iterable = iter(dataset)
+        iterable = itertools.islice(iterable, 310, None)
 
         # Load in model
         model_filename = get_model_filename(model_name)
