@@ -73,4 +73,4 @@ if __name__ == "__main__":
         # Save history
         hist_name = f"{model_name}.pkl"
         with open(os.path.join("history", hist_name), "wb") as f:
-            pickle.dump(history, f)
+            pickle.dump(history.history, f)
