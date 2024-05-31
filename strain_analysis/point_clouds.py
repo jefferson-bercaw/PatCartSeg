@@ -326,11 +326,6 @@ def get_coordinate_arrays(p_vol, pc_vol):
     p_surf_mask = return_p_surface(p_vol)
     p_coords_array = get_patella_point_cloud(p_surf_mask)
 
-    p_ptcld = o3d.geometry.PointCloud()
-    p_ptcld.points = o3d.utility.Vector3dVector(p_coords_array)
-    p_ptcld.paint_uniform_color([1, 0.706, 0])
-    o3d.visualization.draw_geometries([p_ptcld])
-
     # Edit mask to get the right most pixels for the patellar cartilage and patella surf
     pc_surf_mask = return_pc_surface(pc_vol)
     p_right_surf_mask = return_pc_surface(p_right_vol)
