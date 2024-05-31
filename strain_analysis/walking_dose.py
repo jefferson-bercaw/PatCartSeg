@@ -299,7 +299,7 @@ if __name__ == "__main__":
 
                 # Calculate strain map
                 strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness)
-                mean_strain = np.median(strain_map[:, 3])
+                mean_strain = np.mean(strain_map[:, 3])
 
                 info = scan_properties(scans[idx], scans[idx - 1], info, mean_strain)
 
