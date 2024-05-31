@@ -89,18 +89,18 @@ def save_volumes(pat_vol, pat_cart_vol, model_name, scan_name):
     return
 
 
-def load_volumes(volume, volume_path):
+def load_volumes(scan, volume_path):
     """Loads in .npz volume predictions and returns p_vol and pc_vol"""
-    loaded_data = np.load(os.path.join(volume_path, volume))
+    loaded_data = np.load(os.path.join(volume_path, scan))
     pat_vol = loaded_data["pat_vol"]
     pat_cart_vol = loaded_data["pat_cart_vol"]
 
     return pat_vol, pat_cart_vol
 
 
-def save_coordinate_arrays(p_array, pc_array, pr_array, volume, point_cloud_path):
+def save_coordinate_arrays(p_array, pc_array, pr_array, scan, point_cloud_path):
     """Writes ndarrays to point_cloud path"""
-    np.savez(os.path.join(point_cloud_path, volume), p_array=p_array, pc_array=pc_array, pr_array=pr_array)
+    np.savez(os.path.join(point_cloud_path, scan), p_array=p_array, pc_array=pc_array, pr_array=pr_array)
     return
 
 
@@ -108,6 +108,7 @@ if __name__ == "__main__":
     # Options:
     predict_volumes_option = True
     create_point_clouds_option = True
+    register_point_clouds_option = True
 
     # Declarations
     model_name = "unet_2024-05-29_17-21-09_cHT5.h5"
@@ -121,14 +122,13 @@ if __name__ == "__main__":
         image_dir = get_data_path("Paranjape_Cropped") + os.sep + "*.bmp"
         dataset = get_paranjape_dataset(image_dir, batch_size=batch_size)
         iterable = iter(dataset)
-        iterable = itertools.islice(iterable, 310, None)
 
         # Load in model
         model_filename = get_model_filename(model_name)
         model = load_model(model_filename)
 
         # Iterate through scans in dataset, make predictions, create volumes, save ndarrays
-        for i in range(32, len(dataset) // batches_per_scan):
+        for i in range(len(dataset) // batches_per_scan):
 
             for cur_batch_num in range(1, batches_per_scan + 1):
                 filename, mri = next(iterable)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     if create_point_clouds_option:
         # Get volume data path (what we're reading in)
         volume_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name)
-        volumes = os.listdir(volume_path)
+        scans = os.listdir(volume_path)
 
         # Create point cloud data path (what we're saving to)
         point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name)
@@ -164,8 +164,15 @@ if __name__ == "__main__":
             os.mkdir(point_cloud_path)
 
         # Iterate through each volume, calculate coordinate arrays, and save
-        for volume in volumes:
-            pat_vol, pat_cart_vol = load_volumes(volume, volume_path)
+        for scan in scans:
+            pat_vol, pat_cart_vol = load_volumes(scan, volume_path)
             p_array, pc_array, pr_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
-            save_coordinate_arrays(p_array, pc_array, pr_array, volume, point_cloud_path)
+            save_coordinate_arrays(p_array, pc_array, pr_array, scan, point_cloud_path)
 
+    # Load pre and post, register, calculate surface deviation of the articulating surface, save registered point clouds
+    # if register_point_clouds_option:
+    #     # Get point cloud data path (what we're reading in)
+    #     point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name)
+    #     scans = os.listdir(point_cloud_path)
+    #
+    #     # Create
