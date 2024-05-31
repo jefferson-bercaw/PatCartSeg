@@ -5,7 +5,15 @@ import open3d as o3d
 import copy
 
 
-def move_patella(p_fixed, p_moving):
+def move_patella(p_points_fixed, p_points_moving):
+
+    # Create open3d point cloud objects
+    p_fixed = o3d.geometry.PointCloud()
+    p_fixed.points = o3d.utility.Vector3dVector(p_points_fixed)
+
+    p_moving = o3d.geometry.PointCloud()
+    p_moving.points = o3d.utility.Vector3dVector(p_points_moving)
+
     # RANSAC
     # Downsample
     voxel_size_d = 1.5  # Downsample so every voxel is _mm
@@ -77,7 +85,17 @@ def move_patella(p_fixed, p_moving):
     p_fixed.paint_uniform_color([0, 0.651, 0.929])
     o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="ICP Result")
 
+    p_moved = np.asarray(p_moved.points)
+
     return p_moved, icp.transformation
+
+
+def move_point_cloud(post_array, transform):
+    """Takes in a (n, 3) ndarray of a point cloud, and a (4, 4) transform and transforms the point cloud"""
+    point_cloud = o3d.geometry.PointCloud()
+    point_cloud.points = o3d.utility.Vector3dVector(post_array)
+    point_cloud.transform(transform)
+    return np.asarray(point_cloud.points)
 
 
 if __name__ == "__main__":
@@ -89,11 +107,7 @@ if __name__ == "__main__":
 
     # Fixed and moving patella
     p_points_fixed = point_clouds[subj_names[3]]["p_coords_array"]
-    p_fixed = o3d.geometry.PointCloud()
-    p_fixed.points = o3d.utility.Vector3dVector(p_points_fixed)
 
     p_points_moving = point_clouds[subj_names[4]]["p_coords_array"]
-    p_moving = o3d.geometry.PointCloud()
-    p_moving.points = o3d.utility.Vector3dVector(p_points_moving)
 
-    p_moved, icp_transform = move_patella(p_fixed, p_moving)
+    p_moved, icp_transform = move_patella(p_points_fixed, p_points_moving)
