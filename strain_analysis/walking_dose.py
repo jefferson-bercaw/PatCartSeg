@@ -13,6 +13,7 @@ from point_clouds import get_coordinate_arrays
 from registration import move_patella, move_point_cloud
 from strain_analysis import produce_strain_map
 
+
 def get_paranjape_dataset(image_dir, batch_size):
     """Returns a tf.data.Dataset object containing the filenames of the Paranjape dataset"""
     dataset = tf.data.Dataset.list_files(image_dir, shuffle=False)
@@ -25,7 +26,7 @@ def load_data(image_path):
     """Load in MRI slice and return the slice tensor and the filename"""
     image = tf.io.read_file(image_path)
     image = tf.image.decode_bmp(image)
-
+    image = tf.cast(image, tf.float64) / 255.0
     filename = tf.strings.split(image_path, os.path.sep)[-1]
 
     return filename, image
@@ -146,8 +147,8 @@ def create_point_clouds(pre_pc_array, post_pc_array):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = False
-    create_point_clouds_option = False
+    predict_volumes_option = True
+    create_point_clouds_option = True
     register_point_clouds_option = True
 
     # Declarations
@@ -223,6 +224,7 @@ if __name__ == "__main__":
         # Iterate through each scan and take in a pair of scans
         for idx in range(len(scans)):
             if idx % 2 != 0:
+                print(f"Current Scans: {scans[idx]} and {scans[idx-1]}")
                 pre_p_array, pre_pc_array, pre_pr_array = load_coordinate_arrays(scans[idx], point_cloud_path)
                 post_p_array, post_pc_array, post_pr_array = load_coordinate_arrays(scans[idx-1], point_cloud_path)
                 info = scan_properties(scans[idx], scans[idx-1])
@@ -233,7 +235,7 @@ if __name__ == "__main__":
 
                 # Remove last column on pc_arrays
                 pre_pc_array = pre_pc_array[:, :-1]
-                post_pc_array = post_pc_array[:, -1]
+                post_pc_array = post_pc_array[:, :-1]
 
                 # Register the patella
                 post_p_array, transform = move_patella(pre_p_array, post_p_array)
