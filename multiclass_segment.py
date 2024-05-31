@@ -29,7 +29,7 @@ if __name__ == "__main__":
         # Hyperparameters
         batch_size = 20
         dropout_rate = array_to_metric(args.arr)
-        epochs = 500
+        epochs = 1
         patience = 20
         min_delta = 0.0001
 
