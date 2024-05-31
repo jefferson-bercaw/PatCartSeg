@@ -62,10 +62,6 @@ if __name__ == "__main__":
                                  callbacks=early_stopping_callback,
                                  validation_data=val_dataset)
 
-        print(f"History: {history}")
-        print(f"History.history: {history.history}")
-        print(f"History keys: {history.keys()}")
-
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         model_name = f"unet_{current_time}_{dataset}"
