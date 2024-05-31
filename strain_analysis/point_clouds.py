@@ -313,6 +313,38 @@ def extract_right_patellar_volume(p_vol, pc_vol):
     return p_right_vol
 
 
+def get_coordinate_arrays(p_vol, pc_vol):
+    """Transforms (256, 256, 120) ndarrays for the patella and patellar cartilage predictions to (n, 3) ndarray for
+    the patella, (n, 4) for the cartilage and cartilage thickness, and (n, 3) for the articulating surface of the
+    patella"""
+    p_vol = remove_nocart_slices(p_vol, pc_vol)
+
+    # Get right patellar volume (at the cartilage interface)
+    p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
+
+    # Edit mask to get the surface pixels (no middle pixels) for the patella and get the point cloud
+    p_surf_mask = return_p_surface(p_vol)
+    p_coords_array = get_patella_point_cloud(p_surf_mask)
+
+    p_ptcld = o3d.geometry.PointCloud()
+    p_ptcld.points = o3d.utility.Vector3dVector(p_coords_array)
+    p_ptcld.paint_uniform_color([1, 0.706, 0])
+    o3d.visualization.draw_geometries([p_ptcld])
+
+    # Edit mask to get the right most pixels for the patellar cartilage and patella surf
+    pc_surf_mask = return_pc_surface(pc_vol)
+    p_right_surf_mask = return_pc_surface(p_right_vol)
+    p_right_coords_array = get_patella_point_cloud(p_right_surf_mask)
+
+    # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
+    pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
+
+    # Calculate coord array and store thickness values for this scan
+    pc_coords_array = organize_coordinate_array(pc_thick_map)
+
+    return p_coords_array, pc_coords_array, p_right_coords_array
+
+
 if __name__ == '__main__':
 
     # Specify model name and subject name(s)
@@ -331,6 +363,8 @@ if __name__ == '__main__':
         print(f"Subject {subj_name}")
         # Load in patella and patellar cartilage volumes
         p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
+
+        # p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
 
         # Post-processing: Fill holes, remove stray pixels, in both volumes?
         p_vol = remove_nocart_slices(p_vol, pc_vol)
