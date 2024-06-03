@@ -68,6 +68,6 @@ def build_unet(kernel_sizes):
 
 
 if __name__ == "__main__":
-    kernel_sizes = [7, 5, 3, 3, 3]
+    kernel_sizes = [7, 5, 5, 3, 3]
     unet_model = build_unet(kernel_sizes=kernel_sizes)
     unet_model.summary()

@@ -17,8 +17,15 @@ args = parser.parse_args()
 
 
 def array_to_metric(arr_num):
-    dropout = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
-    return dropout[arr_num]
+    kernel_sizes = [[3, 3, 3, 3, 3],
+                    [5, 5, 5, 5, 5],
+                    [7, 5, 3, 3, 3],
+                    [5, 3, 3, 3, 3],
+                    [5, 5, 3, 3, 3],
+                    [5, 5, 5, 3, 3],
+                    [5, 5, 5, 5, 3],
+                    [7, 5, 5, 3, 3]]
+    return kernel_sizes[arr_num]
 
 
 if __name__ == "__main__":
@@ -28,7 +35,7 @@ if __name__ == "__main__":
     with strategy.scope():
         # Hyperparameters
         batch_size = 20
-        dropout_rate = array_to_metric(args.arr)
+        dropout_rate = 0.3
         epochs = 500
         patience = 20
         min_delta = 0.0001
@@ -36,7 +43,7 @@ if __name__ == "__main__":
         dataset = "cHT5"
 
         # Build and compile model
-        unet_model = build_unet(dropout_rate=dropout_rate)
+        unet_model = build_unet(kernel_sizes=array_to_metric(args.arr))
 
         unet_model.compile(optimizer='adam',
                            loss=dice_loss,
