@@ -3,6 +3,7 @@ from evaluate import four_digit_number, assemble_mri_volume
 import os
 import matplotlib.pyplot as plt
 import scipy
+import scipy.ndimage as ndimage
 import pyvista as pv
 import pickle
 import open3d as o3d
@@ -26,6 +27,9 @@ def return_predicted_volumes(subj_name, model_name):
 
     p_vol = assemble_mri_volume(p_pred_names, xy_dim=256)
     pc_vol = assemble_mri_volume(pc_pred_names, xy_dim=256)
+
+    p_vol[p_vol > 0] = 1
+    pc_vol[pc_vol > 0] = 1
 
     return p_vol, pc_vol
 
@@ -278,6 +282,38 @@ def remove_nocart_slices(p_vol, pc_vol):
     return p_vol
 
 
+def remove_patella_outliers(p_vol):
+    """Removes disconnected pixels from the patella"""
+    # Iterate through each slice (3rd dimension)
+    # Calculate 2d connectivity of each pixel in the binary mask
+    # Remove pixels that stand alone (have no connectivity), or pixels that are only connected diagonally
+
+    # Step 2: Not doing:
+    # Find the middle slice of the patella
+    # Calculate centroid of the patella of this slice and the max distance of a True pixel from this centroid
+    # Iterate through each slice (3rd dimension)
+    # Calculate distance from the centroid of the middle slice
+    # If larger than 1.5x the max distance, set to False
+
+    # Step 1: Remove disconnected pixels and those connected only diagonally in each 2D slice
+    cleaned_vol = np.zeros_like(p_vol, dtype=bool)
+    structure = np.array([[0, 1, 0],
+                          [1, 1, 1],
+                          [0, 1, 0]])  # 4-connectivity structure
+
+    for i in range(50, p_vol.shape[2]):
+        slice_ = p_vol[:, :, i]
+        labeled_slice, num_features = ndimage.label(slice_, structure=structure)
+
+        # Filter out small components
+        sizes = ndimage.sum(slice_, labeled_slice, range(1, num_features + 1))
+        for j in range(1, num_features + 1):
+            if sizes[j - 1] >= 1:
+                cleaned_vol[:, :, i][labeled_slice == j] = True
+
+    return cleaned_vol
+
+
 def extract_right_patellar_volume(p_vol, pc_vol):
     """Extracts the patellar pixels at the patellar cartilage interface"""
     p_right_vol = np.zeros_like(p_vol)
@@ -317,7 +353,11 @@ def get_coordinate_arrays(p_vol, pc_vol):
     """Transforms (256, 256, 120) ndarrays for the patella and patellar cartilage predictions to (n, 3) ndarray for
     the patella, (n, 4) for the cartilage and cartilage thickness, and (n, 3) for the articulating surface of the
     patella"""
+    # Zero all slices of the patella that do not have patellar cartilage
     p_vol = remove_nocart_slices(p_vol, pc_vol)
+
+    # Remove outliers based on distance from centroid and connectivity
+    p_vol = remove_patella_outliers(p_vol)
 
     # Get right patellar volume (at the cartilage interface)
     p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
@@ -363,6 +403,7 @@ if __name__ == '__main__':
 
         # Post-processing: Fill holes, remove stray pixels, in both volumes?
         p_vol = remove_nocart_slices(p_vol, pc_vol)
+        p_vol = remove_patella_outliers(p_vol)
 
         # Get right patellar volume (at the cartilage interface)
         p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
