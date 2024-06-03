@@ -191,7 +191,7 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = False
+    predict_volumes_option = True
     create_point_clouds_option = True
     register_point_clouds_option = True
 
