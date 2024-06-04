@@ -354,7 +354,7 @@ def get_coordinate_arrays(p_vol, pc_vol):
     the patella, (n, 4) for the cartilage and cartilage thickness, and (n, 3) for the articulating surface of the
     patella"""
     # Zero all slices of the patella that do not have patellar cartilage
-    p_vol = remove_nocart_slices(p_vol, pc_vol)
+    # p_vol = remove_nocart_slices(p_vol, pc_vol)
 
     # Remove outliers based on distance from centroid and connectivity
     p_vol = remove_patella_outliers(p_vol)
