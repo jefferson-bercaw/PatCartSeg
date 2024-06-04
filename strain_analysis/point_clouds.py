@@ -301,7 +301,7 @@ def remove_patella_outliers(p_vol):
                           [1, 1, 1],
                           [0, 1, 0]])  # 4-connectivity structure
 
-    for i in range(50, p_vol.shape[2]):
+    for i in range(p_vol.shape[2]):
         slice_ = p_vol[:, :, i]
         labeled_slice, num_features = ndimage.label(slice_, structure=structure)
 
