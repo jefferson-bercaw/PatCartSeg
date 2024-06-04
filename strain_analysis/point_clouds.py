@@ -127,8 +127,6 @@ def calculate_thickness(p_vol, pc_surf_mask):
 
     voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
 
-    # Initialize the patellar cartilage thickness map that will be returned
-    pc_thick_map = np.zeros_like(pc_surf_mask)
 
     # Find the indices of the patella and patellar cartilage
     pc_inds = np.argwhere(pc_surf_mask)
@@ -145,6 +143,8 @@ def calculate_thickness(p_vol, pc_surf_mask):
     distances = scipy.spatial.distance.cdist(pc_pos, p_pos)
     closest_indices = np.argmin(distances, axis=1)
 
+    pc_coords_array = np.zeros((len(pc_inds), 4))
+
     for i in range(len(pc_inds)):
         # Get x, y, z coordinates of the PC point and the nearest patella point
         pc_coord = pc_pos[i]
@@ -154,10 +154,10 @@ def calculate_thickness(p_vol, pc_surf_mask):
         dist = np.linalg.norm(p_coord-pc_coord)
 
         # Store in thickness map (256, 256, 120)
-        pc_ind_here = pc_inds[i]
-        pc_thick_map[pc_ind_here[0], pc_ind_here[1], pc_ind_here[2]] = dist
+        # pc_ind_here = pc_inds[i]
+        pc_coords_array[i, :] = [pc_coord[0], pc_coord[1], pc_coord[2], dist]
 
-    return pc_thick_map
+    return pc_coords_array
 
 
 def calculate_distance(p_coord, pc_coord):
@@ -372,10 +372,7 @@ def get_coordinate_arrays(p_vol, pc_vol):
     p_right_coords_array = get_patella_point_cloud(p_right_surf_mask)
 
     # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
-    pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
-
-    # Calculate coord array and store thickness values for this scan
-    pc_coords_array = organize_coordinate_array(pc_thick_map)
+    pc_coords_array = calculate_thickness(p_surf_mask, pc_surf_mask)
 
     return p_coords_array, pc_coords_array, p_right_coords_array
 
