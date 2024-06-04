@@ -191,9 +191,11 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
+    predict_volumes_option = False
     create_point_clouds_option = True
     register_point_clouds_option = True
+    visualize_registration_option = True
+    visualize_strain_map_option = True
 
     # Declarations
     model_name = "unet_2024-05-29_17-21-09_cHT5.h5"
@@ -288,7 +290,7 @@ if __name__ == "__main__":
                 post_pc_array = post_pc_array[:, :-1]
 
                 # Register the patella
-                post_p_array, transform = move_patella(pre_p_array, post_p_array)
+                post_p_array, transform = move_patella(pre_p_array, post_p_array, output=visualize_registration_option)
 
                 # Move other structures
                 post_pc_array = move_point_cloud(post_pc_array, transform)
@@ -298,7 +300,7 @@ if __name__ == "__main__":
                 pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
 
                 # Calculate strain map
-                strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness)
+                strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness, output=visualize_strain_map_option)
                 mean_strain = np.mean(strain_map[:, 3])
 
                 info = scan_properties(scans[idx], scans[idx - 1], info, mean_strain)

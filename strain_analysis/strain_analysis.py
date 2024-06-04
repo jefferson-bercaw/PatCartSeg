@@ -115,7 +115,7 @@ def remove_outer_boundaries(pc_ptcld, thickness):
     return filtered_pc_ptcld, np.array(filtered_thickness)
 
 
-def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
+def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, output):
     # Remove outer boundaries
     pc_ptcld_full = copy.deepcopy(pc_ptcld)
     fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
@@ -159,10 +159,14 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness):
 
     strain_map = np.concatenate((avg_coord, strain[:, np.newaxis]), axis=1)
 
+    if output:
+        visualize_strain_map(strain_map, "strain")
+
     return strain_map
 
 
 def visualize_strain_map(strain_map, comp_type):
+    """Takes in a nx4 strain point cloud, and plots the strain surface, with label specified by comp_type"""
     coords = strain_map[:, 0:3]
     strain = strain_map[:, 3]
     strain_cloud = pv.PolyData(np.transpose([coords[:, 0], coords[:, 1], coords[:, 2]]))
