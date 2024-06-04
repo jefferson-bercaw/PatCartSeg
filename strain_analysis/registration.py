@@ -5,7 +5,7 @@ import open3d as o3d
 import copy
 
 
-def move_patella(p_points_fixed, p_points_moving):
+def move_patella(p_points_fixed, p_points_moving, output):
 
     # Create open3d point cloud objects
     p_fixed = o3d.geometry.PointCloud()
@@ -80,10 +80,11 @@ def move_patella(p_points_fixed, p_points_moving):
 
     p_moved = p_moving.transform(icp.transformation)
 
-    # Visualizing ICP transform
-    # p_moved.paint_uniform_color([1, 0, 0])
-    # p_fixed.paint_uniform_color([0, 0.651, 0.929])
-    # o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="ICP Result")
+    if output:
+        # Visualizing ICP transform
+        p_moved.paint_uniform_color([1, 0, 0])
+        p_fixed.paint_uniform_color([0, 0.651, 0.929])
+        o3d.visualization.draw_geometries([p_moved, p_fixed], window_name="ICP Result")
 
     p_moved = np.asarray(p_moved.points)
 
