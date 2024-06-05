@@ -307,8 +307,9 @@ def remove_patella_outliers(p_vol):
 
         # Filter out small components
         sizes = ndimage.sum(slice_, labeled_slice, range(1, num_features + 1))
+
         for j in range(1, num_features + 1):
-            if sizes[j - 1] >= 1:
+            if sizes[j - 1] >= 600:
                 cleaned_vol[:, :, i][labeled_slice == j] = True
 
     return cleaned_vol
