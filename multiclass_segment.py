@@ -25,7 +25,7 @@ if __name__ == "__main__":
         batch_size = 20
         dropout_rate = 0.3
         epochs = 500
-        patience = 20
+        patience = 80
         min_delta = 0.0001
 
         dataset = "cHT5"
