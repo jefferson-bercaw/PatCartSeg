@@ -4,9 +4,9 @@
 #SBATCH --nodes=1
 #SBATCH --mem=64G
 #SBATCH -p scavenger-gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 #SBATCH --exclusive
-#SBATCH --array=3,4,5,6
+#SBATCH --array=4
 
 python multiclass_segment.py -a $SLURM_ARRAY_TASK_ID
 python evaluate.py
