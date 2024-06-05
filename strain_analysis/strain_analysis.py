@@ -82,8 +82,8 @@ def average_thickness_values(pc_ptcld, thickness):
 
 
 def remove_outer_boundaries(pc_ptcld, thickness):
-    # Distance to shave off:
-    radius = 4.0  # mm
+    # Relative distance to shave off:
+    radius = 20.0  # mm
 
     # Estimate normals for the entire point cloud
     pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
@@ -120,8 +120,8 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     pc_ptcld_full = copy.deepcopy(pc_ptcld)
     fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
 
-    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness)
-    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness)
+    # pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness)
+    # fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness)
 
     # Visualize removal
     # pc_ptcld.paint_uniform_color([1, 0, 0])
@@ -132,21 +132,26 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     # fixed_pc_ptcld_full.paint_uniform_color([0, 0, 1])
     # o3d.visualization.draw_geometries([fixed_pc_ptcld, fixed_pc_ptcld_full])
 
+    # Visualize two registered thickness maps
+    # pc_ptcld.paint_uniform_color([1, 0, 0])
+    # fixed_pc_ptcld.paint_uniform_color([0, 0, 1])
+    # o3d.visualization.draw_geometries([pc_ptcld, fixed_pc_ptcld])
+
     # Average thickness values over a certain area
     moving_pc, thickness = average_thickness_values(pc_ptcld, thickness)
     fixed_pc, fixed_thickness = average_thickness_values(fixed_pc_ptcld, fixed_thickness)
 
-    # Get points arrays
-    moving_pc = np.asarray(pc_ptcld.points)
-    fixed_pc = np.asarray(fixed_pc_ptcld.points)
+    # # Get points arrays
+    # moving_pc = np.asarray(moving_pc.points)
+    # fixed_pc = np.asarray(fixed_pc.points)
 
     # compute distances
     distances = scipy.spatial.distance.cdist(moving_pc, fixed_pc)
     closest_indices = np.argmin(distances, axis=1)  # indices of the fixed_pc closest to the moving_pc
 
     # Initialize arrays
-    avg_coord = np.zeros_like(moving_pc)
-    strain = np.zeros_like(moving_pc[:, 0])
+    avg_coord = []
+    strain = []
 
     # Iterate through the moving_pc
     for i in range(len(moving_pc)):
@@ -154,10 +159,25 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
         moving_coord = moving_pc[i]  # post coord
         fixed_coord = fixed_pc[closest_indices[i]]  # pre coord
 
-        avg_coord[i, :] = fixed_coord  # average coordinate location
-        strain[i] = (thickness[i] - fixed_thickness[closest_indices[i]]) / fixed_thickness[closest_indices[i]]
+        # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
+        dist_thresh = 1.0  # distance [mm] that signifies a "good" comparison
+        if np.linalg.norm(moving_coord - fixed_coord) < dist_thresh:
+            avg_coord.append((fixed_coord + moving_coord) / 2)  # average coordinate location
+            strain.append((thickness[i] - fixed_thickness[closest_indices[i]]) / fixed_thickness[closest_indices[i]])
 
-    strain_map = np.concatenate((avg_coord, strain[:, np.newaxis]), axis=1)
+    # Convert coords and strain lists to numpy arrays
+    avg_coord = np.array(avg_coord)
+    strain = np.array(strain)
+
+    # Remove outer boundaries of strain map
+    strain_ptcld = o3d.geometry.PointCloud()
+    strain_ptcld.points = o3d.utility.Vector3dVector(avg_coord)
+    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain)
+
+    strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
+    #
+    plt.hist(strain)
+    plt.show()
 
     if output:
         visualize_strain_map(strain_map, "strain")
