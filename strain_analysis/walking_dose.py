@@ -148,53 +148,52 @@ def create_point_clouds(pre_pc_array, post_pc_array):
 
 def output_plots(info):
     froude_categories = ["010", "025", "040"]
-    data_for_boxplot = {category: [] for category in froude_categories}
+    duration_categories = ["10", "20", "30", "40", "60"]
 
-    for froude, strain in zip(info["Froude"], info["Mean Strain"]):
-        data_for_boxplot[froude].append(strain)
+    foude_data = {category: [] for category in froude_categories}
+    duration_data = {category: [] for category in duration_categories}
+
+    for froude, duration, strain in zip(info["Froude"], info["Duration"], info["Mean Strain"]):
+        if duration == "30":
+            foude_data[froude].append(strain)
+        if froude == "025":
+            duration_data[duration].append(strain)
 
     # Convert the data to a list of lists for boxplot
-    data_to_plot = [data_for_boxplot[category] for category in froude_categories]
+    froude_list = [foude_data[category] for category in froude_categories]
+    duration_list = [duration_data[category] for category in duration_categories]
 
-    # Create the plot
+    # Create froude vs strain plot
     plt.figure(figsize=(10, 6))
-    plt.boxplot(data_to_plot, labels=froude_categories)
+    plt.boxplot(froude_list, labels=froude_categories)
 
     # Customize the plot
     plt.xlabel("Froude")
     plt.ylabel("Mean Strain")
-    plt.title("Mean Strain vs Froude")
+    plt.title("Mean Strain vs Froude (Duration = 30 min)")
 
     # Show the plot
     plt.show()
 
-    duration_categories = ["10", "20", "30", "40", "60"]
-    data_for_boxplot = {category: [] for category in duration_categories}
-
-    for duration, strain in zip(info["Duration"], info["Mean Strain"]):
-        data_for_boxplot[duration].append(strain)
-
-    # Convert the data to a list of lists for boxplot
-    data_to_plot = [data_for_boxplot[category] for category in duration_categories]
-
     # Create the plot
     plt.figure(figsize=(10, 6))
-    plt.boxplot(data_to_plot, labels=duration_categories)
+    plt.boxplot(duration_list, labels=duration_categories)
 
     # Customize the plot
     plt.xlabel("Duration (min)")
     plt.ylabel("Mean Strain")
-    plt.title("Mean Strain vs Duration")
+    plt.title("Mean Strain vs Duration (Froude = 0.25)")
 
     # Show the plot
     plt.show()
 
+
 if __name__ == "__main__":
     # Options:
     predict_volumes_option = False
-    create_point_clouds_option = True
+    create_point_clouds_option = False
     register_point_clouds_option = True
-    visualize_registration_option = True
+    visualize_registration_option = False
     visualize_strain_map_option = True
 
     # Declarations
