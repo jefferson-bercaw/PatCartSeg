@@ -137,6 +137,13 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     # fixed_pc_ptcld.paint_uniform_color([0, 0, 1])
     # o3d.visualization.draw_geometries([pc_ptcld, fixed_pc_ptcld])
 
+    # Visualize thickness maps
+    thick_pre_map = np.concatenate((np.asarray(pc_ptcld.points), thickness[:, np.newaxis]), axis=1)
+    thick_post_map = np.concatenate((np.asarray(fixed_pc_ptcld.points), fixed_thickness[:, np.newaxis]), axis=1)
+
+    visualize_strain_map(thick_pre_map, "Pre Thickness")
+    visualize_strain_map(thick_post_map, "Post Thickness")
+
     # Average thickness values over a certain area
     moving_pc, thickness = average_thickness_values(pc_ptcld, thickness)
     fixed_pc, fixed_thickness = average_thickness_values(fixed_pc_ptcld, fixed_thickness)
@@ -191,10 +198,13 @@ def visualize_strain_map(strain_map, comp_type):
     strain = strain_map[:, 3]
     strain_cloud = pv.PolyData(np.transpose([coords[:, 0], coords[:, 1], coords[:, 2]]))
 
-    surf = strain_cloud.delaunay_2d()
+    surf = strain_cloud.delaunay_2d(alpha=2)
     surf[comp_type] = strain
 
-    surf.plot(show_edges=False, cmap="plasma", rng=[-0.3, 0.3])
+    if "hick" in comp_type:
+        surf.plot(show_edges=False, cmap="plasma", rng=[0, 9])
+    else:
+        surf.plot(show_edges=False, cmap="plasma", rng=[-0.3, 0.3])
     return
 
 
