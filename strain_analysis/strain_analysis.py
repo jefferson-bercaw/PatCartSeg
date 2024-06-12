@@ -76,17 +76,15 @@ def average_thickness_values(pc_ptcld, thickness):
         # plt.hist(thick_to_avg)
         # plt.show()
 
-        thickness_new[idx] = np.median(thick_to_avg)
+        thickness_new[idx] = np.mean(thick_to_avg)
 
     return pc_points, thickness_new
 
 
-def remove_outer_boundaries(pc_ptcld, thickness):
-    # Relative distance to shave off:
-    radius = 20.0  # mm
+def remove_outer_boundaries(pc_ptcld, thickness, radius):
 
     # Estimate normals for the entire point cloud
-    pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+    pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30))
 
     # Compute point density
     kdtree = o3d.geometry.KDTreeFlann(pc_ptcld)
@@ -120,22 +118,23 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     pc_ptcld_full = copy.deepcopy(pc_ptcld)
     fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
 
-    # pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness)
-    # fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness)
+    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=2.0)
+    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=2.0)
 
     # Visualize removal
-    # pc_ptcld.paint_uniform_color([1, 0, 0])
-    # pc_ptcld_full.paint_uniform_color([0, 0, 1])
-    # o3d.visualization.draw_geometries([pc_ptcld, pc_ptcld_full])
-    #
-    # fixed_pc_ptcld.paint_uniform_color([1, 0, 0])
-    # fixed_pc_ptcld_full.paint_uniform_color([0, 0, 1])
-    # o3d.visualization.draw_geometries([fixed_pc_ptcld, fixed_pc_ptcld_full])
+    if output:
+        pc_ptcld.paint_uniform_color([1, 0, 0])
+        pc_ptcld_full.paint_uniform_color([0, 0, 1])
+        o3d.visualization.draw_geometries([pc_ptcld, pc_ptcld_full])
+        #
+        fixed_pc_ptcld.paint_uniform_color([1, 0, 0])
+        fixed_pc_ptcld_full.paint_uniform_color([0, 0, 1])
+        o3d.visualization.draw_geometries([fixed_pc_ptcld, fixed_pc_ptcld_full])
 
-    # Visualize two registered thickness maps
-    # pc_ptcld.paint_uniform_color([1, 0, 0])
-    # fixed_pc_ptcld.paint_uniform_color([0, 0, 1])
-    # o3d.visualization.draw_geometries([pc_ptcld, fixed_pc_ptcld])
+        # Visualize two registered thickness maps
+        pc_ptcld.paint_uniform_color([1, 0, 0])
+        fixed_pc_ptcld.paint_uniform_color([0, 0, 1])
+        o3d.visualization.draw_geometries([pc_ptcld, fixed_pc_ptcld])
 
     # Visualize thickness maps
     thick_pre_map = np.concatenate((np.asarray(pc_ptcld.points), thickness[:, np.newaxis]), axis=1)
@@ -164,7 +163,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
         fixed_coord = fixed_pc[closest_indices[i]]  # pre coord
 
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
-        dist_thresh = 1.0  # distance [mm] that signifies a "good" comparison
+        dist_thresh = 0.75  # distance [mm] that signifies a "good" comparison
         if np.linalg.norm(moving_coord - fixed_coord) < dist_thresh:
             avg_coord.append((fixed_coord + moving_coord) / 2)  # average coordinate location
             strain.append((thickness[i] - fixed_thickness[closest_indices[i]]) / fixed_thickness[closest_indices[i]])
@@ -176,7 +175,12 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     # Remove outer boundaries of strain map
     strain_ptcld = o3d.geometry.PointCloud()
     strain_ptcld.points = o3d.utility.Vector3dVector(avg_coord)
-    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain)
+
+    # Copy strain map for visual comparison
+    strain_map_pre_removal = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
+
+    # Remove outer boundaries
+    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=5.0)
 
     strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
     #
@@ -186,7 +190,8 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     if output:
         visualize_strain_map(thick_pre_map, "Pre Thickness")
         visualize_strain_map(thick_post_map, "Post Thickness")
-        visualize_strain_map(strain_map, "strain")
+        visualize_strain_map(strain_map_pre_removal, "strain pre-removal")
+        visualize_strain_map(strain_map, "strain post-removal")
 
     return strain_map
 
@@ -212,7 +217,7 @@ def store_registered_points(registered_points, comp_type, strain_map, moving_p_p
 
     registered_points[comp_type]["strain_map"] = strain_map
     registered_points[comp_type]["pre_p_ptcld"] = np.asarray(fixed_p_ptcld.points)
-    registered_points[comp_type]["post_p_ptcld"] = np.asarray(moving_p_ptcld.points)
+    registered_points[comp_type]["post_p_ptcld"] = moving_p_ptcld
     registered_points[comp_type]["pre_pc_ptcld"] = np.asarray(fixed_pc_ptcld.points)
     registered_points[comp_type]["post_pc_ptcld"] = np.asarray(moving_pc_ptcld.points)
 
@@ -250,7 +255,7 @@ if __name__ == "__main__":
         moving_pc_ptcld, moving_thickness = get_cartilage_ptcld(point_clouds, subj_names[idx])
 
         # Perform Registration and get transformation
-        moving_p_ptcld, icp_transform = move_patella(fixed_p_ptcld, moving_p_ptcld)
+        moving_p_ptcld, icp_transform = move_patella(np.asarray(fixed_p_ptcld.points), np.asarray(moving_p_ptcld.points), output=False)
 
         # Transform other moving structures
         moving_p_right_ptcld.transform(icp_transform)
@@ -271,7 +276,7 @@ if __name__ == "__main__":
         transformations = store_transformations(transformations, subj_names[idx], icp_transform)
 
         # Create strain maps
-        strain_map = produce_strain_map(moving_pc_ptcld, moving_thickness, fixed_pc_ptcld, fixed_thickness)
+        strain_map = produce_strain_map(moving_pc_ptcld, moving_thickness, fixed_pc_ptcld, fixed_thickness, output=True)
 
         # Store the strain and bone maps
         registered_points = store_registered_points(registered_points, comp_type, strain_map,
