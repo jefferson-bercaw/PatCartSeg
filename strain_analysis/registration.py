@@ -73,8 +73,8 @@ def move_patella(p_points_fixed, p_points_moving, output):
     icp = o3d.pipelines.registration.registration_icp(p_moving, p_fixed, threshold, initial_moving_to_fixed,
                                                       o3d.pipelines.registration.TransformationEstimationPointToPoint(),
                                                       o3d.pipelines.registration.ICPConvergenceCriteria(
-                                                          relative_fitness=0.000000001,
-                                                          relative_rmse=0.0000000001,
+                                                          relative_fitness=1e-10,
+                                                          relative_rmse=1e-10,
                                                           max_iteration=50000)
                                                       )
 
@@ -111,4 +111,4 @@ if __name__ == "__main__":
 
     p_points_moving = point_clouds[subj_names[4]]["p_coords_array"]
 
-    p_moved, icp_transform = move_patella(p_points_fixed, p_points_moving)
+    p_moved, icp_transform = move_patella(p_points_fixed, p_points_moving, output=True)
