@@ -141,9 +141,6 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     thick_pre_map = np.concatenate((np.asarray(pc_ptcld.points), thickness[:, np.newaxis]), axis=1)
     thick_post_map = np.concatenate((np.asarray(fixed_pc_ptcld.points), fixed_thickness[:, np.newaxis]), axis=1)
 
-    visualize_strain_map(thick_pre_map, "Pre Thickness")
-    visualize_strain_map(thick_post_map, "Post Thickness")
-
     # Average thickness values over a certain area
     moving_pc, thickness = average_thickness_values(pc_ptcld, thickness)
     fixed_pc, fixed_thickness = average_thickness_values(fixed_pc_ptcld, fixed_thickness)
@@ -183,10 +180,12 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
 
     strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
     #
-    plt.hist(strain)
-    plt.show()
+    # plt.hist(strain)
+    # plt.show()
 
     if output:
+        visualize_strain_map(thick_pre_map, "Pre Thickness")
+        visualize_strain_map(thick_post_map, "Post Thickness")
         visualize_strain_map(strain_map, "strain")
 
     return strain_map
