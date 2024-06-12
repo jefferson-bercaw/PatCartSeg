@@ -250,12 +250,11 @@ def plot_thickness_distributions(thickness_values, model_name):
 def interpolate_patella(p_pos):
     """Takes in nx3 ndarray of patella positions, and interpolates them"""
     p_point_cloud = pv.PolyData(np.transpose([p_pos[:, 0], p_pos[:, 1], p_pos[:, 2]]))
-    p_point_cloud["Slice"] = p_pos[:, 1]
 
     # Construct patella surface and resample
-    p_surf = p_point_cloud.reconstruct_surface()
+    p_surf = p_point_cloud.delaunay_2d().poisson_surface()
     p_surf = p_surf.subdivide(nsub=1)
-    # p_surf.plot(show_edges=True)
+    p_surf.plot(show_edges=True)
 
     # Get new points
     p_pos = p_surf.points
@@ -367,6 +366,9 @@ def get_coordinate_arrays(p_vol, pc_vol):
     p_surf_mask = return_p_surface(p_vol)
     p_coords_array = get_patella_point_cloud(p_surf_mask)
 
+    # Interpolate the patella surface
+    # p_interp_coords_array = interpolate_patella(p_raw_coords_array)
+
     # Edit mask to get the right most pixels for the patellar cartilage and patella surf
     pc_surf_mask = return_pc_surface(pc_vol)
     p_right_surf_mask = return_pc_surface(p_right_vol)
@@ -397,34 +399,35 @@ if __name__ == '__main__':
         # Load in patella and patellar cartilage volumes
         p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
 
+        p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
         # p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
 
         # Post-processing: Fill holes, remove stray pixels, in both volumes?
-        p_vol = remove_nocart_slices(p_vol, pc_vol)
-        p_vol = remove_patella_outliers(p_vol)
-
-        # Get right patellar volume (at the cartilage interface)
-        p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
-
-        # Edit mask to get the surface pixels (no middle pixels) for the patella and get the point cloud
-        p_surf_mask = return_p_surface(p_vol)
-        p_coords_array = get_patella_point_cloud(p_surf_mask)
-
-        p_ptcld = o3d.geometry.PointCloud()
-        p_ptcld.points = o3d.utility.Vector3dVector(p_coords_array)
-        p_ptcld.paint_uniform_color([1, 0.706, 0])
-        o3d.visualization.draw_geometries([p_ptcld])
-
-        # Edit mask to get the right most pixels for the patellar cartilage and patella surf
-        pc_surf_mask = return_pc_surface(pc_vol)
-        p_right_surf_mask = return_pc_surface(p_right_vol)
-        p_right_coords_array = get_patella_point_cloud(p_right_surf_mask)
-
-        # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
-        pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
-
-        # Calculate coord array and store thickness values for this scan
-        pc_coords_array = organize_coordinate_array(pc_thick_map)
+        # p_vol = remove_nocart_slices(p_vol, pc_vol)
+        # p_vol = remove_patella_outliers(p_vol)
+        #
+        # # Get right patellar volume (at the cartilage interface)
+        # p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
+        #
+        # # Edit mask to get the surface pixels (no middle pixels) for the patella and get the point cloud
+        # p_surf_mask = return_p_surface(p_vol)
+        # p_coords_array = get_patella_point_cloud(p_surf_mask)
+        #
+        # p_ptcld = o3d.geometry.PointCloud()
+        # p_ptcld.points = o3d.utility.Vector3dVector(p_coords_array)
+        # p_ptcld.paint_uniform_color([1, 0.706, 0])
+        # o3d.visualization.draw_geometries([p_ptcld])
+        #
+        # # Edit mask to get the right most pixels for the patellar cartilage and patella surf
+        # pc_surf_mask = return_pc_surface(pc_vol)
+        # p_right_surf_mask = return_pc_surface(p_right_vol)
+        # p_right_coords_array = get_patella_point_cloud(p_right_surf_mask)
+        #
+        # # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
+        # pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
+        #
+        # # Calculate coord array and store thickness values for this scan
+        # pc_coords_array = organize_coordinate_array(pc_thick_map)
 
         # Upsample the cartilage point cloud
         # pc_coords_array = upsample_pc_coords_array(pc_coords_array)
