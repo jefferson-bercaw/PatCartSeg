@@ -146,6 +146,38 @@ def create_point_clouds(pre_pc_array, post_pc_array):
     return pre_pc_ptcld, post_pc_ptcld
 
 
+def calculate_middle_strain(strain_map, output):
+    """Locates and calculates the middle point of the strain map"""
+    point_cloud = strain_map[:, 0:3]
+    min_avg_distance = 1000.0
+    for idx, point in enumerate(point_cloud):
+        total_distance = 0
+        for other_point in point_cloud:
+            if not np.array_equal(point, other_point):
+                total_distance += np.linalg.norm(point-other_point)
+        avg_distance = total_distance / (len(point_cloud) - 1)
+        if avg_distance < min_avg_distance:
+            min_avg_distance = avg_distance
+            center_point = point
+            central_strain = strain_map[idx, 3]
+
+    center_point = center_point.reshape(1, 3)
+
+    # Visualize center
+    if output:
+        ptcld = o3d.geometry.PointCloud()
+        ptcld.points = o3d.utility.Vector3dVector(point_cloud)
+
+        center = o3d.geometry.PointCloud()
+        center.points = o3d.utility.Vector3dVector(center_point)
+
+        ptcld.paint_uniform_color([1, 0, 0])
+        center.paint_uniform_color([0, 0, 1])
+        o3d.visualization.draw_geometries([ptcld, center])
+
+    return central_strain
+
+
 def output_plots(info):
     froude_categories = ["010", "025", "040"]
     duration_categories = ["10", "20", "30", "40", "60"]
@@ -194,7 +226,7 @@ if __name__ == "__main__":
     create_point_clouds_option = False
     register_point_clouds_option = True
     visualize_registration_option = False
-    visualize_strain_map_option = True
+    visualize_strain_map_option = False
 
     # Declarations
     model_name = "unet_2024-05-29_17-21-09_cHT5.h5"
@@ -300,8 +332,10 @@ if __name__ == "__main__":
 
                 # Calculate strain map
                 strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness, output=visualize_strain_map_option)
-                mean_strain = np.mean(strain_map[:, 3])
 
-                info = scan_properties(scans[idx], scans[idx - 1], info, mean_strain)
+                # Calculate the strain at the middle-most point of the strain map
+                middle_strain = calculate_middle_strain(strain_map, output=False)
+
+                info = scan_properties(scans[idx], scans[idx - 1], info, middle_strain)
 
         output_plots(info)
