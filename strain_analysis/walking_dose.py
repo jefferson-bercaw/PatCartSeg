@@ -222,14 +222,14 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = False
-    create_point_clouds_option = False
+    predict_volumes_option = True
+    create_point_clouds_option = True
     register_point_clouds_option = True
     visualize_registration_option = False
     visualize_strain_map_option = False
 
     # Declarations
-    model_name = "unet_2024-05-29_17-21-09_cHT5.h5"
+    model_name = "unet_2024-06-16_16-41-22_cHT5.h5"
     batch_size = 12
     n_slices = 120
     batches_per_scan = n_slices // batch_size
@@ -334,8 +334,14 @@ if __name__ == "__main__":
                 strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness, output=visualize_strain_map_option)
 
                 # Calculate the strain at the middle-most point of the strain map
-                middle_strain = calculate_middle_strain(strain_map, output=False)
+                # strains = list(strain_map[:, 3])
+                # plt.hist(strains)
+                # plt.xlabel("Strain")
+                # plt.show()
 
-                info = scan_properties(scans[idx], scans[idx - 1], info, middle_strain)
+                mean_strain = np.mean(strain_map[:, 3])
+                print(f"Mean strain for {scans[idx]}: {mean_strain}")
+
+                info = scan_properties(scans[idx], scans[idx - 1], info, mean_strain)
 
         output_plots(info)
