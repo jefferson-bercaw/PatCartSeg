@@ -7,7 +7,8 @@ import scipy.ndimage as ndimage
 import pyvista as pv
 import pickle
 import open3d as o3d
-
+from get_data_path import get_data_path
+from registration import move_patella
 
 def return_predicted_volumes(subj_name, model_name):
     cwd = os.getcwd()
@@ -126,7 +127,6 @@ def calculate_thickness(p_vol, pc_surf_mask):
      cartilage volume, with cartilage thickness values in the location of the patellar cartilage surface"""
 
     voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
-
 
     # Find the indices of the patella and patellar cartilage
     pc_inds = np.argwhere(pc_surf_mask)
@@ -349,6 +349,30 @@ def extract_right_patellar_volume(p_vol, pc_vol):
     return p_right_vol
 
 
+def return_true_volumes(subj_name):
+    """Returns true volumes from manual segmentation"""
+    data_path = get_data_path("cHT")
+
+    true_folder = os.path.join(data_path, "test", "mask")
+
+    image_list = [f"{subj_name}-{four_digit_number(i)}.bmp" for i in range(1, 120)]
+
+    true_names = [os.path.join(true_folder, image_name) for image_name in image_list]
+
+    true_vol = assemble_mri_volume(true_names, xy_dim=256)
+
+    p_vol = np.zeros_like(true_vol)
+    pc_vol = np.zeros_like(true_vol)
+
+    inds_p = np.logical_and(0.003 < true_vol, true_vol < 0.006)
+    inds_pc = true_vol > 0.006
+
+    p_vol[inds_p] = 1
+    pc_vol[inds_pc] = 1
+
+    return p_vol, pc_vol
+
+
 def get_coordinate_arrays(p_vol, pc_vol):
     """Transforms (256, 256, 120) ndarrays for the patella and patellar cartilage predictions to (n, 3) ndarray for
     the patella, (n, 4) for the cartilage and cartilage thickness, and (n, 3) for the articulating surface of the
@@ -386,7 +410,7 @@ if __name__ == '__main__':
     # subj_names = ["AS_018", "AS_019", "AS_020", "AS_021", "AS_022", "AS_023"]
     # model_name = "unet_2024-04-17_08-06-28"
     subj_names = ["AS_006", "AS_007", "AS_008", "AS_009", "AS_010", "AS_011"]
-    model_name = "unet_2024-05-27_08-01-08_cHT5"
+    model_name = "unet_2024-06-16_16-41-22_cHT5"
 
     thickness_values = list()
 
@@ -398,8 +422,13 @@ if __name__ == '__main__':
         print(f"Subject {subj_name}")
         # Load in patella and patellar cartilage volumes
         p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
+        p_vol_true, pc_vol_true = return_true_volumes(subj_name)
 
         p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
+        p_true_coords_array, pc_true_coords_array, pc_right_coords_array = get_coordinate_arrays(p_vol_true, pc_vol_true)
+
+        p_points_moved, transform = move_patella(p_coords_array, p_true_coords_array, True)  # True moving to predicted
+
         # p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
 
         # Post-processing: Fill holes, remove stray pixels, in both volumes?
