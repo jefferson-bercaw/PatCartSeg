@@ -145,8 +145,8 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     fixed_pc, fixed_thickness = average_thickness_values(fixed_pc_ptcld, fixed_thickness)
 
     # # Get points arrays
-    # moving_pc = np.asarray(moving_pc.points)
-    # fixed_pc = np.asarray(fixed_pc.points)
+    # moving_pc = np.asarray(pc_ptcld.points)
+    # fixed_pc = np.asarray(fixed_pc_ptcld.points)
 
     # compute distances
     distances = scipy.spatial.distance.cdist(moving_pc, fixed_pc)
@@ -156,7 +156,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     avg_coord = []
     strain = []
 
-    # Iterate through the moving_pc
+    # Iterate through the moving_pc (post)
     for i in range(len(moving_pc)):
         #  Get x, y, z coordinates of the moving and fixed PC point
         moving_coord = moving_pc[i]  # post coord
@@ -165,8 +165,13 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
         dist_thresh = 0.75  # distance [mm] that signifies a "good" comparison
         if np.linalg.norm(moving_coord - fixed_coord) < dist_thresh:
+            pre_thick = fixed_thickness[closest_indices[i]]
+            post_thick = thickness[i]
+
             avg_coord.append((fixed_coord + moving_coord) / 2)  # average coordinate location
-            strain.append((thickness[i] - fixed_thickness[closest_indices[i]]) / fixed_thickness[closest_indices[i]])
+
+            strain_here = (post_thick - pre_thick) / pre_thick
+            strain.append(strain_here)
 
     # Convert coords and strain lists to numpy arrays
     avg_coord = np.array(avg_coord)
