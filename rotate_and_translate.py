@@ -168,5 +168,5 @@ if __name__ == "__main__":
             # Save
             save_images(trans_mri, trans_mask, save_data_path, f"a{idx}{file}")
 
-        if file_num % (50 * (args.naug+1)):
+        if file_num % (50 * (5+1)):
             print(f"File {file_num * (5+1)} of {len(files) * (5+1)}")
