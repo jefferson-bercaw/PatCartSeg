@@ -404,10 +404,18 @@ def get_coordinate_arrays(p_vol, pc_vol):
 
     return p_coords_array, pc_coords_array, p_right_coords_array
 
-def export_point_cloud(subj_name, type, point_cloud):
+def export_point_cloud(subj_name, tissue_type, point_cloud):
     """Export a nx3 point cloud to a .txt file"""
-    np.savetxt(f"./geomagic/{subj_name}_{type}", point_cloud, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"./geomagic/{subj_name}_{tissue_type}.txt", point_cloud, delimiter='\t', fmt='%.6f')
     return
+
+
+def import_point_cloud(subj_name, tissue_type):
+    """Imports a nx3 point cloud from a .pcd file"""
+    filename = f"./geomagic/{subj_name}_{tissue_type}.pcd"
+    ptcld = o3d.io.read_point_cloud(filename)
+    coord_array = np.asarray(ptcld.points)
+    return coord_array
 
 
 if __name__ == '__main__':
@@ -436,11 +444,15 @@ if __name__ == '__main__':
         p_true_coords_array, pc_true_coords_array, pc_right_coords_array = get_coordinate_arrays(p_vol_true, pc_vol_true)
 
         # Export to point clouds for Geomagic to smooth/interpolate
-        export_point_cloud(subj_name, )
+        export_point_cloud(subj_name, "P", p_coords_array)
+        export_point_cloud(subj_name, "PC", pc_coords_array)
+
         # Load in new point clouds
+        p_coords_array = import_point_cloud(subj_name, "P")
+        pc_coords_array = import_point_cloud(subj_name, "PC")
 
         # Register the patellae together
-        p_points_moved, transform = move_patella(p_coords_array, p_true_coords_array, True)  # True moving to predicted
+        # p_points_moved, transform = move_patella(p_coords_array, p_true_coords_array, True)  # True moving to predicted
 
         # Calculate cartilage thickness maps
         # pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
@@ -455,13 +467,13 @@ if __name__ == '__main__':
         # pc_coords_array = upsample_pc_coords_array(pc_coords_array)
 
         # Store point clouds in a dictionary
-        point_clouds = store_point_clouds(point_clouds, p_coords_array, pc_coords_array, p_right_coords_array, subj_name)
+        # point_clouds = store_point_clouds(point_clouds, p_coords_array, pc_coords_array, p_right_coords_array, subj_name)
 
         # Store thickness values for distribution analysis
         # thickness_values.append(pc_coords_array[:, 3])
 
         # Visualize the map
-        visualize_thickness_map(pc_thick_map)
+        # visualize_thickness_map(pc_thick_map)
 
     # plot_thickness_distributions(thickness_values, model_name)
 
