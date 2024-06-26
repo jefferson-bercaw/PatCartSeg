@@ -10,6 +10,7 @@ import open3d as o3d
 from get_data_path import get_data_path
 from registration import move_patella
 
+
 def return_predicted_volumes(subj_name, model_name):
     cwd = os.getcwd()
     pred_folder = os.path.join(cwd, "../results", model_name)
@@ -403,6 +404,11 @@ def get_coordinate_arrays(p_vol, pc_vol):
 
     return p_coords_array, pc_coords_array, p_right_coords_array
 
+def export_point_cloud(subj_name, type, point_cloud):
+    """Export a nx3 point cloud to a .txt file"""
+    np.savetxt(f"./geomagic/{subj_name}_{type}", point_cloud, delimiter='\t', fmt='%.6f')
+    return
+
 
 if __name__ == '__main__':
 
@@ -420,41 +426,28 @@ if __name__ == '__main__':
     # Thickness Loop
     for subj_name in subj_names:
         print(f"Subject {subj_name}")
-        # Load in patella and patellar cartilage volumes
+
+        # Load in patella and patellar cartilage volumes for predicted and true scans
         p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
         p_vol_true, pc_vol_true = return_true_volumes(subj_name)
 
+        # Get coordinate arrays for predicted and true scans
         p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
         p_true_coords_array, pc_true_coords_array, pc_right_coords_array = get_coordinate_arrays(p_vol_true, pc_vol_true)
 
+        # Export to point clouds for Geomagic to smooth/interpolate
+        export_point_cloud(subj_name, )
+        # Load in new point clouds
+
+        # Register the patellae together
         p_points_moved, transform = move_patella(p_coords_array, p_true_coords_array, True)  # True moving to predicted
 
-        # p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
-
-        # Post-processing: Fill holes, remove stray pixels, in both volumes?
-        # p_vol = remove_nocart_slices(p_vol, pc_vol)
-        # p_vol = remove_patella_outliers(p_vol)
-        #
-        # # Get right patellar volume (at the cartilage interface)
-        # p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
-        #
-        # # Edit mask to get the surface pixels (no middle pixels) for the patella and get the point cloud
-        # p_surf_mask = return_p_surface(p_vol)
-        # p_coords_array = get_patella_point_cloud(p_surf_mask)
-        #
-        # p_ptcld = o3d.geometry.PointCloud()
-        # p_ptcld.points = o3d.utility.Vector3dVector(p_coords_array)
-        # p_ptcld.paint_uniform_color([1, 0.706, 0])
-        # o3d.visualization.draw_geometries([p_ptcld])
-        #
-        # # Edit mask to get the right most pixels for the patellar cartilage and patella surf
-        # pc_surf_mask = return_pc_surface(pc_vol)
-        # p_right_surf_mask = return_pc_surface(p_right_vol)
-        # p_right_coords_array = get_patella_point_cloud(p_right_surf_mask)
-        #
-        # # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
+        # Calculate cartilage thickness maps
         # pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
-        #
+
+        # Save (nx4) cartilage thickness maps
+
+        ### OLD
         # # Calculate coord array and store thickness values for this scan
         # pc_coords_array = organize_coordinate_array(pc_thick_map)
 
