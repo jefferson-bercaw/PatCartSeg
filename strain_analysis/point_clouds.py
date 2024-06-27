@@ -376,7 +376,7 @@ def return_true_volumes(subj_name):
 
 def get_coordinate_arrays(p_vol, pc_vol):
     """Transforms (256, 256, 120) ndarrays for the patella and patellar cartilage predictions to (n, 3) ndarray for
-    the patella, (n, 4) for the cartilage and cartilage thickness, and (n, 3) for the articulating surface of the
+    the patella, (n, 3) for the cartilage and cartilage thickness, and (n, 3) for the articulating surface of the
     patella"""
     # Zero all slices of the patella that do not have patellar cartilage
     # p_vol = remove_nocart_slices(p_vol, pc_vol)
@@ -396,13 +396,12 @@ def get_coordinate_arrays(p_vol, pc_vol):
 
     # Edit mask to get the right most pixels for the patellar cartilage and patella surf
     pc_surf_mask = return_pc_surface(pc_vol)
-    p_right_surf_mask = return_pc_surface(p_right_vol)
-    p_right_coords_array = get_patella_point_cloud(p_right_surf_mask)
+    pc_coords_array = get_patella_point_cloud(pc_surf_mask)
 
     # For each cartilage surface pt, calculate nearest P pt, calculate dist, store val in PC coord
-    pc_coords_array = calculate_thickness(p_surf_mask, pc_surf_mask)
+    # pc_coords_array = calculate_thickness(p_surf_mask, pc_surf_mask)
 
-    return p_coords_array, pc_coords_array, p_right_coords_array
+    return p_coords_array, pc_coords_array
 
 
 def export_point_cloud(subj_name, tissue_type, point_cloud):
@@ -437,16 +436,16 @@ if __name__ == '__main__':
         print(f"Subject {subj_name}")
 
         # Load in patella and patellar cartilage volumes for predicted and true scans
-        # p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
+        p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
         # p_vol_true, pc_vol_true = return_true_volumes(subj_name)
-        #
+
         # # Get coordinate arrays for predicted and true scans
-        # p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
+        p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
         # p_true_coords_array, pc_true_coords_array, pc_right_coords_array = get_coordinate_arrays(p_vol_true, pc_vol_true)
 
         # # Export to point clouds for Geomagic to smooth/interpolate
-        # export_point_cloud(subj_name, "P", p_coords_array)
-        # export_point_cloud(subj_name, "PC", pc_coords_array)
+        export_point_cloud(subj_name, "P", p_coords_array)
+        export_point_cloud(subj_name, "PC", pc_coords_array)
 
         # Load in new point clouds
         p_coords_array = import_point_cloud(subj_name, "P")

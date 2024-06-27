@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from dice_loss_function import dice_loss
 from get_data_path import get_data_path
 from evaluate import load_model
-from point_clouds import get_coordinate_arrays
+from point_clouds import get_coordinate_arrays, calculate_thickness
 from registration import move_patella, move_point_cloud
 from strain_analysis import produce_strain_map
 
@@ -102,21 +102,37 @@ def load_volumes(scan, volume_path):
     return pat_vol, pat_cart_vol
 
 
-def save_coordinate_arrays(p_array, pc_array, pr_array, scan, point_cloud_path):
+def save_coordinate_arrays(p_array, pc_array, scan):
     """Writes ndarrays to point_cloud path"""
-    np.savez(os.path.join(point_cloud_path, scan), p_array=p_array, pc_array=pc_array, pr_array=pr_array)
+
+    # Remove .npz extension on scan, if there
+    if scan[-4:] == ".npz":
+        scan = scan[:-4]
+
+    np.savetxt(f"{get_data_path('Paranjape_ToGeomagic')}/P/{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{get_data_path('Paranjape_ToGeomagic')}/PC/{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
+
     print(f"Saved {scan} point clouds")
     return
 
 
-def load_coordinate_arrays(scan, point_cloud_path):
-    """Loads in .npz volume predictions and returns p_vol and pc_vol"""
-    loaded_data = np.load(os.path.join(point_cloud_path, scan))
-    p_array = loaded_data["p_array"]
-    pc_array = loaded_data["pc_array"]
-    pr_array = loaded_data["pr_array"]
+def load_coordinate_arrays(scan):
+    """Loads in .pcd point clouds from Geomagic"""
 
-    return p_array, pc_array, pr_array
+    # Remove .npz extension on scan, if there
+    if scan[-4:] == ".npz":
+        scan = scan[:-4]
+
+    filename_P = f"{get_data_path('Paranjape_FromGeomagic')}/{scan}_P.pcd"
+    filename_PC = f"{get_data_path('Paranjape_FromGeomagic')}/{scan}_PC.pcd"
+
+    ptcld_P = o3d.io.read_point_cloud(filename_P)
+    ptcld_PC = o3d.io.read_point_cloud(filename_PC)
+
+    p_array = np.asarray(ptcld_P.points)
+    pc_array = np.asarray(ptcld_PC.points)
+
+    return p_array, pc_array
 
 
 def scan_properties(scan2, scan1, info, strain):
@@ -144,38 +160,6 @@ def create_point_clouds(pre_pc_array, post_pc_array):
     post_pc_ptcld = o3d.geometry.PointCloud()
     post_pc_ptcld.points = o3d.utility.Vector3dVector(post_pc_array)
     return pre_pc_ptcld, post_pc_ptcld
-
-
-def calculate_middle_strain(strain_map, output):
-    """Locates and calculates the middle point of the strain map"""
-    point_cloud = strain_map[:, 0:3]
-    min_avg_distance = 1000.0
-    for idx, point in enumerate(point_cloud):
-        total_distance = 0
-        for other_point in point_cloud:
-            if not np.array_equal(point, other_point):
-                total_distance += np.linalg.norm(point-other_point)
-        avg_distance = total_distance / (len(point_cloud) - 1)
-        if avg_distance < min_avg_distance:
-            min_avg_distance = avg_distance
-            center_point = point
-            central_strain = strain_map[idx, 3]
-
-    center_point = center_point.reshape(1, 3)
-
-    # Visualize center
-    if output:
-        ptcld = o3d.geometry.PointCloud()
-        ptcld.points = o3d.utility.Vector3dVector(point_cloud)
-
-        center = o3d.geometry.PointCloud()
-        center.points = o3d.utility.Vector3dVector(center_point)
-
-        ptcld.paint_uniform_color([1, 0, 0])
-        center.paint_uniform_color([0, 0, 1])
-        o3d.visualization.draw_geometries([ptcld, center])
-
-    return central_strain
 
 
 def output_plots(info):
@@ -222,8 +206,9 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
-    create_point_clouds_option = True
+    predict_volumes_option = False
+    create_point_clouds_option = False
+    # Geomagic here
     register_point_clouds_option = True
     visualize_registration_option = False
     visualize_strain_map_option = False
@@ -284,8 +269,8 @@ if __name__ == "__main__":
         # Iterate through each volume, calculate coordinate arrays, and save
         for scan in scans:
             pat_vol, pat_cart_vol = load_volumes(scan, volume_path)
-            p_array, pc_array, pr_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
-            save_coordinate_arrays(p_array, pc_array, pr_array, scan, point_cloud_path)
+            p_array, pc_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
+            save_coordinate_arrays(p_array, pc_array, scan)
 
     # Load pre and post, register, calculate strain map, save registered point clouds and strain map
     if register_point_clouds_option:
@@ -309,8 +294,12 @@ if __name__ == "__main__":
         for idx in range(len(scans)):
             if idx % 2 != 0:
                 print(f"Current Scans: {scans[idx]} and {scans[idx-1]}")
-                pre_p_array, pre_pc_array, pre_pr_array = load_coordinate_arrays(scans[idx], point_cloud_path)
-                post_p_array, post_pc_array, post_pr_array = load_coordinate_arrays(scans[idx-1], point_cloud_path)
+                pre_p_array, pre_pc_array = load_coordinate_arrays(scans[idx])
+                post_p_array, post_pc_array = load_coordinate_arrays(scans[idx-1])
+
+                # Calculate thickness
+                pre_pc_array = calculate_thickness(pre_p_array, pre_pc_array)
+                post_pc_array = calculate_thickness(post_p_array, post_pc_array)
 
                 # Extract thicknesses
                 pre_thickness = pre_pc_array[:, 3]
@@ -325,7 +314,6 @@ if __name__ == "__main__":
 
                 # Move other structures
                 post_pc_array = move_point_cloud(post_pc_array, transform)
-                post_pr_array = move_point_cloud(post_pr_array, transform)
 
                 # Create o3d point clouds
                 pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
