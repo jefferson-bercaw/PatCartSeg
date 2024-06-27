@@ -123,19 +123,19 @@ def get_patella_point_cloud(p_vol):
     return p_pos
 
 
-def calculate_thickness(p_vol, pc_surf_mask):
+def calculate_thickness(p_pos, pc_pos):
     """Takes in a patella binary volume and a patellar cartilage surface binary volume, and returns the same patellar
      cartilage volume, with cartilage thickness values in the location of the patellar cartilage surface"""
 
-    voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
+    # voxel_lengths = [0.3, 0.3, 1.0]  # voxel lengths in mm
 
     # Find the indices of the patella and patellar cartilage
-    pc_inds = np.argwhere(pc_surf_mask)
-    p_inds = np.argwhere(p_vol)
-
-    # Find the x, y, and z coordinates of the patella and patellar cartilage
-    pc_pos = pc_inds * voxel_lengths
-    p_pos = p_inds * voxel_lengths
+    # pc_inds = np.argwhere(pc_surf_mask)
+    # p_inds = np.argwhere(p_vol)
+    #
+    # # Find the x, y, and z coordinates of the patella and patellar cartilage
+    # pc_pos = pc_inds * voxel_lengths
+    # p_pos = p_inds * voxel_lengths
 
     # Add points to the patella along the surface for a finer mesh
     # p_pos = interpolate_patella(p_pos)
@@ -144,9 +144,9 @@ def calculate_thickness(p_vol, pc_surf_mask):
     distances = scipy.spatial.distance.cdist(pc_pos, p_pos)
     closest_indices = np.argmin(distances, axis=1)
 
-    pc_coords_array = np.zeros((len(pc_inds), 4))
+    pc_coords_array = np.zeros((len(pc_pos), 4))
 
-    for i in range(len(pc_inds)):
+    for i in range(len(pc_pos)):
         # Get x, y, z coordinates of the PC point and the nearest patella point
         pc_coord = pc_pos[i]
         p_coord = p_pos[closest_indices[i]]
@@ -216,8 +216,8 @@ def upsample_pc_coords_array(coords_array):
     return coords_array_upsampled
 
 
-def visualize_thickness_map(pc_thick_map):
-    coords_array = organize_coordinate_array(pc_thick_map)
+def visualize_thickness_map(coords_array):
+    # coords_array = organize_coordinate_array(pc_thick_map)
     point_cloud = pv.PolyData(np.transpose([coords_array[:, 0], coords_array[:, 1], coords_array[:, 2]]))
     point_cloud['Cart. Thickness (mm)'] = coords_array[:, 3]
 
@@ -404,6 +404,7 @@ def get_coordinate_arrays(p_vol, pc_vol):
 
     return p_coords_array, pc_coords_array, p_right_coords_array
 
+
 def export_point_cloud(subj_name, tissue_type, point_cloud):
     """Export a nx3 point cloud to a .txt file"""
     np.savetxt(f"./geomagic/{subj_name}_{tissue_type}.txt", point_cloud, delimiter='\t', fmt='%.6f')
@@ -436,16 +437,16 @@ if __name__ == '__main__':
         print(f"Subject {subj_name}")
 
         # Load in patella and patellar cartilage volumes for predicted and true scans
-        p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
-        p_vol_true, pc_vol_true = return_true_volumes(subj_name)
+        # p_vol, pc_vol = return_predicted_volumes(subj_name, model_name)
+        # p_vol_true, pc_vol_true = return_true_volumes(subj_name)
+        #
+        # # Get coordinate arrays for predicted and true scans
+        # p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
+        # p_true_coords_array, pc_true_coords_array, pc_right_coords_array = get_coordinate_arrays(p_vol_true, pc_vol_true)
 
-        # Get coordinate arrays for predicted and true scans
-        p_coords_array, pc_coords_array, p_right_coords_array = get_coordinate_arrays(p_vol, pc_vol)
-        p_true_coords_array, pc_true_coords_array, pc_right_coords_array = get_coordinate_arrays(p_vol_true, pc_vol_true)
-
-        # Export to point clouds for Geomagic to smooth/interpolate
-        export_point_cloud(subj_name, "P", p_coords_array)
-        export_point_cloud(subj_name, "PC", pc_coords_array)
+        # # Export to point clouds for Geomagic to smooth/interpolate
+        # export_point_cloud(subj_name, "P", p_coords_array)
+        # export_point_cloud(subj_name, "PC", pc_coords_array)
 
         # Load in new point clouds
         p_coords_array = import_point_cloud(subj_name, "P")
@@ -455,7 +456,9 @@ if __name__ == '__main__':
         # p_points_moved, transform = move_patella(p_coords_array, p_true_coords_array, True)  # True moving to predicted
 
         # Calculate cartilage thickness maps
-        # pc_thick_map = calculate_thickness(p_surf_mask, pc_surf_mask)
+        pc_thick_map = calculate_thickness(p_coords_array, pc_coords_array)
+        pc_thick_map[:,3] = pc_thick_map[:,3] * 1000.0
+        print(f"Mean thickness: {np.mean(pc_thick_map[:,3])}")
 
         # Save (nx4) cartilage thickness maps
 
@@ -473,8 +476,8 @@ if __name__ == '__main__':
         # thickness_values.append(pc_coords_array[:, 3])
 
         # Visualize the map
-        # visualize_thickness_map(pc_thick_map)
-
+        visualize_thickness_map(pc_thick_map)
+        print("Done")
     # plot_thickness_distributions(thickness_values, model_name)
 
     with open("point_clouds.pkl", 'wb') as f:
