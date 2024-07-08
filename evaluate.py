@@ -231,33 +231,32 @@ def plot_mri_with_both_masks(subj_name, model_name):
     # Get Volumes for this subject and model prediction
     mri_volume, p_truth_volume, p_pred_volume, pc_truth_volume, pc_pred_volume = return_volumes(subj_name, model_name)
 
+    p_pred_volume = np.where(p_pred_volume > 0, 1, 0)
+    pc_pred_volume = np.where(pc_pred_volume > 0, 1, 0)
+
     alpha_p_truth = np.where(p_truth_volume == 1, 0.4, 0)  # Set alpha based on mask values
     alpha_p_pred = np.where(p_pred_volume == 1, 0.4, 0)  # Set alpha based on mask values
     alpha_pc_truth = np.where(pc_truth_volume == 1, 0.4, 0)
     alpha_pc_pred = np.where(pc_pred_volume == 1, 0.4, 0)
 
-    top_left_coords = [150, 50]  # row, col
-    img_size = 175
-    bottom_right_coords = [top_left_coords[0] + img_size, top_left_coords[1] + img_size]
-
     # Find a 9 element slice list containing the first and last ground truth predictions
     slice_list = get_slice_list(p_truth_volume, pc_truth_volume)
 
-    fig, axs = plt.subplots(3, 3, figsize=(15, 15))
+    fig, axs = plt.subplots(3, 3, figsize=(30, 30))
 
     for i, slice_idx in enumerate(slice_list):
         ax = axs[i // 3, i % 3]
 
-        ax.imshow(mri_volume[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='gray')
+        ax.imshow(mri_volume[:, :, slice_idx], cmap='gray')
         ax.axis('off')
 
         # Overlay ground truth and predicted patella masks
-        ax.imshow(alpha_p_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Blues', alpha=alpha_p_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
-        ax.imshow(alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+        ax.imshow(alpha_p_truth[:, :, slice_idx], cmap='Blues', alpha=alpha_p_truth[:, :, slice_idx])
+        ax.imshow(alpha_p_pred[:, :, slice_idx], cmap='Reds', alpha=alpha_p_pred[:, :, slice_idx])
 
         # Overlay ground truth and predicted patellar cartilage masks
-        ax.imshow(alpha_pc_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Wistia', alpha=alpha_pc_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
-        ax.imshow(alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Greens', alpha=alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+        ax.imshow(alpha_pc_truth[:, :, slice_idx], cmap='Wistia', alpha=alpha_pc_truth[:, :, slice_idx])
+        ax.imshow(alpha_pc_pred[:, :, slice_idx], cmap='Greens', alpha=alpha_pc_pred[:, :, slice_idx])
 
     plt.tight_layout()
     plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_and_pc_windows.png")), dpi=600)
@@ -269,12 +268,12 @@ def plot_mri_with_both_masks(subj_name, model_name):
     for i, slice_idx in enumerate(slice_list):
         ax = axs[i // 3, i % 3]
 
-        ax.imshow(mri_volume[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='gray')
+        ax.imshow(mri_volume[:, :, slice_idx], cmap='gray')
         ax.axis('off')
 
         # Overlay ground truth and predicted patella masks
-        ax.imshow(alpha_p_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Blues', alpha=alpha_p_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
-        ax.imshow(alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_p_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+        ax.imshow(alpha_p_truth[:, :, slice_idx], cmap='Blues', alpha=alpha_p_truth[:, :, slice_idx])
+        ax.imshow(alpha_p_pred[:, :, slice_idx], cmap='Reds', alpha=alpha_p_pred[:, :, slice_idx])
 
     plt.tight_layout()
     plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_windows.png")), dpi=600)
@@ -286,12 +285,12 @@ def plot_mri_with_both_masks(subj_name, model_name):
     for i, slice_idx in enumerate(slice_list):
         ax = axs[i // 3, i % 3]
 
-        ax.imshow(mri_volume[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='gray')
+        ax.imshow(mri_volume[:, :, slice_idx], cmap='gray')
         ax.axis('off')
 
         # Overlay ground truth and predicted patellar cartilage masks
-        ax.imshow(alpha_pc_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Blues', alpha=alpha_pc_truth[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
-        ax.imshow(alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx], cmap='Reds', alpha=alpha_pc_pred[top_left_coords[0]:bottom_right_coords[0], top_left_coords[1]:bottom_right_coords[1], slice_idx])
+        ax.imshow(alpha_pc_truth[:, :, slice_idx], cmap='Blues', alpha=alpha_pc_truth[:, :, slice_idx])
+        ax.imshow(alpha_pc_pred[:, :, slice_idx], cmap='Reds', alpha=alpha_pc_pred[:, :, slice_idx])
 
     plt.tight_layout()
     plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_pc_windows.png")), dpi=600)
@@ -388,6 +387,8 @@ if __name__ == "__main__":
         date_times = get_most_recent_model()
 
         for date_time in date_times:
+
+            plot_mri_with_both_masks("AS_006", "unet_2024-07-03_16-16-58_cHT5")
 
             print(f"Evaluating model {date_time}")
 
