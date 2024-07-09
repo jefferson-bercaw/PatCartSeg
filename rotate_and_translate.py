@@ -59,7 +59,7 @@ def set_up_dataset_directory(save_data_path):
         os.mkdir(os.path.join(save_data_path, "val", "mask"))
 
 
-def move_test_and_val(data_path, save_data_path):
+def move_test_and_val(data_path, save_data_path, to_exclude):
     """Moving all contents from the data_path to the save_data_path"""
     val_src = os.path.join(data_path, "val")
     test_src = os.path.join(data_path, "test")
@@ -73,9 +73,27 @@ def move_test_and_val(data_path, save_data_path):
     if os.path.exists(test_dest):
         shutil.rmtree(test_dest)
 
-    # Copy
-    shutil.copytree(val_src, val_dest)
-    shutil.copytree(test_src, test_dest)
+    val_mask_src = os.path.join(val_src, "mask")
+    val_mri_src = os.path.join(val_src, "mri")
+    val_mask_dest = os.path.join(val_dest, "mask")
+    val_mri_dest = os.path.join(val_dest, "mri")
+
+    test_mask_src = os.path.join(test_src, "mask")
+    test_mri_src = os.path.join(test_src, "mri")
+    test_mask_dest = os.path.join(test_dest, "mask")
+    test_mri_dest = os.path.join(test_dest, "mri")
+
+    srcs = [val_mask_src, val_mri_src, test_mask_src, test_mri_src]
+    dests = [val_mask_dest, val_mri_dest, test_mask_dest, test_mri_dest]
+
+    for src, dest in zip(srcs, dests):
+        files = os.listdir(src)
+        for file in files:
+            slice_num = get_slice_num(file)
+            if (slice_num > to_exclude // 2) and (slice_num <= 120 - to_exclude // 2):
+                source_path = os.path.join(src, file)
+                dest_path = os.path.join(dest, file)
+                shutil.move(source_path, dest_path)
     return
 
 
@@ -104,12 +122,21 @@ def rot_and_trans_bounds(a):
     return rot, tran
 
 
+def get_slice_num(file):
+    """Returns integer of 1 - 120 of slice number"""
+    end_str = file.split("_")[-1]
+    num_str = end_str.split(".")[0]
+    return int(num_str)
+
+
 if __name__ == "__main__":
-    print(f"args.arr: {args.arr}")
+    # print(f"args.arr: {args.arr}")
 
     # Get rotation and translation bounds from slurm job task array
-    rot, t = rot_and_trans_bounds(args.arr)
-
+    # rot, t = rot_and_trans_bounds(args.arr)
+    rot = 20.0
+    t = 20.0
+    to_exclude = 50  # excludes n images (n/2 on either side)
     print(f"Rotation Bounds: +/- {rot} degrees")
     print(f"Translation Bounds: +/- {t} px")
 
@@ -117,18 +144,18 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     # Load in image path
-    data_path = get_data_path(args.dataset)
-
+    # data_path = get_data_path(args.dataset)
+    data_path = get_data_path("cHT")
     train_path = os.path.join(data_path, "train")
 
     # Save data path: make it if it doesn't exist
-    save_data_path = get_data_path(f"{args.dataset}{args.naug}_{int(rot)}_{int(t)}")
+    save_data_path = get_data_path("ctHT5")
 
     print(f"Saving new images to {save_data_path}")
 
     set_up_dataset_directory(save_data_path)
 
-    move_test_and_val(data_path, save_data_path)
+    move_test_and_val(data_path, save_data_path, to_exclude)
 
     # List images
     mri_path = os.path.join(train_path, "mri")
@@ -137,33 +164,37 @@ if __name__ == "__main__":
     files = os.listdir(mri_path)
 
     for file_num, file in enumerate(files):
-        mri_file = os.path.join(mri_path, file)
-        mask_file = os.path.join(mask_path, file)
+        slice_num = get_slice_num(file)
 
-        mri_img = Image.open(mri_file)
-        mri = np.asarray(mri_img)
+        if (slice_num > to_exclude // 2) and (slice_num <= 120 - to_exclude // 2):
 
-        mask_img = Image.open(mask_file)
-        mask = np.asarray(mask_img)
+            mri_file = os.path.join(mri_path, file)
+            mask_file = os.path.join(mask_path, file)
 
-        # Save original image
-        save_images(mri, mask, save_data_path, file)
+            mri_img = Image.open(mri_file)
+            mri = np.asarray(mri_img)
 
-        # Generate random rotations/translations
-        degs = np.random.uniform(-rot, rot, size=args.naug)
-        trans = np.random.randint(int(-1 * t), int(t+1), size=(args.naug, 2))
+            mask_img = Image.open(mask_file)
+            mask = np.asarray(mask_img)
 
-        for idx, deg in enumerate(degs):
-            tran = trans[idx, :]
+            # Save original image
+            save_images(mri, mask, save_data_path, file)
 
-            # Rotate
-            rot_mri, rot_mask = rotate_images(mri, mask, deg)
+            # Generate random rotations/translations
+            degs = np.random.uniform(-rot, rot, size=5)
+            trans = np.random.randint(int(-1 * t), int(t+1), size=(5, 2))
 
-            # Translate
-            trans_mri, trans_mask = translate_images(rot_mri, rot_mask, tran)
+            for idx, deg in enumerate(degs):
+                tran = trans[idx, :]
 
-            # Save
-            save_images(trans_mri, trans_mask, save_data_path, f"a{idx}{file}")
+                # Rotate
+                rot_mri, rot_mask = rotate_images(mri, mask, deg)
 
-        if file_num % (50 * (args.naug+1)):
-            print(f"File {file_num * (args.naug+1)} of {len(files) * (args.naug+1)}")
+                # Translate
+                trans_mri, trans_mask = translate_images(rot_mri, rot_mask, tran)
+
+                # Save
+                save_images(trans_mri, trans_mask, save_data_path, f"a{idx}{file}")
+
+            if file_num % (50 * (6)):
+                print(f"File {file_num * (6)} of {len(files) * 6}")
