@@ -124,6 +124,50 @@ def get_slice_num(file):
     return int(num_str)
 
 
+def remove_outer_bounds(to_exclude=50):
+    """Removes training, testing, validation images outside to_exclude//2 bounds from given dataset"""
+
+    data_path = get_data_path("cHT")
+    
+    train_path = os.path.join(data_path, "train")
+
+    # Save data path: make it if it doesn't exist
+    save_data_path = get_data_path("ctHT")
+
+    print(f"Saving new images to {save_data_path}")
+
+    set_up_dataset_directory(save_data_path)
+
+    move_test_and_val(data_path, save_data_path, to_exclude)
+
+    # List images
+    mri_path = os.path.join(train_path, "mri")
+    mask_path = os.path.join(train_path, "mask")
+
+    files = os.listdir(mri_path)
+
+    for file_num, file in enumerate(files):
+        slice_num = get_slice_num(file)
+
+        if (slice_num > to_exclude // 2) and (slice_num <= 120 - to_exclude // 2):
+
+            mri_file = os.path.join(mri_path, file)
+            mask_file = os.path.join(mask_path, file)
+
+            mri_img = Image.open(mri_file)
+            mri = np.asarray(mri_img)
+
+            mask_img = Image.open(mask_file)
+            mask = np.asarray(mask_img)
+
+            # Save original image
+            save_images(mri, mask, save_data_path, file)
+
+            print(f"File {file_num} of {len(files)}")
+
+    return
+
+
 if __name__ == "__main__":
     # print(f"args.arr: {args.arr}")
 
