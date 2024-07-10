@@ -162,8 +162,8 @@ def remove_outer_bounds(to_exclude=50):
 
             # Save original image
             save_images(mri, mask, save_data_path, file)
-
-            print(f"File {file_num} of {len(files)}")
+            if file_num % 100 == 0:
+                print(f"File {file_num} of {len(files)}")
 
     return
 
