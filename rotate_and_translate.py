@@ -67,12 +67,7 @@ def move_test_and_val(data_path, save_data_path, to_exclude):
     val_dest = os.path.join(save_data_path, "val")
     test_dest = os.path.join(save_data_path, "test")
 
-    # Remove destination directory if it already exists
-    if os.path.exists(val_dest):
-        shutil.rmtree(val_dest)
-    if os.path.exists(test_dest):
-        shutil.rmtree(test_dest)
-
+    # Get source and destination paths for val and test dataset for masks and mris
     val_mask_src = os.path.join(val_src, "mask")
     val_mri_src = os.path.join(val_src, "mri")
     val_mask_dest = os.path.join(val_dest, "mask")
@@ -93,7 +88,7 @@ def move_test_and_val(data_path, save_data_path, to_exclude):
             if (slice_num > to_exclude // 2) and (slice_num <= 120 - to_exclude // 2):
                 source_path = os.path.join(src, file)
                 dest_path = os.path.join(dest, file)
-                shutil.move(source_path, dest_path)
+                shutil.copyfile(source_path, dest_path)
     return
 
 
@@ -124,7 +119,7 @@ def rot_and_trans_bounds(a):
 
 def get_slice_num(file):
     """Returns integer of 1 - 120 of slice number"""
-    end_str = file.split("_")[-1]
+    end_str = file.split("-")[-1]
     num_str = end_str.split(".")[0]
     return int(num_str)
 
