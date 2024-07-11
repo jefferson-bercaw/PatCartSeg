@@ -123,7 +123,7 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
     pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
     pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, filename_npy)
-    print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
+    # print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
     # Save the masks as BMP files
     pat_img = Image.fromarray(pat)
@@ -436,7 +436,7 @@ if __name__ == "__main__":
                 # Output predictions
                 save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob)
 
-                print(f"Img {i+1} of {n_test_images}")
+                # print(f"Img {i+1} of {n_test_images}")
 
             pat_dsc = calculate_dice(pat_positives)
             pat_cart_dsc = calculate_dice(pat_cart_positives)
