@@ -62,7 +62,7 @@ def parse_scan_name(filename):
     # Remove extension, get slice number, assert it is 1, and return the scan name
     no_ext = filename_str_start.split(".")[0]
     num = int(no_ext.split("-")[1])
-    assert num == 1, (f"Images are out of order! First image in this batch is not first in scan! "
+    assert num == 26, (f"Images are out of order! First image in this batch is not first in scan! "
                       f"First batch image: {filename_str_start}")
 
     scan_name = no_ext.split("-")[0]
@@ -83,9 +83,9 @@ def save_volumes(pat_vol, pat_cart_vol, model_name, scan_name):
         os.mkdir(volume_path)
 
     # Assert shape is correct
-    assert pat_vol.shape == (256, 256, 120), (f"Patella volume being saved is not (256, 256, 120)! "
+    assert pat_vol.shape == (256, 256, 70), (f"Patella volume being saved is not (256, 256, 70)! "
                                               f"Shape {pat_vol.shape}")
-    assert pat_cart_vol.shape == (256, 256, 120), (f"Patellar cartilage volume being saved is not (256, 256, 120)! "
+    assert pat_cart_vol.shape == (256, 256, 70), (f"Patellar cartilage volume being saved is not (256, 256, 70)! "
                                                    f"Shape {pat_cart_vol.shape}")
 
     # Save scans
@@ -209,20 +209,20 @@ if __name__ == "__main__":
     predict_volumes_option = True
     create_point_clouds_option = True
     # Geomagic here
-    register_point_clouds_option = True
+    register_point_clouds_option = False
     visualize_registration_option = False
     visualize_strain_map_option = False
 
     # Declarations
-    model_name = "unet_2024-07-03_16-16-58_cHT5.h5"
-    batch_size = 12
-    n_slices = 120
+    model_name = "unet_2024-07-10_14-39-28_ctHT.h5"
+    batch_size = 14
+    n_slices = 70
     batches_per_scan = n_slices // batch_size
 
     # Predict patella and patellar cartilage volumes
     if predict_volumes_option:
         # Load in dataset
-        image_dir = get_data_path("Paranjape_Cropped") + os.sep + "*.bmp"
+        image_dir = get_data_path("Paranjape_ct") + os.sep + "*.bmp"
         dataset = get_paranjape_dataset(image_dir, batch_size=batch_size)
         iterable = iter(dataset)
 
