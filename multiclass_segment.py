@@ -62,10 +62,19 @@ if __name__ == "__main__":
         model_name = f"unet_{current_time}_{dataset}"
         unet_model.save(os.path.join("models", f"{model_name}.h5"))
 
-        # Print saving model
-        print(f"Saving model to {model_name}.h5")
-
         # Save history
         hist_name = f"{model_name}.pkl"
         with open(os.path.join("history", hist_name), "wb") as f:
             pickle.dump(history.history, f)
+
+        # Print saving model
+        print(f"Saving model to {model_name}.h5")
+        print(f"Model Parameters:"
+              f"patience: {patience}"
+              f"batch_size: {batch_size}"
+              f"dropout_rate: {dropout_rate}"
+              f"max epochs: {epochs}"
+              f"epochs trained for: {len(history.history['loss'])}"
+              f"model depth: {args.arr}")
+
+
