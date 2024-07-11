@@ -52,28 +52,33 @@ if __name__ == "__main__":
     y_end = y_start + xy_dim
 
     # Get current dataset we're cropping
-    data_path = get_data_path("Paranjape")
+    data_path = get_data_path("HT")
     dataset_types = ["test", "train", "val"]
 
     # Get saving dataset and setup
-    save_data_path = get_data_path("Paranjape_Cropped")
-    os.mkdir(save_data_path)
+    save_data_path = get_data_path("cHT")
 
-    # iterate through each image and crop
-    files = os.listdir(data_path)
+    for set_type in ["train", "test", "val"]:
+        for img_type in ["mask", "mri"]:
 
-    for idx, file in enumerate(files):
-        mri_name = os.path.join(data_path, file)
+            # iterate through each image and crop
+            files = os.listdir(os.path.join(data_path, set_type, img_type))
 
-        mri_img = Image.open(mri_name)
-        mri = np.array(mri_img)
+            for idx, file in enumerate(files):
+                mri_name = os.path.join(data_path, set_type, img_type, file)
 
-        # Cropped image
-        mri_crop = mri[y_start:y_end, x_start:x_end]
+                mri_img = Image.open(mri_name)
+                mri = np.array(mri_img)
 
-        # Save image
-        save_images(mri_crop, save_data_path, file)
+                if mri.shape == (512, 512, 3):
+                    mri = mri[:, :, 0]
 
-        # Output status
-        if int(50 * idx) % len(files) == 0:
-            print(f"File {idx} of {len(files)}")
+                # Cropped image
+                mri_crop = mri[y_start:y_end, x_start:x_end]
+
+                # Save image
+                save_images(mri_crop, os.path.join(save_data_path, set_type, img_type), file)
+
+                # Output status
+                if int(50 * idx) % len(files) == 0:
+                    print(f"File {idx} of {len(files)}")

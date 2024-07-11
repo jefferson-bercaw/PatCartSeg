@@ -173,9 +173,11 @@ if __name__ == "__main__":
 
     # Get rotation and translation bounds from slurm job task array
     # rot, t = rot_and_trans_bounds(args.arr)
+
     rot = 20.0
     t = 20.0
     to_exclude = 50  # excludes n images (n/2 on either side)
+
     print(f"Rotation Bounds: +/- {rot} degrees")
     print(f"Translation Bounds: +/- {t} px")
 
@@ -183,12 +185,13 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     # Load in image path
-    # data_path = get_data_path(args.dataset)
     data_path = get_data_path("cHT")
+
     train_path = os.path.join(data_path, "train")
 
     # Save data path: make it if it doesn't exist
-    save_data_path = get_data_path("ctHT5")
+    save_data_path = get_data_path("cHT5")
+
 
     print(f"Saving new images to {save_data_path}")
 
@@ -219,9 +222,11 @@ if __name__ == "__main__":
             # Save original image
             save_images(mri, mask, save_data_path, file)
 
-            # Generate random rotations/translations
-            degs = np.random.uniform(-rot, rot, size=5)
-            trans = np.random.randint(int(-1 * t), int(t+1), size=(5, 2))
+
+        # Generate random rotations/translations
+        degs = np.random.uniform(-rot, rot, size=5)
+        trans = np.random.randint(int(-1 * t), int(t+1), size=(5, 2))
+
 
             for idx, deg in enumerate(degs):
                 tran = trans[idx, :]
@@ -235,5 +240,6 @@ if __name__ == "__main__":
                 # Save
                 save_images(trans_mri, trans_mask, save_data_path, f"a{idx}{file}")
 
-            if file_num % (50 * (6)):
-                print(f"File {file_num * (6)} of {len(files) * 6}")
+
+        if file_num % (50 * (5+1)):
+            print(f"File {file_num * (5+1)} of {len(files) * (5+1)}")
