@@ -16,11 +16,6 @@ parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're t
 args = parser.parse_args()
 
 
-def array_to_metric(arr_num):
-    dropout = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
-    return dropout[arr_num]
-
-
 if __name__ == "__main__":
     # GPUs
     strategy = tf.distribute.MirroredStrategy()
@@ -28,15 +23,15 @@ if __name__ == "__main__":
     with strategy.scope():
         # Hyperparameters
         batch_size = 20
-        dropout_rate = array_to_metric(args.arr)
+        dropout_rate = 0.3
         epochs = 500
-        patience = 20
+        patience = 100
         min_delta = 0.0001
 
-        dataset = "cHT5"
+        dataset = "ctHT"
 
         # Build and compile model
-        unet_model = build_unet(dropout_rate=dropout_rate)
+        unet_model = build_unet(model_depth=args.arr)
 
         unet_model.compile(optimizer='adam',
                            loss=dice_loss,
@@ -67,10 +62,19 @@ if __name__ == "__main__":
         model_name = f"unet_{current_time}_{dataset}"
         unet_model.save(os.path.join("models", f"{model_name}.h5"))
 
-        # Print saving model
-        print(f"Saving model to {model_name}.h5")
-
         # Save history
         hist_name = f"{model_name}.pkl"
         with open(os.path.join("history", hist_name), "wb") as f:
             pickle.dump(history.history, f)
+
+        # Print saving model
+        print(f"Saving model to {model_name}.h5")
+        print(f"Model Parameters:"
+              f"patience: {patience}"
+              f"batch_size: {batch_size}"
+              f"dropout_rate: {dropout_rate}"
+              f"max epochs: {epochs}"
+              f"epochs trained for: {len(history.history['loss'])}"
+              f"model depth: {args.arr}")
+
+
