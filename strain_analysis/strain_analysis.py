@@ -185,7 +185,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     strain_map_pre_removal = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
 
     # Remove outer boundaries
-    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=5.0)
+    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=3.0)
 
     strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
     #
