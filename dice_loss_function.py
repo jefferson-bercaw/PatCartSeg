@@ -20,7 +20,7 @@ def dice_loss(y_true, y_pred):
 
 def weighted_dice_loss(y_true, y_pred):
     # Weight given to pixels on articulating surface of patella and cartilage
-    n = 100
+    n = 10
 
     # Identify furthest-right pixels
     p_true = y_true[:, :, 0]
