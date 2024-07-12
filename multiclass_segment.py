@@ -7,7 +7,7 @@ import pickle
 import argparse
 
 from unet import build_unet
-from dice_loss_function import dice_loss
+from dice_loss_function import dice_loss, weighted_dice_loss
 from create_dataset import get_dataset
 
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
         # Hyperparameters
         batch_size = 20
         dropout_rate = 0.3
-        epochs = 500
+        epochs = 1000
         patience = 100
         min_delta = 0.0001
 
