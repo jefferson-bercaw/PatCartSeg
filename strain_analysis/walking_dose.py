@@ -207,15 +207,15 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = False
-    create_point_clouds_option = False
+    predict_volumes_option = True
+    create_point_clouds_option = True
     # Geomagic here
-    register_point_clouds_option = True
+    register_point_clouds_option = False
     visualize_registration_option = False
     visualize_strain_map_option = False
 
     # Declarations
-    model_name = "unet_2024-07-10_14-39-28_ctHT.h5"
+    model_name = "unet_2024-07-11_21-01-46_ctHT.h5"
     batch_size = 14
     n_slices = 70
     batches_per_scan = n_slices // batch_size
