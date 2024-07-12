@@ -96,7 +96,8 @@ def remove_outer_boundaries(pc_ptcld, thickness, radius):
 
     # plt.hist(densities, bins=15)
     # plt.show()
-    density_threshold = round(np.max(densities) * 2 / 3)
+    # Threshold for edge removal
+    density_threshold = round(np.max(densities) / 2)
 
     # Filter points based on density
     filtered_points = []
