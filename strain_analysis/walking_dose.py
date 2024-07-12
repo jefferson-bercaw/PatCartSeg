@@ -117,7 +117,8 @@ def save_coordinate_arrays(p_array, pc_array, scan):
 
 
 def load_coordinate_arrays(scan):
-    """Loads in .pcd point clouds from Geomagic"""
+    """Loads in .pcd point clouds from Geomagic
+    Geomagic exports in meters, so we'll convert all distances to millimeters"""
 
     # Remove .npz extension on scan, if there
     if scan[-4:] == ".npz":
@@ -129,8 +130,8 @@ def load_coordinate_arrays(scan):
     ptcld_P = o3d.io.read_point_cloud(filename_P)
     ptcld_PC = o3d.io.read_point_cloud(filename_PC)
 
-    p_array = np.asarray(ptcld_P.points)
-    pc_array = np.asarray(ptcld_PC.points)
+    p_array = np.asarray(ptcld_P.points) * 1000.0
+    pc_array = np.asarray(ptcld_PC.points) * 1000.0
 
     return p_array, pc_array
 
@@ -206,10 +207,10 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
-    create_point_clouds_option = True
+    predict_volumes_option = False
+    create_point_clouds_option = False
     # Geomagic here
-    register_point_clouds_option = False
+    register_point_clouds_option = True
     visualize_registration_option = False
     visualize_strain_map_option = False
 
@@ -275,7 +276,7 @@ if __name__ == "__main__":
     # Load pre and post, register, calculate strain map, save registered point clouds and strain map
     if register_point_clouds_option:
         # Get point cloud data path (what we're reading in)
-        point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name[0:-3])
+        point_cloud_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name[0:-3])
         scans = os.listdir(point_cloud_path)
 
         # Get strain data path (what we're saving to)
