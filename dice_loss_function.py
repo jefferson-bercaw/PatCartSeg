@@ -30,7 +30,7 @@ def weighted_dice_loss(y_true, y_pred):
     pc_pred = y_pred[:, :, 1]
 
     # Change each true pixel to the column number it's in
-    col_indices = tf.range(256, dtype=tf.float64)
+    col_indices = tf.range(256, dtype=tf.float32)
     col_indices = tf.reshape(col_indices, (1, 256))
     col_indices = tf.tile(col_indices, (256, 1))
 
