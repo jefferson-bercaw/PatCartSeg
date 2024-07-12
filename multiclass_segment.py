@@ -7,7 +7,7 @@ import pickle
 import argparse
 
 from unet import build_unet
-from dice_loss_function import dice_loss, weighted_dice_loss
+from dice_loss_function import dice_loss
 from create_dataset import get_dataset
 
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         unet_model = build_unet(model_depth=model_depth)
 
         unet_model.compile(optimizer='adam',
-                           loss=weighted_dice_loss,
+                           loss=dice_loss,
                            metrics=['accuracy',
                                     tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
                                     tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
