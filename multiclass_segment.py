@@ -28,13 +28,13 @@ if __name__ == "__main__":
         patience = 100
         min_delta = 0.0001
 
-        dataset = "ctHT5"
+        dataset = "ctHT"
 
         # Build and compile model
         unet_model = build_unet(model_depth=args.arr)
 
         unet_model.compile(optimizer='adam',
-                           loss=dice_loss,
+                           loss=weighted_dice_loss,
                            metrics=['accuracy',
                                     tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
                                     tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
