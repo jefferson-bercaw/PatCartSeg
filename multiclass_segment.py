@@ -20,14 +20,14 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 20
+        batch_size = 32
         model_depth = 5
         dropout_rate = 0.3
         epochs = 1000
-        patience = 200
+        patience = 100
         min_delta = 0.0001
 
-        dataset = "ctHT"
+        dataset = "ctHT5"
 
         # Build and compile model
         unet_model = build_unet(model_depth=model_depth)
