@@ -96,8 +96,8 @@ def save_coordinate_arrays(p_array, pc_array, scan):
     if scan[-4:] == ".npz":
         scan = scan[:-4]
 
-    np.savetxt(f"{get_data_path('Paranjape_ToGeomagic')}/P/{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
-    np.savetxt(f"{get_data_path('Paranjape_ToGeomagic')}/PC/{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{save_path}/P/{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{save_path}/PC/{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
 
     print(f"Saved {scan} point clouds")
     return
@@ -111,8 +111,8 @@ def load_coordinate_arrays(scan):
     if scan[-4:] == ".npz":
         scan = scan[:-4]
 
-    filename_P = f"{get_data_path('Paranjape_FromGeomagic')}/{scan}_P.pcd"
-    filename_PC = f"{get_data_path('Paranjape_FromGeomagic')}/{scan}_PC.pcd"
+    filename_P = f"R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\From_Geomagic\\P\\{scan}_P.pcd"
+    filename_PC = f"R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\From_Geomagic\\PC\\{scan}_PC.pcd"
 
     ptcld_P = o3d.io.read_point_cloud(filename_P)
     ptcld_PC = o3d.io.read_point_cloud(filename_PC)
@@ -123,19 +123,12 @@ def load_coordinate_arrays(scan):
     return p_array, pc_array
 
 
-def scan_properties(scan2, scan1, info, strain):
+def scan_properties(scan2, scan1, info, dist, strain):
     """Takes in two names of scans and asserts that they're pre and post, while extracting info from the scan name"""
-    assert "pre" in scan2.lower(), f"Scan {scan2} is not a pre scan"
-    assert "post" in scan1.lower(), f"Scan {scan1} is not a post scan"
 
     # Extract information from this pair of scans
-    subject_id = scan2[0:2]
-    froude = scan2[3:6]
-    duration = scan2[7:9]
-
-    info["Subject ID"].append(subject_id)
-    info["Froude"].append(froude)
-    info["Duration"].append(duration)
+    info["Subject ID"].append(scan2[0:6])
+    info["Dist Run"].append(dist)
     info["Mean Strain"].append(strain)
     return info
 
@@ -151,45 +144,28 @@ def create_point_clouds(pre_pc_array, post_pc_array):
 
 
 def output_plots(info):
-    froude_categories = ["010", "025", "040"]
-    duration_categories = ["10", "20", "30", "40", "60"]
+    dist_categories = ["3", "10", "Pre-Pre", "Pre-Rec"]
 
-    foude_data = {category: [] for category in froude_categories}
-    duration_data = {category: [] for category in duration_categories}
+    dist_data = {category: [] for category in dist_categories}
 
-    for froude, duration, strain in zip(info["Froude"], info["Duration"], info["Mean Strain"]):
-        if duration == "30":
-            foude_data[froude].append(strain)
-        if froude == "025":
-            duration_data[duration].append(strain)
+    for dist, strain in zip(info["Dist Run"], info["Mean Strain"]):
+        dist_data[dist].append(strain)
 
     # Convert the data to a list of lists for boxplot
-    froude_list = [foude_data[category] for category in froude_categories]
-    duration_list = [duration_data[category] for category in duration_categories]
+    dist_list = [dist_data[category] for category in dist_data]
 
     # Create froude vs strain plot
     plt.figure(figsize=(10, 6))
-    plt.boxplot(froude_list, labels=froude_categories)
+    plt.boxplot(dist_list, labels=dist_categories)
 
     # Customize the plot
-    plt.xlabel("Froude")
+    plt.xlabel("Distance Run")
     plt.ylabel("Mean Strain")
-    plt.title("Mean Strain vs Froude (Duration = 30 min)")
+    plt.title("Mean Strain vs Distance Run")
 
     # Show the plot
     plt.show()
-
-    # Create the plot
-    plt.figure(figsize=(10, 6))
-    plt.boxplot(duration_list, labels=duration_categories)
-
-    # Customize the plot
-    plt.xlabel("Duration (min)")
-    plt.ylabel("Mean Strain")
-    plt.title("Mean Strain vs Duration (Froude = 0.25)")
-
-    # Show the plot
-    plt.show()
+    return
 
 
 def read_in_labeled_data(subj_dir, subj):
@@ -218,25 +194,43 @@ def read_in_labeled_data(subj_dir, subj):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
-    create_point_clouds_option = True
+    predict_volumes_option = False
+    create_point_clouds_option = False
     # Geomagic here
-    register_point_clouds_option = False
+    register_point_clouds_option = True
     visualize_registration_option = False
     visualize_strain_map_option = False
 
     # Post, pre pairs
     scans = ["AS_001", "AS_002", "AS_003", "AS_004", "AS_007", "AS_008", "AS_010", "AS_011", "AS_013", "AS_012", "AS_016", "AS_015",
              "AS_019", "AS_018", "AS_022", "AS_021", "AS_026", "AS_025", "AS_029", "AS_028", "AS_034", "AS_030", "AS_031", "AS_035",
-             "AS_037", "AS_036", "AS_041", "AS_038", "AS_047", "AS_043"]
-    dist = ["3", "10", "10", "3", "10", "3", "3", "10", "3", "10", "3", "10", "10", "3", "10"]
+             "AS_037", "AS_036", "AS_041", "AS_038", "AS_047", "AS_043",
+             # Repeatability: pre-rec pre-rec and pre-pre pairs
+             "AS_002", "AS_000", "AS_004", "AS_005", "AS_002", "AS_004",  # R01
+             "AS_008", "AS_006", "AS_011", "AS_009", "AS_011", "AS_008",  # R02
+             "AS_014", "AS_012", "AS_015", "AS_017", "AS_012", "AS_015",  # R03
+             "AS_018", "AS_020", "AS_021", "AS_023", "AS_018", "AS_021",  # R04
+             "AS_025", "AS_024", "AS_028", "AS_027", "AS_025", "AS_028",  # R05
+             "AS_030", "AS_032", "AS_033", "AS_035", "AS_035", "AS_030",  # R06
+             "AS_036", "AS_039", "AS_038", "AS_040", "AS_036", "AS_038",  # R07
+             "AS_043", "AS_046", "AS_044", "AS_045", "AS_043", "AS_044"]  # R08
+
+    dist = ["3", "10", "10", "3", "10", "3", "3", "10", "3", "10", "3", "10", "10", "3", "10",
+
+            "Pre-Rec", "Pre-Rec", "Pre-Pre",
+            "Pre-Rec", "Pre-Rec", "Pre-Pre",
+            "Pre-Rec", "Pre-Rec", "Pre-Pre",
+            "Pre-Rec", "Pre-Rec", "Pre-Pre",
+            "Pre-Rec", "Pre-Rec", "Pre-Pre",
+            "Pre-Rec", "Pre-Rec", "Pre-Pre",
+            "Pre-Rec", "Pre-Rec", "Pre-Pre",
+            "Pre-Rec", "Pre-Rec", "Pre-Pre"]
 
     # Predict patella and patellar cartilage volumes
     if predict_volumes_option:
 
         subj_dir = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Organized_Data"
         subjs = os.listdir(subj_dir)
-        subjs = subjs[35:]
         for idx, subj in enumerate(subjs):
             if idx < 48:
                 p_vol, pc_vol = read_in_labeled_data(subj_dir, subj)
@@ -261,25 +255,25 @@ if __name__ == "__main__":
     # Load pre and post, register, calculate strain map, save registered point clouds and strain map
     if register_point_clouds_option:
         # Get point cloud data path (what we're reading in)
-        point_cloud_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\From_Geomagic"
-        scans = os.listdir(point_cloud_path)
+        # point_cloud_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\From_Geomagic\\P"
+        # scans = os.listdir(point_cloud_path)
 
         # Get strain data path (what we're saving to)
-        strain_path = os.path.join(get_data_path("Paranjape_PCs"))
+        strain_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\Strain"
         if not os.path.exists(strain_path):
             os.mkdir(strain_path)
 
         # Initialize info
         info = {}
         info["Subject ID"] = []
-        info["Froude"] = []
-        info["Duration"] = []
+        info["Dist Run"] = []
         info["Mean Strain"] = []
-
+        j = 0
         # Iterate through each scan and take in a pair of scans
         for idx in range(len(scans)):
             if idx % 2 != 0:
-                print(f"Current Scans: {scans[idx]} and {scans[idx-1]}")
+                print(f"Current Scans: {scans[idx]} and {scans[idx-1]}, distance={dist[j]}")
+
                 pre_p_array, pre_pc_array = load_coordinate_arrays(scans[idx])
                 post_p_array, post_pc_array = load_coordinate_arrays(scans[idx-1])
 
@@ -307,15 +301,11 @@ if __name__ == "__main__":
                 # Calculate strain map
                 strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness, output=visualize_strain_map_option)
 
-                # Calculate the strain at the middle-most point of the strain map
-                # strains = list(strain_map[:, 3])
-                # plt.hist(strains)
-                # plt.xlabel("Strain")
-                # plt.show()
-
                 mean_strain = np.mean(strain_map[:, 3])
                 print(f"Mean strain for {scans[idx]}: {mean_strain}")
 
-                info = scan_properties(scans[idx], scans[idx - 1], info, mean_strain)
+                info = scan_properties(scans[idx], scans[idx - 1], info, dist[j], mean_strain)
+
+                j += 1
 
         output_plots(info)
