@@ -13,7 +13,7 @@ from evaluate import load_model
 from point_clouds import get_coordinate_arrays, calculate_thickness
 from registration import move_patella, move_point_cloud
 from strain_analysis import produce_strain_map
-
+from PIL import Image
 
 def get_paranjape_dataset(image_dir, batch_size):
     """Returns a tf.data.Dataset object containing the filenames of the Paranjape dataset"""
@@ -72,24 +72,10 @@ def parse_scan_name(filename):
     return scan_name
 
 
-def save_volumes(pat_vol, pat_cart_vol, model_name, scan_name):
-    start_path = get_data_path("Paranjape_Volumes")
-    volume_path = os.path.join(start_path, model_name[0:-3])
-
-    # If paths don't exist, create them
-    if not os.path.exists(start_path):
-        os.mkdir(start_path)
-    if not os.path.exists(volume_path):
-        os.mkdir(volume_path)
-
-    # Assert shape is correct
-    assert pat_vol.shape == (256, 256, 70), (f"Patella volume being saved is not (256, 256, 70)! "
-                                              f"Shape {pat_vol.shape}")
-    assert pat_cart_vol.shape == (256, 256, 70), (f"Patellar cartilage volume being saved is not (256, 256, 70)! "
-                                                   f"Shape {pat_cart_vol.shape}")
-
+def save_volumes(pat_vol, pat_cart_vol, scan_name):
+    save_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\Volumes"
     # Save scans
-    np.savez(os.path.join(volume_path, scan_name), pat_vol=pat_vol, pat_cart_vol=pat_cart_vol)
+    np.savez(os.path.join(save_path, scan_name), pat_vol=pat_vol, pat_cart_vol=pat_cart_vol)
     return
 
 
@@ -104,6 +90,7 @@ def load_volumes(scan, volume_path):
 
 def save_coordinate_arrays(p_array, pc_array, scan):
     """Writes ndarrays to point_cloud path"""
+    save_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\To_Geomagic"
 
     # Remove .npz extension on scan, if there
     if scan[-4:] == ".npz":
@@ -205,6 +192,30 @@ def output_plots(info):
     plt.show()
 
 
+def read_in_labeled_data(subj_dir, subj):
+    p_path = os.path.join(subj_dir, subj, "P")
+    pc_path = os.path.join(subj_dir, subj, "PC")
+
+    p_vol = np.zeros((512, 512, 70), dtype=np.uint8)
+    pc_vol = np.zeros((512, 512, 70), dtype=np.uint8)
+    j = 0
+
+    files = os.listdir(p_path)
+    for idx, file in enumerate(files):
+        if idx < 95 and idx >= 25:
+            p_file = os.path.join(p_path, file)
+            pc_file = os.path.join(pc_path, file)
+
+            p_img = np.asarray(Image.open(p_file)) / 255.0
+            pc_img = np.asarray(Image.open(pc_file)) / 255.0
+
+            p_vol[:, :, j] = p_img.astype(np.uint8)
+            pc_vol[:, :, j] = pc_img.astype(np.uint8)
+            j += 1
+
+    return p_vol, pc_vol
+
+
 if __name__ == "__main__":
     # Options:
     predict_volumes_option = True
@@ -214,58 +225,32 @@ if __name__ == "__main__":
     visualize_registration_option = False
     visualize_strain_map_option = False
 
-    # Declarations
-    model_name = "unet_2024-07-11_21-01-46_ctHT.h5"
-    batch_size = 14
-    n_slices = 70
-    batches_per_scan = n_slices // batch_size
+    # Post, pre pairs
+    scans = ["AS_001", "AS_002", "AS_003", "AS_004", "AS_007", "AS_008", "AS_010", "AS_011", "AS_013", "AS_012", "AS_016", "AS_015",
+             "AS_019", "AS_018", "AS_022", "AS_021", "AS_026", "AS_025", "AS_029", "AS_028", "AS_034", "AS_030", "AS_031", "AS_035",
+             "AS_037", "AS_036", "AS_041", "AS_038", "AS_047", "AS_043"]
+    dist = ["3", "10", "10", "3", "10", "3", "3", "10", "3", "10", "3", "10", "10", "3", "10"]
 
     # Predict patella and patellar cartilage volumes
     if predict_volumes_option:
-        # Load in dataset
-        image_dir = get_data_path("Paranjape_ct") + os.sep + "*.bmp"
-        dataset = get_paranjape_dataset(image_dir, batch_size=batch_size)
-        iterable = iter(dataset)
 
-        # Load in model
-        model_filename = get_model_filename(model_name)
-        model = load_model(model_filename)
-
-        # Iterate through scans in dataset, make predictions, create volumes, save ndarrays
-        for i in range(len(dataset) // batches_per_scan):
-
-            for cur_batch_num in range(1, batches_per_scan + 1):
-                filename, mri = next(iterable)
-                pred_label = model.predict(mri)
-                pat, pat_cart = process_predicted_label(pred_label)
-
-                # If we're predicting the first batch of images in the scan, assign volume to prediction,
-                # and get scan name to save the volumes
-                if cur_batch_num == 1:
-                    pat_vol = pat
-                    pat_cart_vol = pat_cart
-                    scan_name = parse_scan_name(filename)
-
-                # If we're not predicting first batch, append to current batch
-                elif cur_batch_num <= batches_per_scan:
-                    pat_vol = np.concatenate((pat_vol, pat), axis=2)
-                    pat_cart_vol = np.concatenate((pat_cart_vol, pat_cart), axis=2)
-
-                # If we've predicted final batch for scan, save volume
-                if cur_batch_num == batches_per_scan:
-                    save_volumes(pat_vol, pat_cart_vol, model_name, scan_name)
-                    print(f"Saved {scan_name}, scan {i} of {(len(dataset) // batches_per_scan) - 1}")
+        subj_dir = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Organized_Data"
+        subjs = os.listdir(subj_dir)
+        subjs = subjs[35:]
+        for idx, subj in enumerate(subjs):
+            if idx < 48:
+                p_vol, pc_vol = read_in_labeled_data(subj_dir, subj)
+                save_volumes(p_vol, pc_vol, subj)
+                print(f"saved {subj} volumes")
 
     # Create point clouds of the patella, patellar cartilage, and articulating surface of patella
     if create_point_clouds_option:
         # Get volume data path (what we're reading in)
-        volume_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name[0:-3])
+        volume_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\Volumes"
         scans = os.listdir(volume_path)
 
         # Create point cloud data path (what we're saving to)
-        point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name[0:-3])
-        if not os.path.exists(point_cloud_path):
-            os.mkdir(point_cloud_path)
+        point_cloud_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\To_Geomagic"
 
         # Iterate through each volume, calculate coordinate arrays, and save
         for scan in scans:
@@ -276,11 +261,11 @@ if __name__ == "__main__":
     # Load pre and post, register, calculate strain map, save registered point clouds and strain map
     if register_point_clouds_option:
         # Get point cloud data path (what we're reading in)
-        point_cloud_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name[0:-3])
+        point_cloud_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\From_Geomagic"
         scans = os.listdir(point_cloud_path)
 
         # Get strain data path (what we're saving to)
-        strain_path = os.path.join(get_data_path("Paranjape_PCs"), model_name[0:-3])
+        strain_path = os.path.join(get_data_path("Paranjape_PCs"))
         if not os.path.exists(strain_path):
             os.mkdir(strain_path)
 
