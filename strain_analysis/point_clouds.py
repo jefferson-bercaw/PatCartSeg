@@ -382,10 +382,10 @@ def get_coordinate_arrays(p_vol, pc_vol):
     # p_vol = remove_nocart_slices(p_vol, pc_vol)
 
     # Remove outliers based on distance from centroid and connectivity
-    p_vol = remove_patella_outliers(p_vol)
+    # p_vol = remove_patella_outliers(p_vol)
 
     # Get right patellar volume (at the cartilage interface)
-    p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
+    # p_right_vol = extract_right_patellar_volume(p_vol, pc_vol)
 
     # Edit mask to get the surface pixels (no middle pixels) for the patella and get the point cloud
     p_surf_mask = return_p_surface(p_vol)
