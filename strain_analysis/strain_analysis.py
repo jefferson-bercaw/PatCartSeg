@@ -119,8 +119,8 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     pc_ptcld_full = copy.deepcopy(pc_ptcld)
     fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
 
-    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=1.0)
-    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=1.0)
+    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=5)
+    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=5)
 
     # Visualize removal
     if output:
@@ -164,7 +164,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
         fixed_coord = fixed_pc[closest_indices[i]]  # pre coord
 
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
-        dist_thresh = 0.75  # distance [mm] that signifies a "good" comparison
+        dist_thresh = 1  # distance [mm] that signifies a "good" comparison
         if np.linalg.norm(moving_coord - fixed_coord) < dist_thresh:
             pre_thick = fixed_thickness[closest_indices[i]]
             post_thick = thickness[i]
@@ -184,19 +184,19 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
 
     # Copy strain map for visual comparison
     strain_map_pre_removal = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
+    strain_map = np.concatenate((avg_coord, strain[:, np.newaxis]), axis=1)
 
-    # Remove outer boundaries
-    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=3.0)
-
-    strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
-    #
+    # # Remove outer boundaries
+    # strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=3.0)
+    # strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
+    # #
     # plt.hist(strain)
     # plt.show()
 
     if output:
-        visualize_strain_map(thick_pre_map, "Pre Thickness")
-        visualize_strain_map(thick_post_map, "Post Thickness")
-        visualize_strain_map(strain_map_pre_removal, "strain pre-removal")
+        # visualize_strain_map(thick_pre_map, "Pre Thickness")
+        # visualize_strain_map(thick_post_map, "Post Thickness")
+        # visualize_strain_map(strain_map_pre_removal, "strain pre-removal")
         visualize_strain_map(strain_map, "strain post-removal")
 
     return strain_map
