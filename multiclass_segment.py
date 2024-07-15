@@ -27,7 +27,7 @@ if __name__ == "__main__":
         patience = 200
         min_delta = 0.0001
 
-        dataset = "ctHT5"
+        dataset = "ctHT"
 
         # Build and compile model
         unet_model = build_unet(model_depth=model_depth)
