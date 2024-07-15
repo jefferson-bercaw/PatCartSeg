@@ -24,7 +24,7 @@ if __name__ == "__main__":
         model_depth = 5
         dropout_rate = 0.3
         epochs = 1000
-        patience = 100
+        patience = 200
         min_delta = 0.0001
 
         dataset = "ctHT5"
