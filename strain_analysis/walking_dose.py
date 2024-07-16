@@ -62,7 +62,7 @@ def parse_scan_name(filename):
     # Remove extension, get slice number, assert it is 1, and return the scan name
     no_ext = filename_str_start.split(".")[0]
     num = int(no_ext.split("-")[1])
-    assert num == 1, (f"Images are out of order! First image in this batch is not first in scan! "
+    assert num == 26, (f"Images are out of order! First image in this batch is not first in scan! "
                       f"First batch image: {filename_str_start}")
 
     scan_name = no_ext.split("-")[0]
@@ -83,9 +83,9 @@ def save_volumes(pat_vol, pat_cart_vol, model_name, scan_name):
         os.mkdir(volume_path)
 
     # Assert shape is correct
-    assert pat_vol.shape == (256, 256, 120), (f"Patella volume being saved is not (256, 256, 120)! "
+    assert pat_vol.shape == (256, 256, 70), (f"Patella volume being saved is not (256, 256, 70)! "
                                               f"Shape {pat_vol.shape}")
-    assert pat_cart_vol.shape == (256, 256, 120), (f"Patellar cartilage volume being saved is not (256, 256, 120)! "
+    assert pat_cart_vol.shape == (256, 256, 70), (f"Patellar cartilage volume being saved is not (256, 256, 70)! "
                                                    f"Shape {pat_cart_vol.shape}")
 
     # Save scans
@@ -117,7 +117,8 @@ def save_coordinate_arrays(p_array, pc_array, scan):
 
 
 def load_coordinate_arrays(scan):
-    """Loads in .pcd point clouds from Geomagic"""
+    """Loads in .pcd point clouds from Geomagic
+    Geomagic exports in meters, so we'll convert all distances to millimeters"""
 
     # Remove .npz extension on scan, if there
     if scan[-4:] == ".npz":
@@ -129,8 +130,8 @@ def load_coordinate_arrays(scan):
     ptcld_P = o3d.io.read_point_cloud(filename_P)
     ptcld_PC = o3d.io.read_point_cloud(filename_PC)
 
-    p_array = np.asarray(ptcld_P.points)
-    pc_array = np.asarray(ptcld_PC.points)
+    p_array = np.asarray(ptcld_P.points) * 1000.0
+    pc_array = np.asarray(ptcld_PC.points) * 1000.0
 
     return p_array, pc_array
 
@@ -166,18 +167,48 @@ def output_plots(info):
     froude_categories = ["010", "025", "040"]
     duration_categories = ["10", "20", "30", "40", "60"]
 
-    foude_data = {category: [] for category in froude_categories}
+    froude_data = {category: [] for category in froude_categories}
     duration_data = {category: [] for category in duration_categories}
+    froude_thick = {category: [] for category in froude_categories}
+    duration_thick = {category: [] for category in duration_categories}
 
-    for froude, duration, strain in zip(info["Froude"], info["Duration"], info["Mean Strain"]):
+    for froude, duration, strain, delt in zip(info["Froude"], info["Duration"], info["Mean Strain"], info["Change_in_Thickness"]):
         if duration == "30":
-            foude_data[froude].append(strain)
+            froude_data[froude].append(strain)
+            froude_thick[froude].append(delt)
         if froude == "025":
             duration_data[duration].append(strain)
+            duration_thick[duration].append(delt)
 
     # Convert the data to a list of lists for boxplot
-    froude_list = [foude_data[category] for category in froude_categories]
+    froude_list = [froude_data[category] for category in froude_categories]
     duration_list = [duration_data[category] for category in duration_categories]
+    froude_thick_list = [froude_thick[category] for category in froude_categories]
+    duration_thick_list = [duration_thick[category] for category in duration_categories]
+
+    # Create froude vs thick plot
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(froude_thick_list, labels=froude_categories)
+
+    # Customize the plot
+    plt.xlabel("Froude")
+    plt.ylabel("Change in Thickness")
+    plt.title("Change in Thickness vs Froude (Duration = 30 min)")
+
+    # Show the plot
+    plt.show()
+
+    # create duration vs thick plot
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(duration_thick_list, labels=duration_categories)
+
+    # Customize the plot
+    plt.xlabel("Duration (min)")
+    plt.ylabel("Change in Thickness")
+    plt.title("Change in Thickness vs Duration (Froude = 0.25)")
+
+    # Show the plot
+    plt.show()
 
     # Create froude vs strain plot
     plt.figure(figsize=(10, 6))
@@ -206,23 +237,23 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
-    create_point_clouds_option = True
+    predict_volumes_option = False
+    create_point_clouds_option = False
     # Geomagic here
     register_point_clouds_option = True
     visualize_registration_option = False
     visualize_strain_map_option = False
 
     # Declarations
-    model_name = "unet_2024-07-03_16-16-58_cHT5.h5"
-    batch_size = 12
-    n_slices = 120
+    model_name = "unet_2024-07-11_00-40-25_ctHT5.h5"
+    batch_size = 14
+    n_slices = 70
     batches_per_scan = n_slices // batch_size
 
     # Predict patella and patellar cartilage volumes
     if predict_volumes_option:
         # Load in dataset
-        image_dir = get_data_path("Paranjape_Cropped") + os.sep + "*.bmp"
+        image_dir = get_data_path("Paranjape_ct") + os.sep + "*.bmp"
         dataset = get_paranjape_dataset(image_dir, batch_size=batch_size)
         iterable = iter(dataset)
 
@@ -275,7 +306,7 @@ if __name__ == "__main__":
     # Load pre and post, register, calculate strain map, save registered point clouds and strain map
     if register_point_clouds_option:
         # Get point cloud data path (what we're reading in)
-        point_cloud_path = os.path.join(get_data_path("Paranjape_PCs"), model_name[0:-3])
+        point_cloud_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name[0:-3])
         scans = os.listdir(point_cloud_path)
 
         # Get strain data path (what we're saving to)
@@ -289,6 +320,7 @@ if __name__ == "__main__":
         info["Froude"] = []
         info["Duration"] = []
         info["Mean Strain"] = []
+        info["Change_in_Thickness"] = []
 
         # Iterate through each scan and take in a pair of scans
         for idx in range(len(scans)):
@@ -304,6 +336,7 @@ if __name__ == "__main__":
                 # Extract thicknesses
                 pre_thickness = pre_pc_array[:, 3]
                 post_thickness = post_pc_array[:, 3]
+                info["Change_in_Thickness"].append(np.mean(pre_thickness) - np.mean(post_thickness))
 
                 # Remove last column on pc_arrays
                 pre_pc_array = pre_pc_array[:, :-1]

@@ -456,7 +456,6 @@ if __name__ == '__main__':
 
         # Calculate cartilage thickness maps
         pc_thick_map = calculate_thickness(p_coords_array, pc_coords_array)
-        pc_thick_map[:,3] = pc_thick_map[:,3] * 1000.0
         print(f"Mean thickness: {np.mean(pc_thick_map[:,3])}")
 
         # Save (nx4) cartilage thickness maps

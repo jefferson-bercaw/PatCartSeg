@@ -81,36 +81,39 @@ def average_thickness_values(pc_ptcld, thickness):
     return pc_points, thickness_new
 
 
-def remove_outer_boundaries(pc_ptcld, thickness, radius):
+def remove_outer_boundaries(pc_ptcld, thickness, radius, n):
+    for i in range(n):
+        # Estimate normals for the entire point cloud
+        pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30))
 
-    # Estimate normals for the entire point cloud
-    pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30))
+        # Compute point density
+        kdtree = o3d.geometry.KDTreeFlann(pc_ptcld)
+        densities = np.zeros(len(pc_ptcld.points))
 
-    # Compute point density
-    kdtree = o3d.geometry.KDTreeFlann(pc_ptcld)
-    densities = np.zeros(len(pc_ptcld.points))
+        for i, point in enumerate(pc_ptcld.points):
+            [_, idx, _] = kdtree.search_radius_vector_3d(point, radius)
+            densities[i] = len(idx)
 
-    for i, point in enumerate(pc_ptcld.points):
-        [_, idx, _] = kdtree.search_radius_vector_3d(point, radius)
-        densities[i] = len(idx)
+        # plt.hist(densities, bins=15)
+        # plt.show()
+        # Threshold for edge removal
+        density_threshold = round(np.max(densities) / 2)
 
-    # plt.hist(densities, bins=15)
-    # plt.show()
-    density_threshold = round(np.max(densities) * 2 / 3)
+        # Filter points based on density
+        filtered_points = []
+        filtered_thickness = []
+        for i, density in enumerate(densities):
+            if density >= density_threshold:
+                filtered_points.append(pc_ptcld.points[i])
+                filtered_thickness.append(thickness[i])
 
-    # Filter points based on density
-    filtered_points = []
-    filtered_thickness = []
-    for i, density in enumerate(densities):
-        if density >= density_threshold:
-            filtered_points.append(pc_ptcld.points[i])
-            filtered_thickness.append(thickness[i])
+        # Create a new point cloud from the filtered points
+        pc_ptcld = o3d.geometry.PointCloud()
+        pc_ptcld.points = o3d.utility.Vector3dVector(np.array(filtered_points))
 
-    # Create a new point cloud from the filtered points
-    filtered_pc_ptcld = o3d.geometry.PointCloud()
-    filtered_pc_ptcld.points = o3d.utility.Vector3dVector(np.array(filtered_points))
+        thickness = np.array(filtered_thickness)
 
-    return filtered_pc_ptcld, np.array(filtered_thickness)
+    return pc_ptcld, thickness
 
 
 def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, output):
@@ -118,8 +121,8 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     pc_ptcld_full = copy.deepcopy(pc_ptcld)
     fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
 
-    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=2.0)
-    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=2.0)
+    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=5, n=8)
+    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=5, n=8)
 
     # Visualize removal
     if output:
@@ -144,7 +147,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     moving_pc, thickness = average_thickness_values(pc_ptcld, thickness)
     fixed_pc, fixed_thickness = average_thickness_values(fixed_pc_ptcld, fixed_thickness)
 
-    # # Get points arrays
+    # Get points arrays
     # moving_pc = np.asarray(pc_ptcld.points)
     # fixed_pc = np.asarray(fixed_pc_ptcld.points)
 
@@ -163,7 +166,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
         fixed_coord = fixed_pc[closest_indices[i]]  # pre coord
 
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
-        dist_thresh = 0.75  # distance [mm] that signifies a "good" comparison
+        dist_thresh = 1  # distance [mm] that signifies a "good" comparison
         if np.linalg.norm(moving_coord - fixed_coord) < dist_thresh:
             pre_thick = fixed_thickness[closest_indices[i]]
             post_thick = thickness[i]
@@ -183,19 +186,19 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
 
     # Copy strain map for visual comparison
     strain_map_pre_removal = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
+    strain_map = np.concatenate((avg_coord, strain[:, np.newaxis]), axis=1)
 
-    # Remove outer boundaries
-    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=5.0)
-
-    strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
-    #
+    # # Remove outer boundaries
+    # strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=3.0)
+    # strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
+    # #
     # plt.hist(strain)
     # plt.show()
 
     if output:
-        visualize_strain_map(thick_pre_map, "Pre Thickness")
-        visualize_strain_map(thick_post_map, "Post Thickness")
-        visualize_strain_map(strain_map_pre_removal, "strain pre-removal")
+        # visualize_strain_map(thick_pre_map, "Pre Thickness")
+        # visualize_strain_map(thick_post_map, "Post Thickness")
+        # visualize_strain_map(strain_map_pre_removal, "strain pre-removal")
         visualize_strain_map(strain_map, "strain post-removal")
 
     return strain_map

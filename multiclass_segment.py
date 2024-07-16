@@ -12,8 +12,6 @@ from create_dataset import get_dataset
 
 
 parser = argparse.ArgumentParser(description="Training Options")
-parser.add_argument("-a", "--arr", help="Enter the suffix of the dataset we're testing", type=int)
-args = parser.parse_args()
 
 
 if __name__ == "__main__":
@@ -22,16 +20,17 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 20
+        batch_size = 32
+        model_depth = 6
         dropout_rate = 0.3
-        epochs = 500
-        patience = 100
+        epochs = 1000
+        patience = 200
         min_delta = 0.0001
 
         dataset = "ctHT"
 
         # Build and compile model
-        unet_model = build_unet(model_depth=args.arr)
+        unet_model = build_unet(model_depth=model_depth)
 
         unet_model.compile(optimizer='adam',
                            loss=dice_loss,
@@ -75,6 +74,6 @@ if __name__ == "__main__":
               f"dropout_rate: {dropout_rate}"
               f"max epochs: {epochs}"
               f"epochs trained for: {len(history.history['loss'])}"
-              f"model depth: {args.arr}")
+              f"model depth: {model_depth}")
 
 

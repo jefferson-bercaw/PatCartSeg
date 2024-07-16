@@ -228,17 +228,14 @@ if __name__ == "__main__":
         trans = np.random.randint(int(-1 * t), int(t+1), size=(5, 2))
 
 
-            for idx, deg in enumerate(degs):
-                tran = trans[idx, :]
-
-                # Rotate
-                rot_mri, rot_mask = rotate_images(mri, mask, deg)
-
-                # Translate
-                trans_mri, trans_mask = translate_images(rot_mri, rot_mask, tran)
-
-                # Save
-                save_images(trans_mri, trans_mask, save_data_path, f"a{idx}{file}")
+        for idx, deg in enumerate(degs):
+            tran = trans[idx, :]
+            # Rotate
+            rot_mri, rot_mask = rotate_images(mri, mask, deg)
+            # Translate
+            trans_mri, trans_mask = translate_images(rot_mri, rot_mask, tran)
+            # Save
+            save_images(trans_mri, trans_mask, save_data_path, f"a{idx}{file}")
 
 
         if file_num % (50 * (5+1)):
