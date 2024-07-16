@@ -215,7 +215,7 @@ if __name__ == "__main__":
     visualize_strain_map_option = False
 
     # Declarations
-    model_name = "unet_2024-07-11_21-01-46_ctHT.h5"
+    model_name = "unet_2024-07-15_19-34-24_ctHT.h5"
     batch_size = 14
     n_slices = 70
     batches_per_scan = n_slices // batch_size
