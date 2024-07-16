@@ -83,14 +83,16 @@ def process_predicted_label(pred_label):
     thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
-    pat = np.squeeze(binary_data[:, :, :, 0])
-    pat_cart = np.squeeze(binary_data[:, :, :, 1])
+    pat = np.squeeze(np.logical_or(binary_data[:, :, :, 0], binary_data[:, :, :, 2]).astype(np.uint8))
+    pat_cart = np.squeeze(np.logical_or(binary_data[:, :, :, 1], binary_data[:, :, :, 3]).astype(np.uint8))
 
     # Probability masks
     pat_prob = np.squeeze(pred_label[:, :, :, 0])
     pat_cart_prob = np.squeeze(pred_label[:, :, :, 1])
+    pat_surf_prob = np.squeeze(pred_label[:, :, :, 2])
+    pat_cart_surf_prob = np.squeeze(pred_label[:, :, :, 3])
 
-    return pat, pat_cart, pat_prob, pat_cart_prob
+    return pat, pat_cart, pat_prob, pat_cart_prob, pat_surf_prob, pat_cart_surf_prob
 
 
 def process_mri(mri):
@@ -98,7 +100,7 @@ def process_mri(mri):
     return mri
 
 
-def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
+def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob, pat_surf_prob, pat_cart_surf_prob):
     filename_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
@@ -107,6 +109,8 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
 
     pat_prob_filepath = os.path.join(results_filename, "pat_prob")
     pat_cart_prob_filepath = os.path.join(results_filename, "pat_cart_prob")
+    pat_surf_prob_filepath = os.path.join(results_filename, "pat_surf_prob")
+    pat_cart_surf_prob_filepath = os.path.join(results_filename, "pat_cart_surf_prob")
 
     # Make directories if they don't exist
     if not os.path.exists(pat_filepath):
@@ -117,6 +121,10 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
         os.mkdir(pat_prob_filepath)
     if not os.path.exists(pat_cart_prob_filepath):
         os.mkdir(pat_cart_prob_filepath)
+    if not os.path.exists(pat_surf_prob_filepath):
+        os.mkdir(pat_surf_prob_filepath)
+    if not os.path.exists(pat_cart_surf_prob_filepath):
+        os.mkdir(pat_cart_surf_prob_filepath)
 
     filename_npy = filename_str.split('.')[0] + ".npy"
 
@@ -124,6 +132,9 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
     pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
     pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, filename_npy)
+    pat_surf_prob_filepath = os.path.join(pat_surf_prob_filepath, filename_npy)
+    pat_cart_prob_filepath = os.path.join(pat_cart_surf_prob_filepath, filename_npy)
+
     # print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
     # Save the masks as BMP files
@@ -135,14 +146,22 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     # Save the probability masks as NPY files
     np.save(pat_prob_filepath, pat_prob)
     np.save(pat_cart_prob_filepath, pat_cart_prob)
+    np.save(pat_surf_prob_filepath, pat_surf_prob)
+    np.save(pat_cart_prob_filepath, pat_cart_surf_prob)
 
     return
 
 
 def process_true_label(label):
-    label = tf.squeeze(label, axis=0)
+    label = tf.squeeze(label, axis=0)  # Convert to (xy_dim, xy_dim, 4)
     pat = label[:, :, 0].numpy().astype(np.uint8)
     pat_cart = label[:, :, 1].numpy().astype(np.uint8)
+    pat_surf = label[:, :, 2].numpy().astype(np.uint8)
+    pat_cart_surf = label[:, :, 3].numpy().astype(np.uint8)
+
+    pat = np.logical_or(pat, pat_surf).astype(np.uint8)
+    pat_cart = np.logical_or(pat_cart, pat_cart_surf).astype(np.uint8)
+
     return pat, pat_cart
 
 
@@ -427,7 +446,7 @@ if __name__ == "__main__":
                 pred_label = model.predict(mri)
 
                 mri = process_mri(mri)
-                pat, pat_cart, pat_prob, pat_cart_prob = process_predicted_label(pred_label)
+                pat, pat_cart, pat_prob, pat_cart_prob, pat_surf_prob, pat_cart_surf_prob = process_predicted_label(pred_label)
                 pat_true, pat_cart_true = process_true_label(label)
 
                 pat_positives = count_positives(pat, pat_true, pat_positives)
@@ -438,7 +457,7 @@ if __name__ == "__main__":
                 plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
                 # Output predictions
-                save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob)
+                save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob, pat_surf_prob, pat_cart_surf_prob)
 
                 # print(f"Img {i+1} of {n_test_images}")
 
