@@ -20,13 +20,14 @@ def get_date_and_hour():
 
 
 def get_history_filename(date_time):
-    # Remove extension
-    date_time = date_time[0:-3] + ".pkl"
+    # Add extension
+    date_time = date_time + ".pkl"
     history_filename = os.path.abspath(os.path.join('history', date_time))
     return history_filename
 
 
 def get_model_filename(date_time):
+    date_time = date_time + ".h5"
     model_filename = os.path.abspath(os.path.join('models', date_time))
     return model_filename
 
@@ -208,7 +209,7 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filen
 
 def get_slice_list(p_truth_volume, pc_truth_volume):
     starting_slice = 0
-    for i in range(120):
+    for i in range(70):
         slice_p_truth = p_truth_volume[:, :, i]
         slice_pc_truth = pc_truth_volume[:, :, i]
 
@@ -308,8 +309,7 @@ def get_comparison_plot_filename(date_time):
 
 def parse_dataset_name(model_name):
     """Returns dataset_name from the model name"""
-    ending = model_name[25:-1]  # Everything but date in front
-    dataset_name = ending.split(".")[0]
+    dataset_name = model_name.split("_")[-1]
     return dataset_name
 
 
@@ -330,7 +330,7 @@ def return_volumes(subj_name, model_name):
     p_and_pc_truth_folder = os.path.join(truth_folder, "test", "mask")
 
     # Get list of images in each folder for this subject
-    image_list = [f"{subj_name}-{four_digit_number(i)}.bmp" for i in range(1, 120)]
+    image_list = [f"{subj_name}-{four_digit_number(i)}.bmp" for i in range(26, 96)]
 
     # Append image list to all absolute paths to load
     p_pred_names = [os.path.join(p_pred_folder, image_name) for image_name in image_list]
@@ -359,10 +359,13 @@ def get_most_recent_model():
     date_times = list()
 
     if len(models) > 1:
-        date_times.append(models[0])  # Get most recent model
+        model = models[0].split(".")[0]
+        date_times.append(model)  # Get most recent model without .h5 extension
+
         return date_times
     else:
         print("There are not enough files in the 'models' subfolder.")
+
 
 
 def plot_loss(history, results_filename, show=False):
@@ -388,11 +391,11 @@ if __name__ == "__main__":
 
         for date_time in date_times:
 
-            plot_mri_with_both_masks("AS_006", date_time)
+            dataset_name = parse_dataset_name(date_time)
+
+            # plot_mri_with_both_masks("AS_006", date_time)
 
             print(f"Evaluating model {date_time}")
-
-            dataset_name = parse_dataset_name(date_time)
 
             # Get results filename
             results_filename = get_results_filename(date_time)
