@@ -18,64 +18,21 @@ def dice_loss(y_true, y_pred):
     return 1 - dice_coefficient(y_true, y_pred)
 
 
-# def weighted_dice_loss(y_true, y_pred):
-#     # Weight given to pixels on articulating surface of patella and cartilage
-#     n = 10
-#
-#     # Identify furthest-right pixels
-#     # Slice labels (batch x 256 x 256 x 1)
-#     p_true = y_true[..., 0]
-#     pc_true = y_true[..., 1]
-#
-#     p_true = tf.cast(p_true, tf.float64)
-#     pc_true = tf.cast(pc_true, tf.float64)
-#
-#     # Slice predictions (batch x 256 x 256 x 1)
-#     p_pred = y_pred[..., 0]
-#     pc_pred = y_pred[..., 1]
-#
-#     # Change each true pixel to the column number it's in (batch x 256 x 256 x 1)
-#     col_indices = tf.range(256, dtype=tf.float64)
-#     col_indices = tf.reshape(col_indices, (1, 256))
-#     col_indices = tf.tile(col_indices, (256, 1))  # This tensor is now (256 256)
-#     col_indices = tf.cast(col_indices, tf.float64)
-#
-#     p_col_locs = tf.math.multiply(col_indices, p_true[..., :, :])
-#     pc_col_locs = tf.math.multiply(col_indices, pc_true[..., :, :])
-#
-#     right_p = tf.argmax(p_col_locs, axis=1)
-#     right_pc = tf.argmax(pc_col_locs, axis=1)
-#
-#     p_row = tf.reshape(tf.where(right_p > 0, 1.0, 0.0), (-1))
-#     p_col = tf.gather(right_p, p_row)
-#
-#     pc_row = tf.reshape(tf.where(right_pc > 0, 1.0, 0.0), (-1))
-#     pc_col = tf.gather(right_pc, pc_row)
-#
-#     p_inds = tf.stack([p_row, p_col], axis=1)
-#     pc_inds = tf.stack([pc_row, pc_col], axis=1)
-#
-#     # Values of the right-most true labels
-#     right_p_true = tf.gather_nd(p_true, p_inds)
-#     right_pc_true = tf.gather_nd(pc_true, pc_inds)
-#
-#     # Corresponding values of the predicted label
-#     right_p_pred = tf.gather_nd(p_pred, p_inds)
-#     right_pc_pred = tf.gather_nd(pc_pred, pc_inds)
-#
-#     # Calculate 3 dice loss scores, and weight accordingly
-#     # 1. Patella right coordinates
-#     p_right_loss = dice_loss(right_p_true, right_p_pred)
-#
-#     # 2. Patellar cartilage right coordinates
-#     pc_right_loss = dice_loss(right_pc_true, right_pc_pred)
-#
-#     # 3. Everything else
-#     normal_loss = dice_loss(y_true, y_pred)
-#
-#     # Sum dice losses
-#     total_loss = n * (p_right_loss + pc_right_loss) + normal_loss
-#     return total_loss
+def weighted_dice_loss(y_true, y_pred):
+    # Weight given to pixels on articulating surface of patella and cartilage
+    n = 10
+
+    # Convert to p, pc, psurf, pcsurf predictions and labels (2d tensor)
+    y_true = tf.reshape(y_true, (-1, 4))
+    y_pred = tf.reshape(y_pred, (-1, 4))
+
+    intersection = tf.reduce_sum(y_true * y_pred, axis=0)
+    union = tf.reduce_sum(y_true, axis=0) + tf.reduce_sum(y_pred, axis=0)
+    dice_loss = 1 - (2 * intersection + 1) / (union + 1)
+
+    weights = tf.constant([1, 1, n, n], dtype=tf.float32)
+    weighted_dice_loss = dice_loss * weights
+    return tf.reduce_sum(weighted_dice_loss)
 
 
 if __name__ == "__main__":
