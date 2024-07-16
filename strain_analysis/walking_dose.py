@@ -167,18 +167,48 @@ def output_plots(info):
     froude_categories = ["010", "025", "040"]
     duration_categories = ["10", "20", "30", "40", "60"]
 
-    foude_data = {category: [] for category in froude_categories}
+    froude_data = {category: [] for category in froude_categories}
     duration_data = {category: [] for category in duration_categories}
+    froude_thick = {category: [] for category in froude_categories}
+    duration_thick = {category: [] for category in duration_categories}
 
-    for froude, duration, strain in zip(info["Froude"], info["Duration"], info["Mean Strain"]):
+    for froude, duration, strain, delt in zip(info["Froude"], info["Duration"], info["Mean Strain"], info["Change_in_Thickness"]):
         if duration == "30":
-            foude_data[froude].append(strain)
+            froude_data[froude].append(strain)
+            froude_thick[froude].append(delt)
         if froude == "025":
             duration_data[duration].append(strain)
+            duration_thick[duration].append(delt)
 
     # Convert the data to a list of lists for boxplot
-    froude_list = [foude_data[category] for category in froude_categories]
+    froude_list = [froude_data[category] for category in froude_categories]
     duration_list = [duration_data[category] for category in duration_categories]
+    froude_thick_list = [froude_thick[category] for category in froude_categories]
+    duration_thick_list = [duration_thick[category] for category in duration_categories]
+
+    # Create froude vs thick plot
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(froude_thick_list, labels=froude_categories)
+
+    # Customize the plot
+    plt.xlabel("Froude")
+    plt.ylabel("Change in Thickness")
+    plt.title("Change in Thickness vs Froude (Duration = 30 min)")
+
+    # Show the plot
+    plt.show()
+
+    # create duration vs thick plot
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(duration_thick_list, labels=duration_categories)
+
+    # Customize the plot
+    plt.xlabel("Duration (min)")
+    plt.ylabel("Change in Thickness")
+    plt.title("Change in Thickness vs Duration (Froude = 0.25)")
+
+    # Show the plot
+    plt.show()
 
     # Create froude vs strain plot
     plt.figure(figsize=(10, 6))
@@ -207,10 +237,10 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
-    create_point_clouds_option = True
+    predict_volumes_option = False
+    create_point_clouds_option = False
     # Geomagic here
-    register_point_clouds_option = False
+    register_point_clouds_option = True
     visualize_registration_option = False
     visualize_strain_map_option = False
 
@@ -290,6 +320,7 @@ if __name__ == "__main__":
         info["Froude"] = []
         info["Duration"] = []
         info["Mean Strain"] = []
+        info["Change_in_Thickness"] = []
 
         # Iterate through each scan and take in a pair of scans
         for idx in range(len(scans)):
@@ -305,6 +336,7 @@ if __name__ == "__main__":
                 # Extract thicknesses
                 pre_thickness = pre_pc_array[:, 3]
                 post_thickness = post_pc_array[:, 3]
+                info["Change_in_Thickness"].append(np.mean(pre_thickness) - np.mean(post_thickness))
 
                 # Remove last column on pc_arrays
                 pre_pc_array = pre_pc_array[:, :-1]
