@@ -8,11 +8,13 @@ from scipy import ndimage
 
 
 def assemble_3d_mask(mask_2d):
-    """Assembles a 3D tf.Tensor of 1s and 0s pertaining to the patella and patellar cartilage
+    """Assembles a 3D tf.Tensor of 1s and 0s pertaining to the patella, patellar cartilage, patella surface,
+    and patellar cartilage surface
 
-    Inputs: mask_2d (ndarray) of 0, 1, and 2 pertaining to background, patella, and patellar cartilage, respectively
+    Inputs: mask_2d (ndarray) of 0, 1, 2, 3, 4 pertaining to background, patella, patellar cartilage, patella surface,
+    and patellar cartilage surface, respectively
 
-    Outputs: mask (tf.tensor) of size (xy_dim, xy_dim, 2) of 1s and 0s corresponding to P and PC
+    Outputs: mask (tf.tensor) of size (xy_dim, xy_dim, 4) of 1s and 0s corresponding to P, PC, P_surf, PC_surf
     """
 
     p_mask_inds = tf.equal(mask_2d, 1)
@@ -21,7 +23,13 @@ def assemble_3d_mask(mask_2d):
     pc_mask_inds = tf.equal(mask_2d, 2)
     pc = tf.where(pc_mask_inds, 1, 0)
 
-    mask = tf.stack([p, pc], axis=-1)
+    p_surf_mask_inds = tf.equal(mask_2d, 3)
+    p_surf = tf.where(p_surf_mask_inds, 1, 0)
+
+    pc_surf_mask_inds = tf.equal(mask_2d, 4)
+    pc_surf = tf.where(pc_surf_mask_inds, 1, 0)
+
+    mask = tf.stack([p, pc, p_surf, pc_surf], axis=-1)
     mask = tf.squeeze(mask, axis=-2)
 
     return mask
@@ -35,7 +43,7 @@ def load_test_data(image_path, mask_path):
 
     Outputs: filename: filename of the .bmp file for this slice (e.g. AS_010-0011.bmp)
              image: tf.float64 normalized to [0, 1] of the MRI slice, size (xy_dim, xy_dim)
-             mask_3d: tf.float64 of 0s and 1s of the mask, size (xy_dim, xy_dim, 2)
+             mask_3d: tf.float64 of 0s and 1s of the mask, size (xy_dim, xy_dim, 4)
     """
 
     image = tf.io.read_file(image_path)
@@ -60,7 +68,7 @@ def load_data(image_path, mask_path):
             mask_path: absolute path of the .bmp file where the mask is stored
 
     Outputs: image: tf.float64 normalized to [0, 1] of the MRI slice, size (xy_dim, xy_dim)
-             mask_3d: tf.float64 of 0s and 1s of the mask, size (xy_dim, xy_dim, 2)
+             mask_3d: tf.float64 of 0s and 1s of the mask, size (xy_dim, xy_dim, 4)
     """
 
     image = tf.io.read_file(image_path)
