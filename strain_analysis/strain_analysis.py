@@ -81,37 +81,39 @@ def average_thickness_values(pc_ptcld, thickness):
     return pc_points, thickness_new
 
 
-def remove_outer_boundaries(pc_ptcld, thickness, radius):
+def remove_outer_boundaries(pc_ptcld, thickness, radius, n):
+    for i in range(n):
+        # Estimate normals for the entire point cloud
+        pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30))
 
-    # Estimate normals for the entire point cloud
-    pc_ptcld.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30))
+        # Compute point density
+        kdtree = o3d.geometry.KDTreeFlann(pc_ptcld)
+        densities = np.zeros(len(pc_ptcld.points))
 
-    # Compute point density
-    kdtree = o3d.geometry.KDTreeFlann(pc_ptcld)
-    densities = np.zeros(len(pc_ptcld.points))
+        for i, point in enumerate(pc_ptcld.points):
+            [_, idx, _] = kdtree.search_radius_vector_3d(point, radius)
+            densities[i] = len(idx)
 
-    for i, point in enumerate(pc_ptcld.points):
-        [_, idx, _] = kdtree.search_radius_vector_3d(point, radius)
-        densities[i] = len(idx)
+        # plt.hist(densities, bins=15)
+        # plt.show()
+        # Threshold for edge removal
+        density_threshold = round(np.max(densities) / 2)
 
-    # plt.hist(densities, bins=15)
-    # plt.show()
-    # Threshold for edge removal
-    density_threshold = round(np.max(densities) / 2)
+        # Filter points based on density
+        filtered_points = []
+        filtered_thickness = []
+        for i, density in enumerate(densities):
+            if density >= density_threshold:
+                filtered_points.append(pc_ptcld.points[i])
+                filtered_thickness.append(thickness[i])
 
-    # Filter points based on density
-    filtered_points = []
-    filtered_thickness = []
-    for i, density in enumerate(densities):
-        if density >= density_threshold:
-            filtered_points.append(pc_ptcld.points[i])
-            filtered_thickness.append(thickness[i])
+        # Create a new point cloud from the filtered points
+        pc_ptcld = o3d.geometry.PointCloud()
+        pc_ptcld.points = o3d.utility.Vector3dVector(np.array(filtered_points))
 
-    # Create a new point cloud from the filtered points
-    filtered_pc_ptcld = o3d.geometry.PointCloud()
-    filtered_pc_ptcld.points = o3d.utility.Vector3dVector(np.array(filtered_points))
+        thickness = np.array(filtered_thickness)
 
-    return filtered_pc_ptcld, np.array(filtered_thickness)
+    return pc_ptcld, thickness
 
 
 def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, output):
@@ -119,8 +121,8 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     pc_ptcld_full = copy.deepcopy(pc_ptcld)
     fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
 
-    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=5)
-    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=5)
+    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=5, n=8)
+    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=5, n=8)
 
     # Visualize removal
     if output:
@@ -145,7 +147,7 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     moving_pc, thickness = average_thickness_values(pc_ptcld, thickness)
     fixed_pc, fixed_thickness = average_thickness_values(fixed_pc_ptcld, fixed_thickness)
 
-    # # Get points arrays
+    # Get points arrays
     # moving_pc = np.asarray(pc_ptcld.points)
     # fixed_pc = np.asarray(fixed_pc_ptcld.points)
 
