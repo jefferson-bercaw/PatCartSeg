@@ -260,7 +260,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
 
     plt.tight_layout()
     plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_and_pc_windows.png")), dpi=600)
-    plt.show()
+    plt.close()
 
     # Patella only
     fig, axs = plt.subplots(3, 3, figsize=(15, 15))
@@ -277,7 +277,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
 
     plt.tight_layout()
     plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_windows.png")), dpi=600)
-    plt.show()
+    plt.close()
 
     # Patellar Cartilage Only
     fig, axs = plt.subplots(3, 3, figsize=(15, 15))
@@ -294,7 +294,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
 
     plt.tight_layout()
     plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_pc_windows.png")), dpi=600)
-    plt.show()
+    plt.close()
 
 
 def get_comparison_plot_filename(date_time):
@@ -373,7 +373,7 @@ def plot_loss(history, results_filename, show=False):
     plt.legend()
     plt.title("Loss")
     plt.savefig(os.path.join(results_filename, "loss.png"))
-
+    plt.close()
     if show:
         plt.show()
 
@@ -388,7 +388,7 @@ if __name__ == "__main__":
 
         for date_time in date_times:
 
-            plot_mri_with_both_masks("AS_006", "unet_2024-07-03_16-16-58_cHT5")
+            plot_mri_with_both_masks("AS_006", date_time)
 
             print(f"Evaluating model {date_time}")
 
