@@ -7,7 +7,7 @@ import itertools
 import open3d as o3d
 import matplotlib.pyplot as plt
 
-from dice_loss_function import dice_loss
+from dice_loss_function import weighted_dice_loss
 from get_data_path import get_data_path
 from evaluate import load_model
 from point_clouds import get_coordinate_arrays, calculate_thickness
@@ -47,6 +47,16 @@ def process_predicted_label(pred_label):
 
     pat = np.squeeze(binary_data[:, :, :, 0])
     pat_cart = np.squeeze(binary_data[:, :, :, 1])
+    pat_surf = np.squeeze(binary_data[:, :, :, 2])
+    pat_cart_surf = np.squeeze(binary_data[:, :, :, 3])
+
+    # Combine patella and patella surface
+    pat = np.logical_or(pat, pat_surf)
+    pat = pat.astype(np.uint8)
+
+    # Combine patellar cartilage and patellar cartilage surface
+    pat_cart = np.logical_or(pat_cart, pat_cart_surf)
+    pat_cart = pat_cart.astype(np.uint8)
 
     # Transpose to (256, 256, batch_size)
     pat = np.transpose(pat, (1, 2, 0))
@@ -245,7 +255,7 @@ if __name__ == "__main__":
     visualize_strain_map_option = False
 
     # Declarations
-    model_name = "unet_2024-07-11_00-40-25_ctHT5.h5"
+    model_name = "unet_2024-07-17_00-39-40_cteHT.h5"
     batch_size = 14
     n_slices = 70
     batches_per_scan = n_slices // batch_size
