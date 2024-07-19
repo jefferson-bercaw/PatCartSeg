@@ -7,7 +7,7 @@ import os
 import matplotlib.pyplot as plt
 from create_dataset import get_dataset
 import datetime
-from dice_loss_function import dice_loss
+from dice_loss_function import weighted_dice_loss
 from PIL import Image
 from unet import build_unet
 from get_data_path import get_data_path
@@ -39,7 +39,7 @@ def load_history(history_filename):
 
 
 def load_model(model_filename):
-    with tf.keras.utils.custom_object_scope({'dice_loss': dice_loss}):  # Register the custom loss function
+    with tf.keras.utils.custom_object_scope({'weighted_dice_loss': weighted_dice_loss}):  # Register the custom loss function
         model = keras.models.load_model(model_filename)
     return model
 
@@ -248,6 +248,10 @@ def get_slice_list(p_truth_volume, pc_truth_volume):
 
 
 def plot_mri_with_both_masks(subj_name, model_name):
+
+    save_location = os.sep.join(get_data_path("cHT").split(os.sep)[:-1])
+    save_location = os.sep.join((save_location, 'results', model_name))
+
     # Get Volumes for this subject and model prediction
     mri_volume, p_truth_volume, p_pred_volume, pc_truth_volume, pc_pred_volume = return_volumes(subj_name, model_name)
 
@@ -279,7 +283,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_pc_pred[:, :, slice_idx], cmap='Greens', alpha=alpha_pc_pred[:, :, slice_idx])
 
     plt.tight_layout()
-    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_and_pc_windows.png")), dpi=600)
+    plt.savefig(os.path.join((save_location, f"{subj_name}_p_and_pc_windows.png")), dpi=600)
     plt.close()
 
     # Patella only
@@ -296,7 +300,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_p_pred[:, :, slice_idx], cmap='Reds', alpha=alpha_p_pred[:, :, slice_idx])
 
     plt.tight_layout()
-    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_windows.png")), dpi=600)
+    plt.savefig(os.path.join((save_location, f"{subj_name}_p_windows.png")), dpi=600)
     plt.close()
 
     # Patellar Cartilage Only
@@ -313,7 +317,7 @@ def plot_mri_with_both_masks(subj_name, model_name):
         ax.imshow(alpha_pc_pred[:, :, slice_idx], cmap='Reds', alpha=alpha_pc_pred[:, :, slice_idx])
 
     plt.tight_layout()
-    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_pc_windows.png")), dpi=600)
+    plt.savefig(os.path.join((save_location, f"{subj_name}_pc_windows.png")), dpi=600)
     plt.close()
 
 
