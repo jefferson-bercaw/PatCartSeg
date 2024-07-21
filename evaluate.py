@@ -235,10 +235,23 @@ def plot_mri_with_both_masks(subj_name, model_name):
     p_pred_volume = np.where(p_pred_volume > 0, 1, 0)
     pc_pred_volume = np.where(pc_pred_volume > 0, 1, 0)
 
-    alpha_p_truth = np.where(p_truth_volume == 1, 0.4, 0)  # Set alpha based on mask values
-    alpha_p_pred = np.where(p_pred_volume == 1, 0.4, 0)  # Set alpha based on mask values
-    alpha_pc_truth = np.where(pc_truth_volume == 1, 0.4, 0)
-    alpha_pc_pred = np.where(pc_pred_volume == 1, 0.4, 0)
+    opacity = 0.5
+    alpha_p_truth = np.where(p_truth_volume == 1, opacity, 0)  # Set alpha based on mask values
+    alpha_p_pred = np.where(p_pred_volume == 1, opacity, 0)  # Set alpha based on mask values
+    alpha_pc_truth = np.where(pc_truth_volume == 1, opacity, 0)
+    alpha_pc_pred = np.where(pc_pred_volume == 1, opacity, 0)
+
+    # Remove extra slices to zoom into areas of interest
+    mri_volume = mri_volume[80:220, :140, :]
+    p_truth_volume = p_truth_volume[80:220, :140, :]
+    pc_truth_volume = pc_truth_volume[80:220, :140, :]
+    p_pred_volume = p_pred_volume[80:220, :140, :]
+    pc_pred_volume = pc_pred_volume[80:220, :140, :]
+
+    alpha_p_truth = alpha_p_truth[80:220, :140, :]
+    alpha_p_pred = alpha_p_pred[80:220, :140, :]
+    alpha_pc_truth = alpha_pc_truth[80:220, :140, :]
+    alpha_pc_pred = alpha_pc_pred[80:220, :140, :]
 
     # Find a 9 element slice list containing the first and last ground truth predictions
     slice_list = get_slice_list(p_truth_volume, pc_truth_volume)
@@ -263,11 +276,26 @@ def plot_mri_with_both_masks(subj_name, model_name):
     plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_p_and_pc_windows.png")), dpi=600)
     plt.close()
 
-    # Patella only
-    fig, axs = plt.subplots(3, 3, figsize=(15, 15))
+    # MRI
+    fig, axs = plt.subplots(9, 1, figsize=(45, 5))
 
     for i, slice_idx in enumerate(slice_list):
         ax = axs[i // 3, i % 3]
+        ax = axs[i]
+
+        ax.imshow(mri_volume[:, :, slice_idx], cmap='gray')
+        ax.axis('off')
+
+    plt.tight_layout()
+    plt.savefig(os.path.abspath(os.path.join("results", model_name, f"{subj_name}_mri_windows.png")), dpi=600)
+    plt.close()
+
+    # Patella only
+    fig, axs = plt.subplots(9, 1, figsize=(45, 5))
+
+    for i, slice_idx in enumerate(slice_list):
+        ax = axs[i // 3, i % 3]
+        ax = axs[i]
 
         ax.imshow(mri_volume[:, :, slice_idx], cmap='gray')
         ax.axis('off')
@@ -281,10 +309,11 @@ def plot_mri_with_both_masks(subj_name, model_name):
     plt.close()
 
     # Patellar Cartilage Only
-    fig, axs = plt.subplots(3, 3, figsize=(15, 15))
+    fig, axs = plt.subplots(9, 1, figsize=(45, 5))
 
     for i, slice_idx in enumerate(slice_list):
         ax = axs[i // 3, i % 3]
+        ax = axs[i]
 
         ax.imshow(mri_volume[:, :, slice_idx], cmap='gray')
         ax.axis('off')
@@ -387,13 +416,14 @@ if __name__ == "__main__":
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # # date_time pattern to identify model we just trained
-        date_times = get_most_recent_model()
+        # date_times = get_most_recent_model()
+        date_times = ["unet_2024-07-11_00-40-25_ctHT5"]
 
         for date_time in date_times:
 
             dataset_name = parse_dataset_name(date_time)
 
-            # plot_mri_with_both_masks("AS_006", date_time)
+            plot_mri_with_both_masks("AS_006", date_time)
 
             print(f"Evaluating model {date_time}")
 
