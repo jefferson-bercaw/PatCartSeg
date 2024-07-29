@@ -118,11 +118,13 @@ def remove_outer_boundaries(pc_ptcld, thickness, radius, n):
 
 def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, output):
     # Remove outer boundaries
+    radius_mm = 2.5
+
     pc_ptcld_full = copy.deepcopy(pc_ptcld)
     fixed_pc_ptcld_full = copy.deepcopy(fixed_pc_ptcld)
 
-    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=5, n=8)
-    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=5, n=8)
+    pc_ptcld, thickness = remove_outer_boundaries(pc_ptcld, thickness, radius=5, n=1)
+    fixed_pc_ptcld, fixed_thickness = remove_outer_boundaries(fixed_pc_ptcld, fixed_thickness, radius=5, n=1)
 
     # Visualize removal
     if output:
@@ -165,13 +167,22 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
         moving_coord = moving_pc[i]  # post coord
         fixed_coord = fixed_pc[closest_indices[i]]  # pre coord
 
+        # Find average thickness value within 2.5 mm radius
+        moving_dists = np.linalg.norm(moving_coord - moving_pc, axis=1)
+        moving_inds = moving_dists < radius_mm
+        moving_thick = np.mean(thickness[moving_inds])
+
+        fixed_dists = np.linalg.norm(fixed_coord - fixed_pc, axis=1)
+        fixed_inds = fixed_dists < radius_mm
+        fixed_thick = np.mean(fixed_thickness[fixed_inds])
+
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
         dist_thresh = 1  # distance [mm] that signifies a "good" comparison
         if np.linalg.norm(moving_coord - fixed_coord) < dist_thresh:
-            pre_thick = fixed_thickness[closest_indices[i]]
-            post_thick = thickness[i]
+            pre_thick = fixed_thick
+            post_thick = moving_thick
 
-            avg_coord.append((fixed_coord + moving_coord) / 2)  # average coordinate location
+            avg_coord.append(fixed_coord)  # average coordinate location
 
             strain_here = (post_thick - pre_thick) / pre_thick
             strain.append(strain_here)
@@ -185,20 +196,18 @@ def produce_strain_map(pc_ptcld, thickness, fixed_pc_ptcld, fixed_thickness, out
     strain_ptcld.points = o3d.utility.Vector3dVector(avg_coord)
 
     # Copy strain map for visual comparison
-    strain_map_pre_removal = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
     strain_map = np.concatenate((avg_coord, strain[:, np.newaxis]), axis=1)
 
     # # Remove outer boundaries
-    # strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=3.0)
-    # strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
-    # #
+    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=5.0, n=1)
+    strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
+
     # plt.hist(strain)
     # plt.show()
 
     if output:
-        # visualize_strain_map(thick_pre_map, "Pre Thickness")
-        # visualize_strain_map(thick_post_map, "Post Thickness")
-        # visualize_strain_map(strain_map_pre_removal, "strain pre-removal")
+        visualize_strain_map(thick_pre_map, "Pre Thickness")
+        visualize_strain_map(thick_post_map, "Post Thickness")
         visualize_strain_map(strain_map, "strain post-removal")
 
     return strain_map

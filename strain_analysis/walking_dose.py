@@ -242,7 +242,7 @@ if __name__ == "__main__":
     # Geomagic here
     register_point_clouds_option = True
     visualize_registration_option = False
-    visualize_strain_map_option = False
+    visualize_strain_map_option = True
 
     # Declarations
     model_name = "unet_2024-07-11_00-40-25_ctHT5.h5"
