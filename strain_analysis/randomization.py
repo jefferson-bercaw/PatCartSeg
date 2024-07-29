@@ -27,15 +27,15 @@ def write_random_excel(directory, folder_names, shuffled_folders):
     df.to_excel(os.path.join(directory, 'random_info.xlsx'), index=False)
 
 
-def copy_folders_to_new_directory(original_directory, new_directory, folder_names, shuffled_folders):
+def copy_folders_to_new_directory(source_directory, dest_directory, source_names, dest_names):
     # Make sure the destination directory exists
-    if not os.path.exists(new_directory):
-        os.makedirs(new_directory)
+    if not os.path.exists(dest_directory):
+        os.makedirs(dest_directory)
 
     # Copy all contents from src to dst
-    for original_name, randomized_name in zip(folder_names, shuffled_folders):
-        src = os.path.join(original_directory, original_name)
-        dst = os.path.join(new_directory, randomized_name)
+    for source_name, dest_name in zip(source_names, dest_names):
+        src = os.path.join(source_directory, str(source_name))
+        dst = os.path.join(dest_directory, str(dest_name))
 
         # Make sure the destination directory exists
         if not os.path.exists(dst):
@@ -50,7 +50,8 @@ def copy_folders_to_new_directory(original_directory, new_directory, folder_name
             else:
                 shutil.copy2(s, d)
 
-        print(f"Copied {original_name} to {randomized_name}")
+        print(f"Copied {source_name} to {dest_name}")
+
 
 def get_random_info(directory):
     # Load in excel doc
@@ -71,6 +72,7 @@ if __name__ == "__main__":
     directory = os.path.join(start_path, model_name)
     original_directory = os.path.join(start_path, model_name, "original")
     randomized_directory = os.path.join(start_path, model_name, "randomized")
+    corrected_directory = os.path.join(start_path, model_name, "corrected")
 
     # Randomize shuffled folders
     numbered_folders, shuffled_folders = search_and_randomize_folders(original_directory)
@@ -78,12 +80,12 @@ if __name__ == "__main__":
     # Write excel spreadsheet containing randomized info
     write_random_excel(directory, numbered_folders, shuffled_folders)
 
-    # Copy folders to new directory with randomized folder names
-    copy_folders_to_new_directory(original_directory, randomized_directory, numbered_folders, shuffled_folders)
+    # Copy original folders to numbered folders
+    copy_folders_to_new_directory(original_directory, randomized_directory, shuffled_folders, numbered_folders)
 
-    # Go back to non-randomized folder names #
-    # Load in the excel file
-    numbered_folders, shuffled_folders = get_random_info(directory)
-
-    # Copy folders to new directory with randomized folder names
-    copy_folders_to_new_directory(randomized_directory, original_directory, numbered_folders, shuffled_folders)
+    # # Go back to non-randomized folder names
+    # # Load in the excel file
+    # numbered_folders, shuffled_folders = get_random_info(directory)
+    #
+    # # Copy randomized folders to corrected directory with original folder names
+    # copy_folders_to_new_directory(randomized_directory, corrected_directory, numbered_folders, shuffled_folders)

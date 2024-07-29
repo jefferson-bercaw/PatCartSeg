@@ -77,7 +77,6 @@ def reshape_mri(mri):
     mri = mri.numpy()
     mri = mri.reshape(14, 256, 256)
     mri = mri.transpose(1, 2, 0)
-    mri = mri.astype(np.uint8)
     return mri
 
 def save_bmps(mri_vol, pat_vol, pat_cart_vol, model_name, scan_name):
@@ -108,11 +107,11 @@ def save_bmps(mri_vol, pat_vol, pat_cart_vol, model_name, scan_name):
         pat_filename = os.path.join(pat_path, f"{scan_name}-{i+26:04}.bmp")
         pat_cart_filename = os.path.join(pat_cart_path, f"{scan_name}-{i+26:04}.bmp")
 
-        mri = mri_vol[:, :, i]
+        mri = 255 * mri_vol[:, :, i]
         pat = pat_vol[:, :, i]
         pat_cart = pat_cart_vol[:, :, i]
 
-        mri = (mri * 255).astype(np.uint8)
+        mri = mri.astype(np.uint8)
         pat = (pat * 255).astype(np.uint8)
         pat_cart = (pat_cart * 255).astype(np.uint8)
 
