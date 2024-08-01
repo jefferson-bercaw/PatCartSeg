@@ -241,8 +241,8 @@ if __name__ == "__main__":
     create_point_clouds_option = False
     # Geomagic here
     register_point_clouds_option = True
-    visualize_registration_option = False
-    visualize_strain_map_option = False
+    visualize_registration_option = True
+    visualize_strain_map_option = True
 
     # Declarations
     model_name = "unet_2024-07-11_00-40-25_ctHT5.h5"
@@ -299,15 +299,20 @@ if __name__ == "__main__":
 
         # Iterate through each volume, calculate coordinate arrays, and save
         for scan in scans:
-            pat_vol, pat_cart_vol = load_volumes(scan, volume_path)
-            p_array, pc_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
-            save_coordinate_arrays(p_array, pc_array, scan)
+            if (scan[4:6] == "10" or scan[4:6] == "40") and scan[7:9] == "30":
+                pat_vol, pat_cart_vol = load_volumes(scan, volume_path)
+                p_array, pc_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
+                save_coordinate_arrays(p_array, pc_array, scan)
 
     # Load pre and post, register, calculate strain map, save registered point clouds and strain map
     if register_point_clouds_option:
         # Get point cloud data path (what we're reading in)
-        point_cloud_path = os.path.join(get_data_path("Paranjape_Volumes"), model_name[0:-3])
+        point_cloud_path = os.path.join(get_data_path("Paranjape_ToGeomagic"), "P")
         scans = os.listdir(point_cloud_path)
+        scans_new = []
+        for scan in scans:
+            scans_new.append(scan[:-6])
+        scans = scans_new
 
         # Get strain data path (what we're saving to)
         strain_path = os.path.join(get_data_path("Paranjape_PCs"), model_name[0:-3])
@@ -352,7 +357,7 @@ if __name__ == "__main__":
                 pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
 
                 # Calculate strain map
-                strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness, output=visualize_strain_map_option)
+                strain_map = produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output=visualize_strain_map_option)
 
                 # Calculate the strain at the middle-most point of the strain map
                 # strains = list(strain_map[:, 3])
