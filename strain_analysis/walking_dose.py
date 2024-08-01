@@ -14,6 +14,7 @@ from evaluate import load_model
 from point_clouds import get_coordinate_arrays, calculate_thickness
 from registration import move_patella, move_point_cloud
 from strain_analysis import produce_strain_map
+from randomization import randomize, derandomize
 
 
 def get_paranjape_dataset(image_dir, batch_size):
@@ -72,12 +73,14 @@ def parse_scan_name(filename):
 
     return scan_name
 
+
 def reshape_mri(mri):
     """Takes in (batch_size, 256, 256) MRI tensor and reshapes it to (256, 256, batch_size)"""
     mri = mri.numpy()
     mri = mri.reshape(14, 256, 256)
     mri = mri.transpose(1, 2, 0)
     return mri
+
 
 def save_bmps(mri_vol, pat_vol, pat_cart_vol, model_name, scan_name):
     start_path = get_data_path("Paranjape_Predictions")
@@ -289,13 +292,16 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True
+    predict_volumes_option = False  # Predict with network
+
+    correct_volumes_option = True  # Use corrected segmentations
+    derandomize_option = True  # Derandomize the corrected segmentations
+
     create_point_clouds_option = False
     # Geomagic here
     register_point_clouds_option = True
     visualize_registration_option = True
     visualize_strain_map_option = True
-
 
     # Declarations
     model_name = "unet_2024-07-11_00-40-25_ctHT5.h5"
@@ -341,6 +347,41 @@ if __name__ == "__main__":
                     save_volumes(pat_vol, pat_cart_vol, model_name, scan_name)
                     save_bmps(mri_vol, pat_vol, pat_cart_vol, model_name, scan_name)
                     print(f"Saved {scan_name}, scan {i} of {(len(dataset) // batches_per_scan) - 1}")
+
+    if correct_volumes_option:
+        image_path = get_data_path("Paranjape_Predictions")
+
+        # Derandomize corrections
+        if derandomize_option:
+            derandomize(model_name[0:-3])
+
+        # Load in corrected images
+        image_path = os.path.join(image_path, model_name[0:-3], "corrected")
+        scans = os.listdir(image_path)
+
+        # Iterate through each folder, and assemble volumes of patella and patellar cartilage
+        for scan in scans:
+            if (scan[4:6] == "10" or scan[4:6] == "40") and scan[7:9] == "30":
+                pat_vol = np.zeros((256, 256, 70))
+                pat_cart_vol = np.zeros((256, 256, 70))
+                images = os.listdir(os.path.join(image_path, scan, "ML_pat"))
+                for image in images:
+                    # Read in image
+                    pat = Image.open(os.path.join(image_path, scan, "ML_pat", image))
+                    pat_cart = Image.open(os.path.join(image_path, scan, "ML_patcart", image))
+
+                    # Convert to np array
+                    pat = np.array(pat)
+                    pat_cart = np.array(pat_cart)
+
+                    # Get slice number
+                    slice_num = int(image.split("-")[1].split(".")[0]) - 26
+
+                    # Save to volume
+                    pat_vol[:, :, slice_num] = pat
+                    pat_cart_vol[:, :, slice_num] = pat_cart
+
+                save_volumes(pat_vol, pat_cart_vol, model_name, scan)
 
     # Create point clouds of the patella, patellar cartilage, and articulating surface of patella
     if create_point_clouds_option:
