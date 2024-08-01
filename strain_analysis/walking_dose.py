@@ -241,8 +241,8 @@ if __name__ == "__main__":
     create_point_clouds_option = False
     # Geomagic here
     register_point_clouds_option = True
-    visualize_registration_option = False
-    visualize_strain_map_option = False
+    visualize_registration_option = True
+    visualize_strain_map_option = True
 
     # Declarations
     model_name = "unet_2024-07-11_00-40-25_ctHT5.h5"
@@ -357,7 +357,7 @@ if __name__ == "__main__":
                 pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
 
                 # Calculate strain map
-                strain_map = produce_strain_map(post_pc_ptcld, post_thickness, pre_pc_ptcld, pre_thickness, output=visualize_strain_map_option)
+                strain_map = produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output=visualize_strain_map_option)
 
                 # Calculate the strain at the middle-most point of the strain map
                 # strains = list(strain_map[:, 3])
