@@ -64,6 +64,46 @@ def get_random_info(directory):
     return numbered_folders, shuffled_folders
 
 
+def randomize(model_name):
+    """This function randomizes model names into a randomized folder, and writes an excel spreadsheet out"""
+    start_path = get_data_path("Paranjape_Predictions")
+    directory = os.path.join(start_path, model_name)
+
+    original_directory = os.path.join(start_path, model_name, "original")  # Model Predictions
+    randomized_directory = os.path.join(start_path, model_name, "randomized")  # Blinded Folder
+    corrected_directory = os.path.join(start_path, model_name, "corrected")  # Corrected Folder
+
+    if not os.path.exists(randomized_directory):
+        os.mkdir(randomized_directory)
+    if not os.path.exists(corrected_directory):
+        os.mkdir(corrected_directory)
+
+    # Randomize shuffled folders
+    numbered_folders, shuffled_folders = search_and_randomize_folders(original_directory)
+
+    # Write excel spreadsheet containing randomized info
+    write_random_excel(directory, numbered_folders, shuffled_folders)
+
+    # Copy original folders to numbered folders
+    copy_folders_to_new_directory(original_directory, randomized_directory, shuffled_folders, numbered_folders)
+    return
+
+
+def derandomize(model_name):
+    start_path = get_data_path("Paranjape_Predictions")
+    directory = os.path.join(start_path, model_name)
+
+    original_directory = os.path.join(start_path, model_name, "original")  # Model Predictions
+    randomized_directory = os.path.join(start_path, model_name, "randomized")  # Blinded Folder
+    corrected_directory = os.path.join(start_path, model_name, "corrected")  # Corrected Folder
+
+    # Read in key and unrandomize
+    numbered_folders, shuffled_folders = get_random_info(directory)
+
+    # Copy randomized folders to corrected directory with original folder names
+    copy_folders_to_new_directory(randomized_directory, corrected_directory, numbered_folders, shuffled_folders)
+
+
 if __name__ == "__main__":
     # Create Randomization #
     start_path = get_data_path("Paranjape_Predictions")
