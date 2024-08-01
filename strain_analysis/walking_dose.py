@@ -6,6 +6,7 @@ import tensorflow as tf
 import itertools
 import open3d as o3d
 import matplotlib.pyplot as plt
+from PIL import Image
 
 from dice_loss_function import dice_loss
 from get_data_path import get_data_path
@@ -71,6 +72,57 @@ def parse_scan_name(filename):
 
     return scan_name
 
+def reshape_mri(mri):
+    """Takes in (batch_size, 256, 256) MRI tensor and reshapes it to (256, 256, batch_size)"""
+    mri = mri.numpy()
+    mri = mri.reshape(14, 256, 256)
+    mri = mri.transpose(1, 2, 0)
+    return mri
+
+def save_bmps(mri_vol, pat_vol, pat_cart_vol, model_name, scan_name):
+    start_path = get_data_path("Paranjape_Predictions")
+    mri_path = os.path.join(start_path, model_name[0:-3], "original", scan_name, "mri")
+    pat_path = os.path.join(start_path, model_name[0:-3], "original", scan_name, "ML_pat")
+    pat_cart_path = os.path.join(start_path, model_name[0:-3], "original", scan_name, "ML_patcart")
+
+    # If paths don't exist, create them
+    if not os.path.exists(mri_path):
+        os.makedirs(mri_path)
+    if not os.path.exists(pat_path):
+        os.makedirs(pat_path)
+    if not os.path.exists(pat_cart_path):
+        os.makedirs(pat_cart_path)
+
+    # Assert shape is correct
+    assert mri_vol.shape == (256, 256, 70), (f"MRI volume being saved is not (256, 256, 70)! "
+                                                f"Shape {mri_vol.shape}")
+    assert pat_vol.shape == (256, 256, 70), (f"Patella volume being saved is not (256, 256, 70)! "
+                                                f"Shape {pat_vol.shape}")
+    assert pat_cart_vol.shape == (256, 256, 70), (f"Patellar cartilage volume being saved is not (256, 256, 70)! "
+                                                f"Shape {pat_cart_vol.shape}")
+
+    # Save scans
+    for i in range(mri_vol.shape[2]):
+        mri_filename = os.path.join(mri_path, f"{scan_name}-{i+26:04}.bmp")
+        pat_filename = os.path.join(pat_path, f"{scan_name}-{i+26:04}.bmp")
+        pat_cart_filename = os.path.join(pat_cart_path, f"{scan_name}-{i+26:04}.bmp")
+
+        mri = 255 * mri_vol[:, :, i]
+        pat = pat_vol[:, :, i]
+        pat_cart = pat_cart_vol[:, :, i]
+
+        mri = mri.astype(np.uint8)
+        pat = (pat * 255).astype(np.uint8)
+        pat_cart = (pat_cart * 255).astype(np.uint8)
+
+        mri_img = Image.fromarray(mri)
+        pat_img = Image.fromarray(pat)
+        pat_cart_img = Image.fromarray(pat_cart)
+
+        mri_img.save(mri_filename)
+        pat_img.save(pat_filename)
+        pat_cart_img.save(pat_cart_filename)
+
 
 def save_volumes(pat_vol, pat_cart_vol, model_name, scan_name):
     start_path = get_data_path("Paranjape_Volumes")
@@ -84,9 +136,9 @@ def save_volumes(pat_vol, pat_cart_vol, model_name, scan_name):
 
     # Assert shape is correct
     assert pat_vol.shape == (256, 256, 70), (f"Patella volume being saved is not (256, 256, 70)! "
-                                              f"Shape {pat_vol.shape}")
+                                             f"Shape {pat_vol.shape}")
     assert pat_cart_vol.shape == (256, 256, 70), (f"Patellar cartilage volume being saved is not (256, 256, 70)! "
-                                                   f"Shape {pat_cart_vol.shape}")
+                                                f"Shape {pat_cart_vol.shape}")
 
     # Save scans
     np.savez(os.path.join(volume_path, scan_name), pat_vol=pat_vol, pat_cart_vol=pat_cart_vol)
@@ -237,12 +289,13 @@ def output_plots(info):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = False
+    predict_volumes_option = True
     create_point_clouds_option = False
     # Geomagic here
     register_point_clouds_option = True
     visualize_registration_option = True
     visualize_strain_map_option = True
+
 
     # Declarations
     model_name = "unet_2024-07-11_00-40-25_ctHT5.h5"
@@ -268,22 +321,25 @@ if __name__ == "__main__":
                 filename, mri = next(iterable)
                 pred_label = model.predict(mri)
                 pat, pat_cart = process_predicted_label(pred_label)
-
+                mri = reshape_mri(mri)
                 # If we're predicting the first batch of images in the scan, assign volume to prediction,
                 # and get scan name to save the volumes
                 if cur_batch_num == 1:
+                    mri_vol = mri
                     pat_vol = pat
                     pat_cart_vol = pat_cart
                     scan_name = parse_scan_name(filename)
 
                 # If we're not predicting first batch, append to current batch
                 elif cur_batch_num <= batches_per_scan:
+                    mri_vol = np.concatenate((mri_vol, mri), axis=2)
                     pat_vol = np.concatenate((pat_vol, pat), axis=2)
                     pat_cart_vol = np.concatenate((pat_cart_vol, pat_cart), axis=2)
 
                 # If we've predicted final batch for scan, save volume
                 if cur_batch_num == batches_per_scan:
                     save_volumes(pat_vol, pat_cart_vol, model_name, scan_name)
+                    save_bmps(mri_vol, pat_vol, pat_cart_vol, model_name, scan_name)
                     print(f"Saved {scan_name}, scan {i} of {(len(dataset) // batches_per_scan) - 1}")
 
     # Create point clouds of the patella, patellar cartilage, and articulating surface of patella
