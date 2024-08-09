@@ -164,8 +164,8 @@ def save_coordinate_arrays(p_array, pc_array, scan):
     if scan[-4:] == ".npz":
         scan = scan[:-4]
 
-    np.savetxt(f"{get_data_path('Paranjape_ToGeomagic')}/P/{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
-    np.savetxt(f"{get_data_path('Paranjape_ToGeomagic')}/PC/{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{get_data_path('Paranjape_ToGeomagicDur')}/P/{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{get_data_path('Paranjape_ToGeomagicDur')}/PC/{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
 
     print(f"Saved {scan} point clouds")
     return
@@ -179,8 +179,8 @@ def load_coordinate_arrays(scan):
     if scan[-4:] == ".npz":
         scan = scan[:-4]
 
-    filename_P = f"{get_data_path('Paranjape_FromGeomagic')}/{scan}_P.pcd"
-    filename_PC = f"{get_data_path('Paranjape_FromGeomagic')}/{scan}_PC.pcd"
+    filename_P = f"{get_data_path('Paranjape_FromGeomagicDur')}/{scan}_P.pcd"
+    filename_PC = f"{get_data_path('Paranjape_FromGeomagicDur')}/{scan}_PC.pcd"
 
     ptcld_P = o3d.io.read_point_cloud(filename_P)
     ptcld_PC = o3d.io.read_point_cloud(filename_PC)
@@ -312,10 +312,10 @@ if __name__ == "__main__":
     # Options:
     predict_volumes_option = False  # Predict with network
 
-    correct_volumes_option = False  # Use corrected segmentations
-    derandomize_option = False  # Derandomize the corrected segmentations
+    correct_volumes_option = True  # Use corrected segmentations
+    derandomize_option = True  # Derandomize the corrected segmentations
 
-    create_point_clouds_option = False
+    create_point_clouds_option = True
     # Geomagic here
     register_point_clouds_option = True
     visualize_registration_option = False
@@ -422,7 +422,7 @@ if __name__ == "__main__":
     # Load pre and post, register, calculate strain map, save registered point clouds and strain map
     if register_point_clouds_option:
         # Get point cloud data path (what we're reading in)
-        point_cloud_path = os.path.join(get_data_path("Paranjape_ToGeomagic"), "P")
+        point_cloud_path = os.path.join(get_data_path("Paranjape_ToGeomagicDur"), "P")
         scans = os.listdir(point_cloud_path)
         scans_new = []
         for scan in scans:
