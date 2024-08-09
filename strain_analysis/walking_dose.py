@@ -292,8 +292,16 @@ def output_plots(info):
 
 def scan_criteria(scan):
     """Returns True if the scan meets the criteria for analysis"""
-    if scan[4:6] == "10" or scan[4:6] == "40":
-        if scan[7:9] == "30":
+    # Slow and fast:
+    # if scan[4:6] == "10" or scan[4:6] == "40":  # If froude
+    #     if scan[7:9] == "30":  # If duration
+    #         if scan[0:2] != "69":
+    #             return True
+    # return False
+
+    # Long and short
+    if scan[4:6] == "25":  # If froude
+        if scan[7:9] == "10" or scan[7:9] == "60":  # If duration
             if scan[0:2] != "69":
                 return True
     return False
