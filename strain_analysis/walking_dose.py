@@ -290,18 +290,28 @@ def output_plots(info):
     plt.show()
 
 
+def scan_criteria(scan):
+    """Returns True if the scan meets the criteria for analysis"""
+    if scan[4:6] == "10" or scan[4:6] == "40":
+        if scan[7:9] == "30":
+            if scan[0:2] != "69":
+                return True
+    return False
+
+
+
 if __name__ == "__main__":
     # Options:
     predict_volumes_option = False  # Predict with network
 
-    correct_volumes_option = True  # Use corrected segmentations
-    derandomize_option = True  # Derandomize the corrected segmentations
+    correct_volumes_option = False  # Use corrected segmentations
+    derandomize_option = False  # Derandomize the corrected segmentations
 
     create_point_clouds_option = False
     # Geomagic here
     register_point_clouds_option = True
-    visualize_registration_option = True
-    visualize_strain_map_option = True
+    visualize_registration_option = False
+    visualize_strain_map_option = False
 
     # Declarations
     model_name = "unet_2024-07-11_00-40-25_ctHT5.h5"
@@ -361,7 +371,7 @@ if __name__ == "__main__":
 
         # Iterate through each folder, and assemble volumes of patella and patellar cartilage
         for scan in scans:
-            if (scan[4:6] == "10" or scan[4:6] == "40") and scan[7:9] == "30":
+            if scan_criteria(scan):
                 pat_vol = np.zeros((256, 256, 70))
                 pat_cart_vol = np.zeros((256, 256, 70))
                 images = os.listdir(os.path.join(image_path, scan, "ML_pat"))
@@ -396,7 +406,7 @@ if __name__ == "__main__":
 
         # Iterate through each volume, calculate coordinate arrays, and save
         for scan in scans:
-            if (scan[4:6] == "10" or scan[4:6] == "40") and scan[7:9] == "30":
+            if (scan[4:6] == "10" or scan[4:6] == "40") and scan[7:9] == "30" and scan[0:2] != "69":
                 pat_vol, pat_cart_vol = load_volumes(scan, volume_path)
                 p_array, pc_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
                 save_coordinate_arrays(p_array, pc_array, scan)
