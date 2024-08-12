@@ -222,9 +222,9 @@ def visualize_strain_map(strain_map, comp_type):
     surf[comp_type] = strain
 
     if "hick" in comp_type:
-        surf.plot(show_edges=False, cmap="jet", rng=[0, 9])
+        surf.plot(show_edges=False, cmap="jet")
     else:
-        surf.plot(show_edges=False, cmap="seismic", rng=[-0.3, 0.3])
+        surf.plot(show_edges=False, cmap="seismic")
     return
 
 
