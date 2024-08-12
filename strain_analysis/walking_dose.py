@@ -7,6 +7,7 @@ import itertools
 import open3d as o3d
 import matplotlib.pyplot as plt
 from PIL import Image
+import csv
 
 from dice_loss_function import dice_loss
 from get_data_path import get_data_path
@@ -164,8 +165,8 @@ def save_coordinate_arrays(p_array, pc_array, scan):
     if scan[-4:] == ".npz":
         scan = scan[:-4]
 
-    np.savetxt(f"{get_data_path('Paranjape_ToGeomagicDur')}/P/{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
-    np.savetxt(f"{get_data_path('Paranjape_ToGeomagicDur')}/PC/{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{get_data_path('Paranjape_ToGeomagicDur')}\\P\\{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{get_data_path('Paranjape_ToGeomagicDur')}\\PC\\{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
 
     print(f"Saved {scan} point clouds")
     return
@@ -307,15 +308,37 @@ def scan_criteria(scan):
     return False
 
 
+def save_cropping_list(scan_name, cropping_list):
+    """Saves a list of cropping values to an excel row"""
+    save_path = get_data_path("results")
+    save_path = os.path.split(save_path)[:-1]
+    save_path = os.path.join(*save_path, 'results')
+    save_file = os.path.join(save_path, "cropping_list.csv")
+
+    header1 = ["Radius (mm)"] + [item[0] for item in cropping_list]
+    header2 = ["Iterations (n)"] + [item[1] for item in cropping_list]
+    row = [scan_name] + [item[2] for item in cropping_list]
+
+    if not os.path.exists(save_file):
+        with open(save_file, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(header1)
+            writer.writerow(header2)
+
+    with open(save_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(row)
+    return
+
 
 if __name__ == "__main__":
     # Options:
     predict_volumes_option = False  # Predict with network
 
-    correct_volumes_option = True  # Use corrected segmentations
-    derandomize_option = True  # Derandomize the corrected segmentations
+    correct_volumes_option = False  # Use corrected segmentations
+    derandomize_option = False  # Derandomize the corrected segmentations
 
-    create_point_clouds_option = True
+    create_point_clouds_option = False
     # Geomagic here
     register_point_clouds_option = True
     visualize_registration_option = False
@@ -414,7 +437,7 @@ if __name__ == "__main__":
 
         # Iterate through each volume, calculate coordinate arrays, and save
         for scan in scans:
-            if (scan[4:6] == "10" or scan[4:6] == "40") and scan[7:9] == "30" and scan[0:2] != "69":
+            if scan_criteria(scan):
                 pat_vol, pat_cart_vol = load_volumes(scan, volume_path)
                 p_array, pc_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
                 save_coordinate_arrays(p_array, pc_array, scan)
@@ -472,7 +495,8 @@ if __name__ == "__main__":
                 pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
 
                 # Calculate strain map
-                strain_map = produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output=visualize_strain_map_option)
+                strain_map, cropping_list = produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output=visualize_strain_map_option)
+                save_cropping_list(scans[idx][:-3], cropping_list)
 
                 # Calculate the strain at the middle-most point of the strain map
                 # strains = list(strain_map[:, 3])

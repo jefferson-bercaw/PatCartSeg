@@ -144,11 +144,13 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
         # Find average thickness value within 2.5 mm radius
         moving_dists = np.linalg.norm(moving_coord - moving_pc, axis=1)
         moving_inds = moving_dists < radius_mm
-        moving_thick = np.mean(post_thickness[moving_inds])
+        # moving_thick = np.mean(post_thickness[moving_inds])
+        moving_thick = post_thickness[i]
 
         fixed_dists = np.linalg.norm(fixed_coord - fixed_pc, axis=1)
         fixed_inds = fixed_dists < radius_mm
-        fixed_thick = np.mean(pre_thickness[fixed_inds])
+        # fixed_thick = np.mean(pre_thickness[fixed_inds])
+        fixed_thick = pre_thickness[closest_indices[i]]
 
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
         dist_thresh = 1  # distance [mm] that signifies a "good" comparison
@@ -156,7 +158,7 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
             pre_thick = fixed_thick
             post_thick = moving_thick
 
-            avg_coord.append(fixed_coord)  # fixed (pre) coord
+            avg_coord.append(moving_coord)  # fixed (pre) coord
 
             strain_here = (post_thick - pre_thick) / pre_thick
             strain.append(strain_here)
@@ -169,8 +171,10 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
     strain_ptcld = o3d.geometry.PointCloud()
     strain_ptcld.points = o3d.utility.Vector3dVector(avg_coord)
 
+    cropping_list = parameterize_cropping(strain_ptcld, strain)
+
     # # Remove outer boundaries
-    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=7.0, n=5)
+    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=8.0, n=10)
     strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
 
     # save_strain_map(strain_map, "strain", f"R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\Strain\\{subj}\\{dist}mi_strain_map_{idx}.pdf")
@@ -190,8 +194,22 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
         visualize_strain_map(thick_pre_map, "Pre Thickness")
         visualize_strain_map(thick_post_map, "Post Thickness")
 
-    return strain_map
+    return strain_map, cropping_list
 
+
+def parameterize_cropping(strain_ptcld, strain):
+    """This function takes in a strain point cloud, and applies a series of cropping to it to see how radius
+    and iterations affects cropping values"""
+    n = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    radii = [2.5, 5.0, 7.5, 10.0, 12.5, 15.0]
+    list_out = []
+
+    for radius in radii:
+        for i in n:
+            _, strain_cropped = remove_outer_boundaries(strain_ptcld, strain, radius=radius, n=i)
+            mean_strain = np.mean(strain_cropped)
+            list_out.append([radius, n, mean_strain])
+    return list_out
 
 
 def visualize_strain_map(strain_map, comp_type):
@@ -204,9 +222,9 @@ def visualize_strain_map(strain_map, comp_type):
     surf[comp_type] = strain
 
     if "hick" in comp_type:
-        surf.plot(show_edges=False, cmap="plasma", rng=[0, 9])
+        surf.plot(show_edges=False, cmap="jet", rng=[0, 9])
     else:
-        surf.plot(show_edges=False, cmap="plasma", rng=[-0.3, 0.3])
+        surf.plot(show_edges=False, cmap="seismic", rng=[-0.3, 0.3])
     return
 
 
