@@ -8,6 +8,7 @@ import open3d as o3d
 import matplotlib.pyplot as plt
 from PIL import Image
 import csv
+import pyvista as pv
 
 from dice_loss_function import dice_loss
 from get_data_path import get_data_path
@@ -312,12 +313,42 @@ def save_cropping_list(scan_name, cropping_list):
     """Saves a list of cropping values to an excel row"""
     save_path = get_data_path("results")
     save_path = os.path.split(save_path)[:-1]
-    save_path = os.path.join(*save_path, 'results')
+    save_path = os.path.join(*save_path, 'results', 'cropping_6')
     save_file = os.path.join(save_path, "cropping_list.csv")
 
-    header1 = ["Radius (mm)"] + [item[0] for item in cropping_list]
-    header2 = ["Iterations (n)"] + [item[1] for item in cropping_list]
-    row = [scan_name] + [item[2] for item in cropping_list]
+    header1 = ["-"] + ["Radius (mm)"] + [item[0] for item in cropping_list]
+    header2 = ["Duration"] + ["Iterations (n)"] + [item[1] for item in cropping_list]
+    row = [scan_name[7:9]] + [scan_name] + [item[2] for item in cropping_list]
+
+    rads = [item[0] for item in cropping_list]
+    iterations = [item[1] for item in cropping_list]
+    mean_strains = [item[2] for item in cropping_list]
+    ptclds = [item[3] for item in cropping_list]
+    strains = [item[4] for item in cropping_list]
+
+    # Iterate through each scan and save .pngs of pyvista plot under the right folder
+    for rad, iteration, mean_strain, ptcld, strain in zip(rads, iterations, mean_strains, ptclds, strains):
+        if not os.path.exists(os.path.join(save_path, scan_name)):
+            os.mkdir(os.path.join(save_path, scan_name))
+
+        # Convert ptcld to pv object with strain values
+        coords = np.asarray(ptcld.points)
+        mean_coord = tuple(np.mean(coords, axis=0))
+        max_rng = np.max(np.abs(strain))
+        strain_cloud = pv.PolyData(np.transpose([coords[:, 0], coords[:, 1], coords[:, 2]]))
+        strain_cloud["Strain"] = strain
+        surf = strain_cloud.delaunay_2d()
+
+        plotter = pv.Plotter(off_screen=True)
+        plotter.add_mesh(surf, scalars="Strain", cmap='seismic', rng=[-max_rng, max_rng])
+
+        plotter.camera.SetPosition(np.mean(coords, axis=0) + np.array([0, 100, 0]))
+        plotter.camera.SetFocalPoint(np.mean(coords, axis=0))
+        plotter.camera.SetViewUp([0, 0, 1])
+        plotter.show_axes()
+
+        plotter.show(screenshot=os.path.join(save_path, scan_name, f"{scan_name}_strain_rad{rad}_iter{iteration}.png"))
+        # plotter.save_graphic(os.path.join(save_path, scan_name, f"{scan_name}_strain_rad{rad}_iter{iteration}.pdf"))
 
     if not os.path.exists(save_file):
         with open(save_file, 'w', newline='') as file:
@@ -325,7 +356,7 @@ def save_cropping_list(scan_name, cropping_list):
             writer.writerow(header1)
             writer.writerow(header2)
 
-    with open(save_file, 'w', newline='') as file:
+    with open(save_file, 'a', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(row)
     return

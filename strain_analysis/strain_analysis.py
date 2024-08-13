@@ -93,19 +93,23 @@ def remove_outer_boundaries(pc_ptcld, thickness, radius, n):
         for i, point in enumerate(pc_ptcld.points):
             [_, idx, _] = kdtree.search_radius_vector_3d(point, radius)
             densities[i] = len(idx)
+        points = np.asarray(pc_ptcld.points)
 
         # plt.hist(densities, bins=15)
         # plt.show()
         # Threshold for edge removal
-        density_threshold = round(np.max(densities) / 2)
-
+        # density_threshold = round(np.max(densities) / 2)  # cropping_2
+        density_threshold = np.percentile(densities, 5)  # cropping_3 (duration) and cropping_4 (speed)
         # Filter points based on density
         filtered_points = []
         filtered_thickness = []
-        for i, density in enumerate(densities):
-            if density >= density_threshold:
-                filtered_points.append(pc_ptcld.points[i])
-                filtered_thickness.append(thickness[i])
+        filtered_points = points[densities >= density_threshold]
+        filtered_thickness = thickness[densities >= density_threshold]
+
+        # for i, density in enumerate(densities):
+        #     if density >= density_threshold:
+        #         filtered_points.append(pc_ptcld.points[i])
+        #         filtered_thickness.append(thickness[i])
 
         # Create a new point cloud from the filtered points
         pc_ptcld = o3d.geometry.PointCloud()
@@ -119,10 +123,12 @@ def remove_outer_boundaries(pc_ptcld, thickness, radius, n):
 def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output):
 
     radius_mm = 2.5
+    pre_pc_points, pre_thickness = average_thickness_values(pre_pc_ptcld, pre_thickness)
+    post_pc_points, post_thickness = average_thickness_values(post_pc_ptcld, post_thickness)
 
     # Visualize thickness maps
-    thick_pre_map = np.concatenate((np.asarray(pre_pc_ptcld.points), pre_thickness[:, np.newaxis]), axis=1)
-    thick_post_map = np.concatenate((np.asarray(post_pc_ptcld.points), post_thickness[:, np.newaxis]), axis=1)
+    thick_pre_map = np.concatenate((np.asarray(pre_pc_points), pre_thickness[:, np.newaxis]), axis=1)
+    thick_post_map = np.concatenate((np.asarray(post_pc_points), post_thickness[:, np.newaxis]), axis=1)
 
     moving_pc = thick_post_map[:, 0:3]
     fixed_pc = thick_pre_map[:, 0:3]
@@ -144,13 +150,13 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
         # Find average thickness value within 2.5 mm radius
         moving_dists = np.linalg.norm(moving_coord - moving_pc, axis=1)
         moving_inds = moving_dists < radius_mm
-        # moving_thick = np.mean(post_thickness[moving_inds])
-        moving_thick = post_thickness[i]
+        moving_thick = np.mean(post_thickness[moving_inds])
+        # moving_thick = post_thickness[i]
 
         fixed_dists = np.linalg.norm(fixed_coord - fixed_pc, axis=1)
         fixed_inds = fixed_dists < radius_mm
-        # fixed_thick = np.mean(pre_thickness[fixed_inds])
-        fixed_thick = pre_thickness[closest_indices[i]]
+        fixed_thick = np.mean(pre_thickness[fixed_inds])
+        # fixed_thick = pre_thickness[closest_indices[i]]
 
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
         dist_thresh = 1  # distance [mm] that signifies a "good" comparison
@@ -165,17 +171,21 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
 
     # Convert coords and strain lists to numpy arrays
     avg_coord = np.array(avg_coord)
-    strain = np.array(strain)
+    strain_original = np.array(strain)
 
-    # Remove outer boundaries of strain map
-    strain_ptcld = o3d.geometry.PointCloud()
-    strain_ptcld.points = o3d.utility.Vector3dVector(avg_coord)
+    # Average strain map values within 2.5 mm radius
+    strain_ptcld_original = o3d.geometry.PointCloud()
+    strain_ptcld_original.points = o3d.utility.Vector3dVector(avg_coord)
+    strain_pc_points, strain = average_thickness_values(strain_ptcld_original, strain_original)
 
-    cropping_list = parameterize_cropping(strain_ptcld, strain)
+    strain_ptcld_avg = o3d.geometry.PointCloud()
+    strain_ptcld_avg.points = o3d.utility.Vector3dVector(strain_pc_points)
+    strain_ptcld_final, strain_final = remove_outer_boundaries(strain_ptcld_avg, strain, radius=5.0, n=8)
 
-    # # Remove outer boundaries
-    strain_ptcld, strain = remove_outer_boundaries(strain_ptcld, strain, radius=8.0, n=10)
-    strain_map = np.concatenate((np.asarray(strain_ptcld.points), strain[:, np.newaxis]), axis=1)
+    # Perform parametric analysis on averaged, but cropped to one set of parameters, strain map
+    cropping_list = parameterize_cropping(strain_ptcld_avg, strain)
+
+    strain_map = np.concatenate((np.asarray(strain_ptcld_final.points), strain_final[:, np.newaxis]), axis=1)
 
     # save_strain_map(strain_map, "strain", f"R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\Strain\\{subj}\\{dist}mi_strain_map_{idx}.pdf")
 
@@ -200,15 +210,16 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
 def parameterize_cropping(strain_ptcld, strain):
     """This function takes in a strain point cloud, and applies a series of cropping to it to see how radius
     and iterations affects cropping values"""
-    n = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    radii = [2.5, 5.0, 7.5, 10.0, 12.5, 15.0]
+    n = list(range(1, 16))
+    radii = [2.5, 5.0, 7.5, 10.0]
     list_out = []
 
+    # Create matplotlib figure of strain distribution
     for radius in radii:
         for i in n:
-            _, strain_cropped = remove_outer_boundaries(strain_ptcld, strain, radius=radius, n=i)
+            strain_cropped_ptcld, strain_cropped = remove_outer_boundaries(strain_ptcld, strain, radius=radius, n=i)
             mean_strain = np.mean(strain_cropped)
-            list_out.append([radius, n, mean_strain])
+            list_out.append([radius, i, mean_strain, strain_cropped_ptcld, strain_cropped])
     return list_out
 
 
