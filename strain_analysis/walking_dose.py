@@ -15,7 +15,7 @@ from get_data_path import get_data_path
 from evaluate import load_model
 from point_clouds import get_coordinate_arrays, calculate_thickness
 from registration import move_patella, move_point_cloud
-from strain_analysis import produce_strain_map
+from strain_analysis import produce_strain_map, plot_thickness_array
 from randomization import randomize, derandomize
 
 
@@ -292,28 +292,28 @@ def output_plots(info):
     plt.show()
 
 
-def scan_criteria(scan):
+def scan_criteria(scan, excluded_list):
     """Returns True if the scan meets the criteria for analysis"""
     # Slow and fast:
     # if scan[4:6] == "10" or scan[4:6] == "40":  # If froude
     #     if scan[7:9] == "30":  # If duration
-    #         if scan[0:2] != "69":
+    #         if scan[0:10] not in excluded_list:
     #             return True
     # return False
 
     # Long and short
     if scan[4:6] == "25":  # If froude
         if scan[7:9] == "10" or scan[7:9] == "60":  # If duration
-            if scan[0:2] != "69":
+            if scan[0:10] not in excluded_list:
                 return True
     return False
 
 
-def save_cropping_list(scan_name, cropping_list):
+def save_cropping_list(scan_name, cropping_list, save_location):
     """Saves a list of cropping values to an excel row"""
     save_path = get_data_path("results")
     save_path = os.path.split(save_path)[:-1]
-    save_path = os.path.join(*save_path, 'results', 'cropping_6')
+    save_path = os.path.join(*save_path, 'results', save_location)
     save_file = os.path.join(save_path, "cropping_list.csv")
 
     header1 = ["-"] + ["Radius (mm)"] + [item[0] for item in cropping_list]
@@ -331,24 +331,9 @@ def save_cropping_list(scan_name, cropping_list):
         if not os.path.exists(os.path.join(save_path, scan_name)):
             os.mkdir(os.path.join(save_path, scan_name))
 
-        # Convert ptcld to pv object with strain values
-        coords = np.asarray(ptcld.points)
-        mean_coord = tuple(np.mean(coords, axis=0))
-        max_rng = np.max(np.abs(strain))
-        strain_cloud = pv.PolyData(np.transpose([coords[:, 0], coords[:, 1], coords[:, 2]]))
-        strain_cloud["Strain"] = strain
-        surf = strain_cloud.delaunay_2d()
-
-        plotter = pv.Plotter(off_screen=True)
-        plotter.add_mesh(surf, scalars="Strain", cmap='seismic', rng=[-max_rng, max_rng])
-
-        plotter.camera.SetPosition(np.mean(coords, axis=0) + np.array([0, 100, 0]))
-        plotter.camera.SetFocalPoint(np.mean(coords, axis=0))
-        plotter.camera.SetViewUp([0, 0, 1])
-        plotter.show_axes()
-
-        plotter.show(screenshot=os.path.join(save_path, scan_name, f"{scan_name}_strain_rad{rad}_iter{iteration}.png"))
-        # plotter.save_graphic(os.path.join(save_path, scan_name, f"{scan_name}_strain_rad{rad}_iter{iteration}.pdf"))
+        # Create nx4 ndarray of ptcld and strain values
+        strain_map = np.concatenate((np.asarray(ptcld.points), np.expand_dims(strain, axis=1)), axis=1)
+        plot_thickness_array(strain_map, scan_name, save_location, f"strain_rad{rad}_iter{iteration}", "Strain")
 
     if not os.path.exists(save_file):
         with open(save_file, 'w', newline='') as file:
@@ -369,9 +354,10 @@ if __name__ == "__main__":
     correct_volumes_option = False  # Use corrected segmentations
     derandomize_option = False  # Derandomize the corrected segmentations
 
-    create_point_clouds_option = False
+    create_point_clouds_option = True
+
     # Geomagic here
-    register_point_clouds_option = True
+    register_point_clouds_option = False
     visualize_registration_option = False
     visualize_strain_map_option = False
 
@@ -380,6 +366,7 @@ if __name__ == "__main__":
     batch_size = 14
     n_slices = 70
     batches_per_scan = n_slices // batch_size
+    excluded_list = ["69F040D30L", "68F025D60R", "56F025D10L"]  # Scans excluded for motion artifact: scan[0:10]
 
     # Predict patella and patellar cartilage volumes
     if predict_volumes_option:
@@ -433,7 +420,7 @@ if __name__ == "__main__":
 
         # Iterate through each folder, and assemble volumes of patella and patellar cartilage
         for scan in scans:
-            if scan_criteria(scan):
+            if scan_criteria(scan, excluded_list):
                 pat_vol = np.zeros((256, 256, 70))
                 pat_cart_vol = np.zeros((256, 256, 70))
                 images = os.listdir(os.path.join(image_path, scan, "ML_pat"))
@@ -468,7 +455,7 @@ if __name__ == "__main__":
 
         # Iterate through each volume, calculate coordinate arrays, and save
         for scan in scans:
-            if scan_criteria(scan):
+            if scan_criteria(scan, excluded_list):
                 pat_vol, pat_cart_vol = load_volumes(scan, volume_path)
                 p_array, pc_array = get_coordinate_arrays(pat_vol, pat_cart_vol)
                 save_coordinate_arrays(p_array, pc_array, scan)
@@ -496,6 +483,8 @@ if __name__ == "__main__":
         info["Mean Strain"] = []
         info["Change_in_Thickness"] = []
 
+        save_location = "cropped_7"
+
         # Iterate through each scan and take in a pair of scans
         for idx in range(len(scans)):
             if idx % 2 != 0:
@@ -506,6 +495,10 @@ if __name__ == "__main__":
                 # Calculate thickness
                 pre_pc_array = calculate_thickness(pre_p_array, pre_pc_array)
                 post_pc_array = calculate_thickness(post_p_array, post_pc_array)
+
+                # Plot thickness arrays
+                plot_thickness_array(pre_pc_array, scans[idx], save_location, "thick_raw", "Thickness (mm)")
+                plot_thickness_array(post_pc_array, scans[idx - 1], save_location, "thick_raw", "Thickness (mm)")
 
                 # Extract thicknesses
                 pre_thickness = pre_pc_array[:, 3]
@@ -526,8 +519,8 @@ if __name__ == "__main__":
                 pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
 
                 # Calculate strain map
-                strain_map, cropping_list = produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output=visualize_strain_map_option)
-                save_cropping_list(scans[idx][:-3], cropping_list)
+                strain_map, cropping_list = produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, visualize_strain_map_option, save_location, scans[idx])
+                save_cropping_list(scans[idx][:-3], cropping_list, save_location)
 
                 # Calculate the strain at the middle-most point of the strain map
                 # strains = list(strain_map[:, 3])

@@ -8,6 +8,7 @@ import pyvista as pv
 from RANSACReg import preprocess_point_cloud, execute_global_registration, refine_registration
 import matplotlib.pyplot as plt
 from registration import move_patella
+from get_data_path import get_data_path
 
 
 def load_point_cloud():
@@ -120,7 +121,7 @@ def remove_outer_boundaries(pc_ptcld, thickness, radius, n):
     return pc_ptcld, thickness
 
 
-def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output):
+def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output, save_location, pre_scan):
 
     radius_mm = 2.5
     pre_pc_points, pre_thickness = average_thickness_values(pre_pc_ptcld, pre_thickness)
@@ -129,6 +130,10 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
     # Visualize thickness maps
     thick_pre_map = np.concatenate((np.asarray(pre_pc_points), pre_thickness[:, np.newaxis]), axis=1)
     thick_post_map = np.concatenate((np.asarray(post_pc_points), post_thickness[:, np.newaxis]), axis=1)
+
+    # Save thickness maps averaged
+    plot_thickness_array(thick_pre_map, pre_scan, save_location, "thick_avg", "Thickness (mm)")
+    plot_thickness_array(thick_post_map, pre_scan[:11]+'post', save_location, "thick_avg", "Thickness (mm)")
 
     moving_pc = thick_post_map[:, 0:3]
     fixed_pc = thick_pre_map[:, 0:3]
@@ -149,14 +154,14 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
 
         # Find average thickness value within 2.5 mm radius
         moving_dists = np.linalg.norm(moving_coord - moving_pc, axis=1)
-        moving_inds = moving_dists < radius_mm
-        moving_thick = np.mean(post_thickness[moving_inds])
-        # moving_thick = post_thickness[i]
+        # moving_inds = moving_dists < radius_mm
+        # moving_thick = np.mean(post_thickness[moving_inds])
+        moving_thick = post_thickness[i]
 
         fixed_dists = np.linalg.norm(fixed_coord - fixed_pc, axis=1)
-        fixed_inds = fixed_dists < radius_mm
-        fixed_thick = np.mean(pre_thickness[fixed_inds])
-        # fixed_thick = pre_thickness[closest_indices[i]]
+        # fixed_inds = fixed_dists < radius_mm
+        # fixed_thick = np.mean(pre_thickness[fixed_inds])
+        fixed_thick = pre_thickness[closest_indices[i]]
 
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
         dist_thresh = 1  # distance [mm] that signifies a "good" comparison
@@ -173,14 +178,26 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
     avg_coord = np.array(avg_coord)
     strain_original = np.array(strain)
 
+    # Create nx4 strain ndarray
+    strain_original_map = np.concatenate((avg_coord, strain_original[:, np.newaxis]), axis=1)
+    plot_thickness_array(strain_original_map, pre_scan[:11], save_location, "strain_raw", "Strain")
+
     # Average strain map values within 2.5 mm radius
     strain_ptcld_original = o3d.geometry.PointCloud()
     strain_ptcld_original.points = o3d.utility.Vector3dVector(avg_coord)
     strain_pc_points, strain = average_thickness_values(strain_ptcld_original, strain_original)
 
+    # Create nx4 strain ndarray
+    strain_original_map = np.concatenate((np.asarray(strain_pc_points), strain[:, np.newaxis]), axis=1)
+    plot_thickness_array(strain_original_map, pre_scan[:11], save_location, "strain_avg", "Strain")
+
     strain_ptcld_avg = o3d.geometry.PointCloud()
     strain_ptcld_avg.points = o3d.utility.Vector3dVector(strain_pc_points)
     strain_ptcld_final, strain_final = remove_outer_boundaries(strain_ptcld_avg, strain, radius=5.0, n=8)
+
+    # Create nx4 boundaries removed strain array
+    strain_final_map = np.concatenate((np.asarray(strain_ptcld_final.points), strain_final[:, np.newaxis]), axis=1)
+    plot_thickness_array(strain_final_map, pre_scan[:11], save_location, "strain_boundaries_removed", "Strain")
 
     # Perform parametric analysis on averaged, but cropped to one set of parameters, strain map
     cropping_list = parameterize_cropping(strain_ptcld_avg, strain)
@@ -254,6 +271,42 @@ def store_registered_points(registered_points, comp_type, strain_map, moving_p_p
 def save_registered_point_clouds(registered_points):
     with open("registered_points.pkl", 'wb') as f:
         pickle.dump(registered_points, f)
+
+
+def plot_thickness_array(pc_array, scan_name, save_location, map_type, met_type):
+    """Plots a pyvista map of the thickness given nx4 ndarray"""
+    # Convert ptcld to pv object with strain values
+    coords = np.asarray(pc_array[:, 0:3])
+    thickness = pc_array[:, 3]
+
+    max_rng = np.max(np.abs(thickness))
+
+    strain_cloud = pv.PolyData(np.transpose([coords[:, 0], coords[:, 1], coords[:, 2]]))
+    strain_cloud[met_type] = thickness
+    surf = strain_cloud.delaunay_2d()
+
+    plotter = pv.Plotter(off_screen=True)
+    if "rain" in map_type:
+        plotter.add_mesh(surf, scalars=met_type, cmap='seismic', rng=[-max_rng, max_rng])
+        plotter.add_text(f"Mean Strain: {np.mean(thickness):.4f}", font_size=16, color="black", position='upper_right')
+    else:
+        plotter.add_mesh(surf, scalars=met_type, cmap='jet')
+        plotter.add_text(f"Mean Thickness: {np.mean(thickness):.3f}", font_size=16, color="black")
+
+    plotter.camera.SetPosition(np.mean(coords, axis=0) + np.array([0, 100, 0]))
+    plotter.camera.SetFocalPoint(np.mean(coords, axis=0))
+    plotter.camera.SetViewUp([0, 0, 1])
+    plotter.show_axes()
+
+    save_path = get_data_path("results")
+    save_path = os.path.split(save_path)[:-1]
+    save_path = os.path.join(*save_path, 'results', save_location)
+
+    if not os.path.exists(os.path.join(save_path, scan_name[:11])):
+        os.mkdir(os.path.join(save_path, scan_name[:11]))
+
+    plotter.show(screenshot=os.path.join(save_path, scan_name[:11], f"{scan_name}_{map_type}.png"))
+    return
 
 
 if __name__ == "__main__":
