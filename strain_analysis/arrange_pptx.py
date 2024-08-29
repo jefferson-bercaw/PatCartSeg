@@ -27,7 +27,7 @@ def add_vertical_texts(prs, slide, msgs):
 if __name__ == "__main__":
     prs = Presentation()
 
-    start_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\results\\cropped_7"
+    start_path = "R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\results\\cropped_crook_2"
 
     subjs = os.listdir(start_path)
     subjs = [subj for subj in subjs if "." not in subj]
@@ -124,4 +124,4 @@ if __name__ == "__main__":
 
         prs, slide = add_vertical_texts(prs, slide, msgs=[None, "Averaged Strain", None, "Avg Strain Cropped"])
 
-    prs.save("R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\results\\cropped_7\\results.pptx")
+    prs.save(os.path.join(start_path, "results.pptx"))

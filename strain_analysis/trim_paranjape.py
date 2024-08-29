@@ -23,6 +23,6 @@ def move_all(data_path, save_data_path, to_exclude):
 
 
 if __name__ == "__main__":
-    data_path = get_data_path("Paranjape_Cropped")
-    save_data_path = get_data_path("Paranjape_ct")
-    move_all(data_path, save_data_path, to_exclude=50)
+    data_path = get_data_path("Crook_c")
+    save_data_path = get_data_path("Crook_ct")
+    move_all(data_path, save_data_path, to_exclude=40)

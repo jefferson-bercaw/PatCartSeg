@@ -123,9 +123,14 @@ def remove_outer_boundaries(pc_ptcld, thickness, radius, n):
 
 def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, output, save_location, pre_scan):
 
+    # Averaging
     radius_mm = 2.5
-    pre_pc_points, pre_thickness = average_thickness_values(pre_pc_ptcld, pre_thickness)
-    post_pc_points, post_thickness = average_thickness_values(post_pc_ptcld, post_thickness)
+    # pre_pc_points, pre_thickness = average_thickness_values(pre_pc_ptcld, pre_thickness)
+    # post_pc_points, post_thickness = average_thickness_values(post_pc_ptcld, post_thickness)
+
+    # No averaging
+    pre_pc_points = np.asarray(pre_pc_ptcld.points)
+    post_pc_points = np.asarray(post_pc_ptcld.points)
 
     # Visualize thickness maps
     thick_pre_map = np.concatenate((np.asarray(pre_pc_points), pre_thickness[:, np.newaxis]), axis=1)
@@ -133,7 +138,7 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
 
     # Save thickness maps averaged
     plot_thickness_array(thick_pre_map, pre_scan, save_location, "thick_avg", "Thickness (mm)")
-    plot_thickness_array(thick_post_map, pre_scan[:11]+'post', save_location, "thick_avg", "Thickness (mm)")
+    plot_thickness_array(thick_post_map, pre_scan[:10]+'post', save_location, "thick_avg", "Thickness (mm)")
 
     moving_pc = thick_post_map[:, 0:3]
     fixed_pc = thick_pre_map[:, 0:3]
@@ -154,17 +159,17 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
 
         # Find average thickness value within 2.5 mm radius
         moving_dists = np.linalg.norm(moving_coord - moving_pc, axis=1)
-        # moving_inds = moving_dists < radius_mm
-        # moving_thick = np.mean(post_thickness[moving_inds])
-        moving_thick = post_thickness[i]
+        moving_inds = moving_dists < radius_mm
+        moving_thick = np.mean(post_thickness[moving_inds])
+        # moving_thick = post_thickness[i]
 
         fixed_dists = np.linalg.norm(fixed_coord - fixed_pc, axis=1)
-        # fixed_inds = fixed_dists < radius_mm
-        # fixed_thick = np.mean(pre_thickness[fixed_inds])
-        fixed_thick = pre_thickness[closest_indices[i]]
+        fixed_inds = fixed_dists < radius_mm
+        fixed_thick = np.mean(pre_thickness[fixed_inds])
+        # fixed_thick = pre_thickness[closest_indices[i]]
 
         # Threshold distance. If the distance between these two coordinates isn't too large, add to strain map
-        dist_thresh = 1  # distance [mm] that signifies a "good" comparison
+        dist_thresh = 1000  # distance [mm] that signifies a "good" comparison
         if np.linalg.norm(moving_coord - fixed_coord) < dist_thresh:
             pre_thick = fixed_thick
             post_thick = moving_thick
@@ -180,7 +185,7 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
 
     # Create nx4 strain ndarray
     strain_original_map = np.concatenate((avg_coord, strain_original[:, np.newaxis]), axis=1)
-    plot_thickness_array(strain_original_map, pre_scan[:11], save_location, "strain_raw", "Strain")
+    plot_thickness_array(strain_original_map, pre_scan[:10], save_location, "strain_raw", "Strain")
 
     # Average strain map values within 2.5 mm radius
     strain_ptcld_original = o3d.geometry.PointCloud()
@@ -189,7 +194,7 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
 
     # Create nx4 strain ndarray
     strain_original_map = np.concatenate((np.asarray(strain_pc_points), strain[:, np.newaxis]), axis=1)
-    plot_thickness_array(strain_original_map, pre_scan[:11], save_location, "strain_avg", "Strain")
+    plot_thickness_array(strain_original_map, pre_scan[:10], save_location, "strain_avg", "Strain")
 
     strain_ptcld_avg = o3d.geometry.PointCloud()
     strain_ptcld_avg.points = o3d.utility.Vector3dVector(strain_pc_points)
@@ -197,11 +202,11 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
 
     # Create nx4 boundaries removed strain array
     strain_final_map = np.concatenate((np.asarray(strain_ptcld_final.points), strain_final[:, np.newaxis]), axis=1)
-    plot_thickness_array(strain_final_map, pre_scan[:11], save_location, "strain_boundaries_removed", "Strain")
+    plot_thickness_array(strain_final_map, pre_scan[:10], save_location, "strain_boundaries_removed", "Strain")
 
     # Perform parametric analysis on averaged, but cropped to one set of parameters, strain map
-    cropping_list = parameterize_cropping(strain_ptcld_avg, strain)
-
+    # cropping_list = parameterize_cropping(strain_ptcld_avg, strain)
+    cropping_list = []
     strain_map = np.concatenate((np.asarray(strain_ptcld_final.points), strain_final[:, np.newaxis]), axis=1)
 
     # save_strain_map(strain_map, "strain", f"R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\Strain\\{subj}\\{dist}mi_strain_map_{idx}.pdf")
@@ -236,6 +241,7 @@ def parameterize_cropping(strain_ptcld, strain):
         for i in n:
             strain_cropped_ptcld, strain_cropped = remove_outer_boundaries(strain_ptcld, strain, radius=radius, n=i)
             mean_strain = np.mean(strain_cropped)
+            # mean_strain = np.mean(strain_cropped)
             list_out.append([radius, i, mean_strain, strain_cropped_ptcld, strain_cropped])
     return list_out
 
@@ -302,10 +308,10 @@ def plot_thickness_array(pc_array, scan_name, save_location, map_type, met_type)
     save_path = os.path.split(save_path)[:-1]
     save_path = os.path.join(*save_path, 'results', save_location)
 
-    if not os.path.exists(os.path.join(save_path, scan_name[:11])):
-        os.mkdir(os.path.join(save_path, scan_name[:11]))
+    if not os.path.exists(os.path.join(save_path, scan_name[:10])):
+        os.mkdir(os.path.join(save_path, scan_name[:10]))
 
-    plotter.show(screenshot=os.path.join(save_path, scan_name[:11], f"{scan_name}_{map_type}.png"))
+    plotter.show(screenshot=os.path.join(save_path, scan_name[:10], f"{scan_name}_{map_type}.png"))
     return
 
 
