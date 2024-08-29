@@ -7,22 +7,23 @@ import matplotlib.pyplot as plt
 from scipy import ndimage
 
 
-def assemble_3d_mask(mask_2d):
-    """Assembles a 3D tf.Tensor of 1s and 0s pertaining to the patella and patellar cartilage
+def assemble_4d_mask(mask_3d):
+    """Assembles a 4D tf.Tensor of 1s and 0s pertaining to the patella and patellar cartilage
 
-    Inputs: mask_2d (ndarray) of 0, 1, and 2 pertaining to background, patella, and patellar cartilage, respectively
+    Inputs: mask_3d (ndarray) of size (xy_dim, xy_dim, depth) containing 0, 1, and 2 pertaining to background, patella, and patellar cartilage, respectively
 
-    Outputs: mask (tf.tensor) of size (xy_dim, xy_dim, 2) of 1s and 0s corresponding to P and PC
+    Outputs: mask_4d (tf.tensor) of size (xy_dim, xy_dim, depth, 2) of 1s and 0s corresponding to P and PC
     """
 
-    p_mask_inds = tf.equal(mask_2d, 1)
+    p_mask_inds = tf.equal(mask_3d, 1)
     p = tf.where(p_mask_inds, 1, 0)
 
-    pc_mask_inds = tf.equal(mask_2d, 2)
+    pc_mask_inds = tf.equal(mask_3d, 2)
     pc = tf.where(pc_mask_inds, 1, 0)
 
     mask = tf.stack([p, pc], axis=-1)
     mask = tf.squeeze(mask, axis=-2)
+    # tf.print(mask.shape)
 
     return mask
 
@@ -33,24 +34,51 @@ def load_test_data(image_path, mask_path):
     Inputs: image_path: absolute path of the .bmp file where the MRI slice is stored
             mask_path: absolute path of the .bmp file where the mask is stored
 
-    Outputs: filename: filename of the .bmp file for this slice (e.g. AS_010-0011.bmp)
+    Outputs: filename: filename of the .bmp file for this volume (e.g. AS_010-0011.bmp)
              image: tf.float64 normalized to [0, 1] of the MRI slice, size (xy_dim, xy_dim)
              mask_3d: tf.float64 of 0s and 1s of the mask, size (xy_dim, xy_dim, 2)
     """
 
-    image = tf.io.read_file(image_path)
-    mask = tf.io.read_file(mask_path)
-    filename = tf.strings.split(image_path, os.path.sep)[-1]
+    # Define vectors of bmp slices
+    numbers = tf.range(start=26, limit=96, dtype=tf.int32)
+    slice_nums = tf.strings.as_string(numbers, width=4, fill='0')
 
-    image = tf.image.decode_bmp(image)
-    mask = tf.image.decode_bmp(mask)
+    # Remove .txt extension
+    image_parts = tf.strings.split(image_path, sep='.')[0]
+    mask_parts = tf.strings.split(mask_path, sep='.')[0]
 
-    mask_3d = assemble_3d_mask(mask)
+    # Combine into list of strings and load in
+    images = tf.strings.join([image_parts, "-", slice_nums, '.bmp'])
+    masks = tf.strings.join([mask_parts, "-", slice_nums, '.bmp'])
+
+    # tf.print(images)
+
+    image = tf.map_fn(read_file, images, fn_output_signature=tf.uint8)
+    mask = tf.map_fn(read_file, masks, fn_output_signature=tf.uint8)
+
+    # tf.print(image.shape)
+
+    image = tf.reshape(image, [256, 256, 70, 1])
+    mask = tf.reshape(mask, [256, 256, 70, 1])
+
+    mask_4d = assemble_4d_mask(mask)
 
     image = tf.cast(image, tf.float64) / 255.0
-    mask_3d = tf.cast(mask_3d, tf.float64)
+    mask_4d = tf.cast(mask_4d, tf.float64)
 
-    return filename, image, mask_3d
+    return image_parts, image, mask_4d
+
+
+def read_file(file_path):
+    """Reads in a file from a given file path"""
+    file_path_new = tf.strings.regex_replace(file_path, r"\\", r"/")
+
+    content = tf.io.read_file(file_path_new)
+
+    image = tf.io.decode_bmp(content, channels=0)
+    image = tf.reshape(image, [256, 256, 1])
+
+    return image
 
 
 def load_data(image_path, mask_path):
@@ -63,18 +91,34 @@ def load_data(image_path, mask_path):
              mask_3d: tf.float64 of 0s and 1s of the mask, size (xy_dim, xy_dim, 2)
     """
 
-    image = tf.io.read_file(image_path)
-    mask = tf.io.read_file(mask_path)
+    # Define vectors of bmp slices
+    numbers = tf.range(start=26, limit=96, dtype=tf.int32)
+    slice_nums = tf.strings.as_string(numbers, width=4, fill='0')
 
-    image = tf.image.decode_bmp(image)
-    mask = tf.image.decode_bmp(mask)
+    # Remove .txt extension
+    image_parts = tf.strings.split(image_path, sep='.')[0]
+    mask_parts = tf.strings.split(mask_path, sep='.')[0]
 
-    mask_3d = assemble_3d_mask(mask)
+    # Combine into list of strings and load in
+    images = tf.strings.join([image_parts, "-", slice_nums, '.bmp'])
+    masks = tf.strings.join([mask_parts, "-", slice_nums, '.bmp'])
+
+    # tf.print(images)
+
+    image = tf.map_fn(read_file, images, fn_output_signature=tf.uint8)
+    mask = tf.map_fn(read_file, masks, fn_output_signature=tf.uint8)
+
+    # tf.print(image.shape)
+
+    image = tf.reshape(image, [256, 256, 70, 1])
+    mask = tf.reshape(mask, [256, 256, 70, 1])
+
+    mask_4d = assemble_4d_mask(mask)
 
     image = tf.cast(image, tf.float64) / 255.0
-    mask_3d = tf.cast(mask_3d, tf.float64)
+    mask_4d = tf.cast(mask_4d, tf.float64)
 
-    return image, mask_3d
+    return image, mask_4d
 
 
 def create_dataset(image_dir, mask_dir, dataset_type):
@@ -128,8 +172,8 @@ def get_dataset(batch_size, dataset_type, dataset):
                           f"or 'val'")
 
     # Add bmp wildcard
-    images_dir = os.path.join(images_dir, "*.bmp")
-    mask_dir = os.path.join(mask_dir, "*.bmp")
+    images_dir = os.path.join(images_dir, "*.txt")
+    mask_dir = os.path.join(mask_dir, "*.txt")
 
     # Create dataset
     dataset = create_dataset(images_dir, mask_dir, dataset_type)
@@ -153,7 +197,7 @@ def get_dataset(batch_size, dataset_type, dataset):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 12
-    dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset="HT")
+    dataset = get_dataset(batch_size=batch_size, dataset_type='test', dataset="ctHT")
     iterable = iter(dataset)
     out = next(iterable)
 
