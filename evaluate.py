@@ -396,7 +396,6 @@ def get_most_recent_model():
         print("There are not enough files in the 'models' subfolder.")
 
 
-
 def plot_loss(history, results_filename, show=False):
     plt.plot(history["val_loss"], label='val_loss')
     plt.plot(history["loss"], label='train_loss')
@@ -416,14 +415,14 @@ if __name__ == "__main__":
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # # date_time pattern to identify model we just trained
-        # date_times = get_most_recent_model()
-        date_times = ["unet_2024-07-11_00-40-25_ctHT5"]
+        date_times = get_most_recent_model()
+        # date_times = ["unet_2024-07-11_00-40-25_ctHT5"]
 
         for date_time in date_times:
 
             dataset_name = parse_dataset_name(date_time)
 
-            plot_mri_with_both_masks("AS_006", date_time)
+            # plot_mri_with_both_masks("AS_006", date_time)
 
             print(f"Evaluating model {date_time}")
 
