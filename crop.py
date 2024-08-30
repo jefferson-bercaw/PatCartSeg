@@ -52,10 +52,10 @@ if __name__ == "__main__":
     y_end = y_start + xy_dim
 
     # Get current dataset we're cropping
-    data_path = get_data_path("Crook")
+    data_path = get_data_path("Owusu-Akyaw")
 
     # Get saving dataset and setup
-    save_data_path = get_data_path("Crook_c")
+    save_data_path = get_data_path("Owusu-Akyaw_c")
 
     files = os.listdir(data_path)
 
