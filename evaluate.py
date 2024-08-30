@@ -83,12 +83,12 @@ def process_predicted_label(pred_label):
     thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
-    pat = np.squeeze(binary_data[:, :, :, 0])
-    pat_cart = np.squeeze(binary_data[:, :, :, 1])
+    pat = np.squeeze(binary_data[:, :, :, :, 0])
+    pat_cart = np.squeeze(binary_data[:, :, :, :, 1])
 
     # Probability masks
-    pat_prob = np.squeeze(pred_label[:, :, :, 0])
-    pat_cart_prob = np.squeeze(pred_label[:, :, :, 1])
+    pat_prob = np.squeeze(pred_label[:, :, :, :, 0])
+    pat_cart_prob = np.squeeze(pred_label[:, :, :, :, 1])
 
     return pat, pat_cart, pat_prob, pat_cart_prob
 
@@ -118,7 +118,8 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     if not os.path.exists(pat_cart_prob_filepath):
         os.mkdir(pat_cart_prob_filepath)
 
-    filename_npy = filename_str.split('.')[0] + ".npy"
+    scan_name = filename_str.split('.')[0]
+    filename_npy = scan_name + ".npy"
 
     pat_filepath = os.path.join(pat_filepath, filename_str)
     pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
@@ -141,8 +142,8 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
 
 def process_true_label(label):
     label = tf.squeeze(label, axis=0)
-    pat = label[:, :, 0].numpy().astype(np.uint8)
-    pat_cart = label[:, :, 1].numpy().astype(np.uint8)
+    pat = label[:, :, :, 0].numpy().astype(np.uint8)
+    pat_cart = label[:, :, :, 1].numpy().astype(np.uint8)
     return pat, pat_cart
 
 
