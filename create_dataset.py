@@ -40,7 +40,7 @@ def load_test_data(image_path, mask_path):
     """
 
     # Define vectors of bmp slices
-    numbers = tf.range(start=1, limit=16, dtype=tf.int32)
+    numbers = tf.range(start=1, limit=57, dtype=tf.int32)
     slice_nums = tf.strings.as_string(numbers, width=4, fill='0')
 
     # Remove .txt extension
@@ -92,7 +92,7 @@ def load_data(image_path, mask_path):
     """
 
     # Define vectors of bmp slices
-    numbers = tf.range(start=1, limit=56, dtype=tf.int32)
+    numbers = tf.range(start=1, limit=57, dtype=tf.int32)
     slice_nums = tf.strings.as_string(numbers, width=4, fill='0')
 
     # Remove .txt extension
