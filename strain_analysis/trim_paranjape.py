@@ -23,6 +23,6 @@ def move_all(data_path, save_data_path, to_exclude):
 
 
 if __name__ == "__main__":
-    data_path = get_data_path("Crook_c")
-    save_data_path = get_data_path("Crook_ct")
+    data_path = get_data_path("Owusu-Akyaw_c")
+    save_data_path = get_data_path("Owusu-Akyaw_ct")
     move_all(data_path, save_data_path, to_exclude=40)
