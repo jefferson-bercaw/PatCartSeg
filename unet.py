@@ -36,11 +36,11 @@ def upsample_block(lyr, conv_features, n_filt, kernel_size, dropout_rate):
 
 def build_unet(model_depth):
     # inputs
-    inputs = layers.Input(shape=(256, 256, 70, 1))  # Adjusted input shape
+    inputs = layers.Input(shape=(224, 128, 56, 1))  # Adjusted input shape
     dropout_rate = 0.3
 
     if model_depth == 3:
-        start_filt = 256
+        start_filt = 128
 
         # encoder
         f1, p1 = downsample_block(inputs, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
@@ -56,10 +56,10 @@ def build_unet(model_depth):
         u5 = upsample_block(u4, conv_features=f1, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
         print(u5.shape)
 
-        outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u5)  # Output shape: (256, 256, 70, 2)
+        outputs = layers.Conv3D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u5)  # Output shape: (256, 256, 70, 2)
 
     elif model_depth == 4:
-        start_filt = 128
+        start_filt = 64
 
         # encoder
         f1, p1 = downsample_block(inputs, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
@@ -73,10 +73,10 @@ def build_unet(model_depth):
         u5 = upsample_block(bottleneck, conv_features=f3, n_filt=4 * start_filt, kernel_size=3, dropout_rate=dropout_rate)
         u6 = upsample_block(u5, conv_features=f2, n_filt=2 * start_filt, kernel_size=3, dropout_rate=dropout_rate)
         u7 = upsample_block(u6, conv_features=f1, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
-        outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u7)
+        outputs = layers.Conv3D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u7)
 
     elif model_depth == 5:
-        start_filt = 64
+        start_filt = 32
 
         # encoder
         f1, p1 = downsample_block(inputs, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
@@ -92,10 +92,10 @@ def build_unet(model_depth):
         u7 = upsample_block(u6, conv_features=f3, n_filt=4 * start_filt, kernel_size=3, dropout_rate=dropout_rate)
         u8 = upsample_block(u7, conv_features=f2, n_filt=2 * start_filt, kernel_size=3, dropout_rate=dropout_rate)
         u9 = upsample_block(u8, conv_features=f1, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
-        outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u9)
+        outputs = layers.Conv3D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u9)
 
     elif model_depth == 6:
-        start_filt = 32
+        start_filt = 16
 
         # encoder
         f1, p1 = downsample_block(inputs, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
@@ -113,7 +113,7 @@ def build_unet(model_depth):
         u9 = upsample_block(u8, conv_features=f3, n_filt=4 * start_filt, kernel_size=3, dropout_rate=dropout_rate)
         u10 = upsample_block(u9, conv_features=f2, n_filt=2 * start_filt, kernel_size=3, dropout_rate=dropout_rate)
         u11 = upsample_block(u10, conv_features=f1, n_filt=start_filt, kernel_size=3, dropout_rate=dropout_rate)
-        outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u11)
+        outputs = layers.Conv3D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u11)
 
     # outputs
     unet_model = tf.keras.Model(inputs, outputs, name="U-Net")
@@ -121,5 +121,5 @@ def build_unet(model_depth):
 
 
 if __name__ == "__main__":
-    unet_model = build_unet(model_depth=3)
+    unet_model = build_unet(model_depth=4)
     unet_model.summary()

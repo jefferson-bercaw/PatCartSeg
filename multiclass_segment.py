@@ -20,14 +20,14 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 32
-        model_depth = 6
+        batch_size = 2
+        model_depth = 4
         dropout_rate = 0.3
         epochs = 1000
         patience = 200
         min_delta = 0.0001
 
-        dataset = "ctHT"
+        dataset = "CHT"
 
         # Build and compile model
         unet_model = build_unet(model_depth=model_depth)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_name = f"unet_{current_time}_{dataset}"
+        model_name = f"unet3d_{current_time}_{dataset}"
         unet_model.save(os.path.join("models", f"{model_name}.h5"))
 
         # Save history
@@ -75,5 +75,3 @@ if __name__ == "__main__":
               f"max epochs: {epochs}"
               f"epochs trained for: {len(history.history['loss'])}"
               f"model depth: {model_depth}")
-
-

@@ -45,11 +45,13 @@ def obtain_cropping_dict():
         bounds_dict = pickle.load(f)
 
     # xy_dim of cropped image
-    xy_dim = 224
+    x_dim = 128
+    y_dim = 224
     z_dim = 56
 
     # Minimum pixels on either side of the box containing the label
-    min_xy = 20
+    min_x = 12
+    min_y = 25
     min_z = 2
 
     # Iterate through each subject
@@ -61,8 +63,8 @@ def obtain_cropping_dict():
         slice_size = bounds_dict[subject]["slice_size"]
 
         # Determine how many extra pixels we have to include that don't have label
-        extra_rows = xy_dim - row_size
-        extra_cols = xy_dim - col_size
+        extra_rows = y_dim - row_size
+        extra_cols = x_dim - col_size
         extra_slices = z_dim - slice_size
 
         # Extract indices of starting values
@@ -72,8 +74,8 @@ def obtain_cropping_dict():
         n_slices = slice_inds[1] - slice_inds[0] + 1
 
         # Determine range of potential starting bounds for the cropped image
-        starting_row_bounds = [row_inds[1] + min_xy - xy_dim, row_inds[0] - min_xy]
-        starting_col_bounds = [col_inds[1] + min_xy - xy_dim, col_inds[0] - min_xy]
+        starting_row_bounds = [row_inds[1] + min_y - y_dim, row_inds[0] - min_y]
+        starting_col_bounds = [col_inds[1] + min_x - x_dim, col_inds[0] - min_x]
         starting_slice_bounds = [slice_inds[1] + min_z - z_dim, slice_inds[0] - min_z]
 
         # Pick a random integer between these two bounds for each dimension
@@ -89,8 +91,8 @@ def obtain_cropping_dict():
             slice_start = 1
 
         # Define ending coordinate locations for each index
-        row_end = row_start + xy_dim
-        col_end = col_start + xy_dim
+        row_end = row_start + y_dim
+        col_end = col_start + x_dim
         slices_list = [slice_start + i for i in range(z_dim)]
 
         # Assemble coordinates for cropping in dictionary

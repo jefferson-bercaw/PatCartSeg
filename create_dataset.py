@@ -40,7 +40,7 @@ def load_test_data(image_path, mask_path):
     """
 
     # Define vectors of bmp slices
-    numbers = tf.range(start=26, limit=96, dtype=tf.int32)
+    numbers = tf.range(start=1, limit=16, dtype=tf.int32)
     slice_nums = tf.strings.as_string(numbers, width=4, fill='0')
 
     # Remove .txt extension
@@ -58,8 +58,8 @@ def load_test_data(image_path, mask_path):
 
     # tf.print(image.shape)
 
-    image = tf.reshape(image, [256, 256, 70, 1])
-    mask = tf.reshape(mask, [256, 256, 70, 1])
+    image = tf.reshape(image, [224, 128, 56, 1])
+    mask = tf.reshape(mask, [224, 128, 56, 1])
 
     mask_4d = assemble_4d_mask(mask)
 
@@ -76,7 +76,7 @@ def read_file(file_path):
     content = tf.io.read_file(file_path_new)
 
     image = tf.io.decode_bmp(content, channels=0)
-    image = tf.reshape(image, [256, 256, 1])
+    image = tf.reshape(image, [224, 128, 1])
 
     return image
 
@@ -92,7 +92,7 @@ def load_data(image_path, mask_path):
     """
 
     # Define vectors of bmp slices
-    numbers = tf.range(start=26, limit=96, dtype=tf.int32)
+    numbers = tf.range(start=1, limit=56, dtype=tf.int32)
     slice_nums = tf.strings.as_string(numbers, width=4, fill='0')
 
     # Remove .txt extension
@@ -110,8 +110,8 @@ def load_data(image_path, mask_path):
 
     # tf.print(image.shape)
 
-    image = tf.reshape(image, [256, 256, 70, 1])
-    mask = tf.reshape(mask, [256, 256, 70, 1])
+    image = tf.reshape(image, [224, 128, 56, 1])
+    mask = tf.reshape(mask, [224, 128, 56, 1])
 
     mask_4d = assemble_4d_mask(mask)
 
@@ -196,8 +196,8 @@ def get_dataset(batch_size, dataset_type, dataset):
 
 if __name__ == '__main__':
     # Hyperparameters
-    batch_size = 12
-    dataset = get_dataset(batch_size=batch_size, dataset_type='test', dataset="ctHT")
+    batch_size = 4
+    dataset = get_dataset(batch_size=batch_size, dataset_type='test', dataset="CHT")
     iterable = iter(dataset)
     out = next(iterable)
 
