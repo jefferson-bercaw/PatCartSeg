@@ -93,6 +93,28 @@ def load_test_scan(mri_folder, mask_folder):
     return mask_folder, mri_3d, mask_4d
 
 
+def visualize_dataset(dataset, num_samples=5):
+    for mri_images, mask_images in dataset.take(1):  # Take one batch
+        # Visualize a few samples
+        for i in range(min(num_samples, mri_images.shape[3])):
+            plt.figure(figsize=(12, 6))
+
+            # Original MRI Image
+            plt.subplot(1, 2, 1)
+            plt.title("MRI Image")
+            plt.imshow(mri_images[0, :, :, i], cmap='gray')  # Assuming grayscale
+            plt.axis('off')
+
+            # Corresponding Mask
+            plt.subplot(1, 2, 2)
+            plt.title("Mask Image")
+            plt.imshow(mask_images[0, :, :, i, 0] * 100, cmap='gray')  # Assuming grayscale
+            plt.axis('off')
+
+            plt.show()
+            plt.savefig("test.png")
+
+
 def get_dataset(batch_size, dataset_type, dataset):
     """Returns a tf.data.Dataset object given batch_size, dataset_type, and dataset selection
 
@@ -154,7 +176,8 @@ def get_dataset(batch_size, dataset_type, dataset):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset="CHT-Group")
+    dataset = get_dataset(batch_size=batch_size, dataset_type='val', dataset="CHT-Group")
+    visualize_dataset(dataset, num_samples=5)
     iterable = iter(dataset)
     out = next(iterable)
     mri, label = out
