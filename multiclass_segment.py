@@ -14,6 +14,7 @@ from create_dataset import get_dataset
 parser = argparse.ArgumentParser(description="Training Options")
 
 if __name__ == "__main__":
+
     # GPUs
     strategy = tf.distribute.MirroredStrategy()
 
