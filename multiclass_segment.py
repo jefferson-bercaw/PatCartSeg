@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 2
+        batch_size = 1
         model_depth = 4
         dropout_rate = 0.3
         epochs = 1000
