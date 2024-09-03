@@ -13,14 +13,13 @@ from create_dataset import get_dataset
 
 parser = argparse.ArgumentParser(description="Training Options")
 
-
 if __name__ == "__main__":
     # GPUs
     strategy = tf.distribute.MirroredStrategy()
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 2
+        batch_size = 4
         model_depth = 4
         dropout_rate = 0.3
         epochs = 1000
@@ -34,7 +33,7 @@ if __name__ == "__main__":
 
         unet_model.compile(optimizer='adam',
                            loss=dice_loss,
-                           metrics=['accuracy',
+                           metrics=[tf.keras.metrics.BinaryAccuracy(),
                                     tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
                                     tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
                                     tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),

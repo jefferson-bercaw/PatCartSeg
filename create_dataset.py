@@ -145,15 +145,17 @@ def get_dataset(batch_size, dataset_type, dataset):
     # Prefetch batch into memory at a given time
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
+    dataset = dataset.cache()
     return dataset
 
 
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(batch_size=batch_size, dataset_type='test', dataset="CHT-Group")
+    dataset = get_dataset(batch_size=batch_size, dataset_type='train', dataset="CHT-Group")
     iterable = iter(dataset)
     out = next(iterable)
-    name, mri, label = out
-    print("Done")
+    mri, label = out
 
+    print(f"MRI size: {mri.numpy().shape}")
+    print(f"Mask size: {label.numpy().shape}")
