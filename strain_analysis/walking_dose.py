@@ -86,7 +86,7 @@ def reshape_mri(mri):
 
 
 def save_bmps(mri_vol, pat_vol, pat_cart_vol, model_name, scan_name):
-    start_path = get_data_path("Crook_Predictions")
+    start_path = get_data_path("Owusu-Akyaw_Predictions")
     mri_path = os.path.join(start_path, model_name[0:-3], "original", scan_name, "mri")
     pat_path = os.path.join(start_path, model_name[0:-3], "original", scan_name, "ML_pat")
     pat_cart_path = os.path.join(start_path, model_name[0:-3], "original", scan_name, "ML_patcart")
@@ -131,7 +131,7 @@ def save_bmps(mri_vol, pat_vol, pat_cart_vol, model_name, scan_name):
 
 
 def save_volumes(pat_vol, pat_cart_vol, model_name, scan_name):
-    start_path = get_data_path("Crook_Volumes")
+    start_path = get_data_path("Owusu-Akyaw_Volumes")
     volume_path = os.path.join(start_path, model_name[0:-3])
 
     # If paths don't exist, create them
@@ -167,8 +167,8 @@ def save_coordinate_arrays(p_array, pc_array, scan):
     if scan[-4:] == ".npz":
         scan = scan[:-4]
 
-    np.savetxt(f"{get_data_path('Crook_ToGeomagic')}\\P\\{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
-    np.savetxt(f"{get_data_path('Crook_ToGeomagic')}\\PC\\{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{get_data_path('Owusu-Akyaw_ToGeomagic')}\\P\\{scan}_P.txt", p_array, delimiter='\t', fmt='%.6f')
+    np.savetxt(f"{get_data_path('Owusu-Akyaw_ToGeomagic')}\\PC\\{scan}_PC.txt", pc_array, delimiter='\t', fmt='%.6f')
 
     print(f"Saved {scan} point clouds")
     return
@@ -182,8 +182,8 @@ def load_coordinate_arrays(scan):
     if scan[-4:] == ".npz":
         scan = scan[:-4]
 
-    filename_P = f"{get_data_path('Crook_FromGeomagic')}/{scan}_P.pcd"
-    filename_PC = f"{get_data_path('Crook_FromGeomagic')}/{scan}_PC.pcd"
+    filename_P = f"{get_data_path('Owusu-Akyaw_FromGeomagic')}/{scan}_P.pcd"
+    filename_PC = f"{get_data_path('Owusu-Akyaw_FromGeomagic')}/{scan}_PC.pcd"
 
     ptcld_P = o3d.io.read_point_cloud(filename_P)
     ptcld_PC = o3d.io.read_point_cloud(filename_PC)
@@ -332,7 +332,7 @@ def deficiency_data(scan_minus_prepost):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = False  # Predict with network
+    predict_volumes_option = True  # Predict with network
 
     correct_volumes_option = False  # Use corrected segmentations
     derandomize_option = False  # Derandomize the corrected segmentations
@@ -341,7 +341,7 @@ if __name__ == "__main__":
 
     # Geomagic here
 
-    register_point_clouds_option = True
+    register_point_clouds_option = False
     visualize_registration_option = False
     visualize_strain_map_option = False
 
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     # Predict patella and patellar cartilage volumes
     if predict_volumes_option:
         # Load in dataset
-        image_dir = get_data_path("Crook_ct") + os.sep + "*.bmp"
+        image_dir = get_data_path("Owusu-Akyaw_ct") + os.sep + "*.bmp"
         dataset = get_paranjape_dataset(image_dir, batch_size=batch_size)
         iterable = iter(dataset)
 
@@ -392,7 +392,7 @@ if __name__ == "__main__":
                     print(f"Saved {scan_name}, scan {i} of {(len(dataset) // batches_per_scan) - 1}")
 
     if correct_volumes_option:
-        image_path = get_data_path("Crook_Predictions")
+        image_path = get_data_path("Owusu-Akyaw_Predictions")
 
         # Derandomize corrections
         if derandomize_option:
@@ -429,11 +429,11 @@ if __name__ == "__main__":
     # Create point clouds of the patella, patellar cartilage, and articulating surface of patella
     if create_point_clouds_option:
         # Get volume data path (what we're reading in)
-        volume_path = os.path.join(get_data_path("Crook_Volumes"), model_name[0:-3])
+        volume_path = os.path.join(get_data_path("Owusu-Akyaw_Volumes"), model_name[0:-3])
         scans = os.listdir(volume_path)
 
         # Create point cloud data path (what we're saving to)
-        point_cloud_path = os.path.join(get_data_path("Crook_PCs"), model_name[0:-3])
+        point_cloud_path = os.path.join(get_data_path("Owusu-Akyaw_PCs"), model_name[0:-3])
         if not os.path.exists(point_cloud_path):
             os.mkdir(point_cloud_path)
 
@@ -447,7 +447,7 @@ if __name__ == "__main__":
     # Load pre and post, register, calculate strain map, save registered point clouds and strain map
     if register_point_clouds_option:
         # Get point cloud data path (what we're reading in)
-        point_cloud_path = os.path.join(get_data_path("Crook_ToGeomagic"), "P")
+        point_cloud_path = os.path.join(get_data_path("Owusu-Akyaw_ToGeomagic"), "P")
         scans = os.listdir(point_cloud_path)
         scans_new = []
         for scan in scans:
@@ -455,7 +455,7 @@ if __name__ == "__main__":
         scans = scans_new
 
         # Get strain data path (what we're saving to)
-        strain_path = os.path.join(get_data_path("Crook_PCs"), model_name[0:-3])
+        strain_path = os.path.join(get_data_path("Owusu-Akyaw_PCs"), model_name[0:-3])
         if not os.path.exists(strain_path):
             os.mkdir(strain_path)
 
@@ -466,7 +466,7 @@ if __name__ == "__main__":
         info["Mean Strain"] = []
         info["Change_in_Thickness"] = []
 
-        save_location = "cropped_crook_3"
+        save_location = "cropped_Owusu-Akyaw"
 
         # Iterate through each scan and take in a pair of scans
         for idx in range(len(scans)):
