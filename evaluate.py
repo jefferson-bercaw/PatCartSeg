@@ -98,8 +98,8 @@ def process_mri(mri):
     return mri
 
 
-def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
-    filename_str = filename.numpy()[0].decode()
+def save_result(scan_name, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
+    subj_str = scan_name.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
     pat_filepath = os.path.join(results_filename, "pat")
@@ -118,32 +118,31 @@ def save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
     if not os.path.exists(pat_cart_prob_filepath):
         os.mkdir(pat_cart_prob_filepath)
 
-    scan_name = filename_str.split('.')[0]
     filename_npy = scan_name + ".npy"
 
-    pat_filepath = os.path.join(pat_filepath, filename_str)
-    pat_cart_filepath = os.path.join(pat_cart_filepath, filename_str)
-    pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
-    pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, filename_npy)
+    pat_filepath = os.path.join(pat_filepath, subj_str)
+    pat_cart_filepath = os.path.join(pat_cart_filepath, subj_str)
+    pat_prob_filepath = os.path.join(pat_prob_filepath, subj_str)
+    pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, subj_str)
     # print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
     # Save the masks as BMP files
-    pat_img = Image.fromarray(pat)
-    pat_cart_img = Image.fromarray(pat_cart)
-    pat_img.save(pat_filepath)
-    pat_cart_img.save(pat_cart_filepath)
+    for i in range(pat.shape[-1]):
+        pat_img = Image.fromarray(pat[0, :, :, i, 0])
+        pat_cart_img = Image.fromarray(pat_cart[0, :, :, i, 1])
+        pat_img.save(pat_filepath + f"_{i}.bmp")
+        pat_cart_img.save(pat_cart_filepath + f"_{i}.bmp")
 
     # Save the probability masks as NPY files
     np.save(pat_prob_filepath, pat_prob)
     np.save(pat_cart_prob_filepath, pat_cart_prob)
-
     return
 
 
 def process_true_label(label):
     label = tf.squeeze(label, axis=0)
-    pat = label[:, :, :, 0].numpy().astype(np.uint8)
-    pat_cart = label[:, :, :, 1].numpy().astype(np.uint8)
+    pat = label[:, :, :, :, 0].numpy().astype(np.uint8)
+    pat_cart = label[:, :, :, :, 1].numpy().astype(np.uint8)
     return pat, pat_cart
 
 
@@ -464,8 +463,8 @@ if __name__ == "__main__":
                 pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
 
                 # Plot examples of true masks that have predictions on them
-                plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
-                plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
+                # plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
+                # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
                 # Output predictions
                 save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob)
