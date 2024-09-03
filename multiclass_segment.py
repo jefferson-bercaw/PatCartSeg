@@ -23,10 +23,10 @@ if __name__ == "__main__":
         batch_size = 2
         model_depth = 4
         dropout_rate = 0.1
-        epochs = 1000
-        patience = 200
+        epochs = 2000
+        patience = 500
         min_delta = 0.0001
-        initial_learning_rate = 0.0001
+        initial_learning_rate = 0.001
 
         dataset_name = "CHT-Group"
 
