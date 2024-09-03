@@ -439,19 +439,19 @@ if __name__ == "__main__":
             plot_loss(history, results_filename, show=False)
 
             # Load in test dataset and create iterable
-            test_dataset = get_dataset(batch_size=1, dataset_type='test', dataset=dataset_name)
+            test_dataset = get_dataset(dataset_name="CHT-Group", dataset_type="test", batch_size=1)
 
             iterable = iter(test_dataset)
-            n_test_images = len(test_dataset)
+            n_test_scans = len(test_dataset)
 
             # Get comparison plots filename
-            comp_filename = get_comparison_plot_filename(date_time)
+            # comp_filename = get_comparison_plot_filename(date_time)
 
             # Count true pixels [intersection, predicted, true]
             pat_positives = [0, 0, 0]
             pat_cart_positives = [0, 0, 0]
 
-            for i in range(n_test_images):
+            for i in range(n_test_scans):
                 filename, mri, label = next(iterable)
 
                 pred_label = model.predict(mri)

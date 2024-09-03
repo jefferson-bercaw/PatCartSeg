@@ -57,6 +57,9 @@ def load_images(dataset_name, dataset_type):
 
 
 def get_dataset(dataset_name, dataset_type, batch_size):
+    data_path = get_data_path(dataset_name)
+    mri_path = os.listdir(os.path.join(data_path, dataset_type, "mri"))
+
     mris, masks = load_images(dataset_name, dataset_type)
 
     mri_3d = mris.astype(np.float32) / 255.0
@@ -67,14 +70,18 @@ def get_dataset(dataset_name, dataset_type, batch_size):
 
     dataset_mri = tf.data.Dataset.from_tensor_slices(tf.constant(mri_3d, dtype=tf.float32))
     dataset_mask = tf.data.Dataset.from_tensor_slices(tf.constant(mask_4d, dtype=tf.float32))
-
-    dataset = tf.data.Dataset.zip((dataset_mri, dataset_mask))
+    dataset_subj = tf.data.Dataset.list_files(mri_path)
 
     if dataset_type == "train":
+        dataset = tf.data.Dataset.zip((dataset_mri, dataset_mask))
         dataset = dataset.shuffle(buffer_size=10)
         dataset = dataset.batch(batch_size=batch_size)
         dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-    else:
+    elif dataset_type == "test":
+        dataset = tf.data.Dataset.zip((dataset_subj, dataset_mri, dataset_mask))
+        dataset = dataset.batch(batch_size=1)
+    elif dataset_type == "val":
+        dataset = tf.data.Dataset.zip((dataset_mri, dataset_mask))
         dataset = dataset.batch(batch_size=1)
     return dataset
 
