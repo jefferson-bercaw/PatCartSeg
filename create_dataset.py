@@ -6,6 +6,7 @@ from get_data_path import get_data_path
 import matplotlib.pyplot as plt
 from scipy import ndimage
 from glob import glob
+from PIL import Image
 
 
 def assemble_4d_mask(mask_3d):
@@ -15,34 +16,63 @@ def assemble_4d_mask(mask_3d):
 
     Outputs: mask_4d (tf.tensor) of size (xy_dim, xy_dim, depth, 2) of 1s and 0s corresponding to P and PC
     """
-    p_mask_inds = tf.equal(mask_3d, 1)
-    p = tf.where(p_mask_inds, 1, 0)
+    p_mask_inds = np.equal(mask_3d, 1)
+    p = np.where(p_mask_inds, 1, 0)
 
-    pc_mask_inds = tf.equal(mask_3d, 2)
-    pc = tf.where(pc_mask_inds, 1, 0)
+    pc_mask_inds = np.equal(mask_3d, 2)
+    pc = np.where(pc_mask_inds, 1, 0)
 
-    mask = tf.stack([p, pc], axis=-1)
-    mask = tf.squeeze(mask, axis=-2)
+    mask = np.stack([p, pc], axis=-1)
 
     return mask
 
 
-def load_images(mri_folder, mask_folder):
+def load_images(dataset_name, dataset_type):
+    data_path = get_data_path(dataset_name)
 
-    mri_files = tf.io.matching_files(tf.strings.join([mri_folder, '/*.bmp']))
-    mask_files = tf.io.matching_files(tf.strings.join([mask_folder, '/*.bmp']))
+    mri_path = os.path.join(data_path, dataset_type, "mri")
+    mask_path = os.path.join(data_path, dataset_type, "mask")
 
-    mris = tf.map_fn(lambda img_file: tf.image.decode_bmp(tf.io.read_file(img_file)), mri_files, fn_output_signature=tf.uint8)
-    masks = tf.map_fn(lambda img_file: tf.image.decode_bmp(tf.io.read_file(img_file)), mask_files, fn_output_signature=tf.uint8)
+    subjs = os.listdir(mri_path)
+    mris = np.zeros((len(subjs), 224, 128, 56))
+    masks = np.zeros((len(subjs), 224, 128, 56))
 
-    mri_3d = tf.cast(mris, tf.float64) / 255.0
+    for i, subj in enumerate(subjs):
+        print(f"Loading in {subj}")
+
+        mri_files = sorted(glob(os.path.join(mri_path, subj, '*.bmp')))
+        mask_files = sorted(glob(os.path.join(mask_path, subj, '*.bmp')))
+
+        mri = np.zeros((224, 128, len(mri_files)))
+        mask = np.zeros((224, 128, len(mask_files)))
+
+        for j, mri_file in enumerate(mri_files):
+            mri[:, :, j] = np.array(Image.open(mri_file))
+            mask[:, :, j] = np.array(Image.open(mask_files[j]))
+
+        mris[i, :, :, :] = mri
+        masks[i, :, :, :] = mask
+
+    return mris, masks
+
+
+def get_dataset(dataset_name, dataset_type, batch_size):
+    mris, masks = load_images(dataset_name, dataset_type)
+
+    mri_3d = mris.astype(np.float32) / 255.0
+
     mask_4d = assemble_4d_mask(masks)
-    mask_4d = tf.cast(mask_4d, tf.float64)
+    mask_4d = mask_4d.astype(np.float32)
 
-    mri_3d = tf.transpose(mri_3d, perm=[1, 2, 0, 3])
-    mask_4d = tf.transpose(mask_4d, perm=[1, 2, 0, 3])
+    dataset_mri = tf.data.Dataset.from_tensor_slices(tf.constant(mri_3d, dtype=tf.float32))
+    dataset_mask = tf.data.Dataset.from_tensor_slices(tf.constant(mask_4d, dtype=tf.float32))
+    dataset = tf.data.Dataset.zip((dataset_mri, dataset_mask))
 
-    return mri_3d, mask_4d
+    if dataset_type == "train":
+        dataset = dataset.shuffle(buffer_size=10)
+        dataset = dataset.batch(batch_size=batch_size)
+        dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    return dataset
 
 
 def visualize_dataset(dataset, num_samples=5):
@@ -67,61 +97,7 @@ def visualize_dataset(dataset, num_samples=5):
             plt.savefig("test.png")
 
 
-def get_dataset(batch_size, dataset_type, dataset):
-    """Returns a tf.data.Dataset object given batch_size, dataset_type, and dataset selection
-
-    Inputs: batch_size: (int), batch size for dataset
-            dataset_type: one of ["train", "test", "val"] corresponding to the dataset type we're creating
-            dataset: dataset flag from argparse calling, currently should be CHT-Group
-
-    Outputs: dataset: tf.data.Dataset object containing filenames and mapping function for calling
-    """
-
-    data_path = get_data_path(dataset)
-
-    # MRI
-    mri_path = os.path.join(data_path, dataset_type, "mri")
-    mri_folders = sorted(
-        [os.path.join(mri_path, d) for d in os.listdir(mri_path) if os.path.isdir(os.path.join(mri_path, d))])
-
-    # Mask
-    mask_path = os.path.join(data_path, dataset_type, "mask")
-    mask_folders = sorted(
-        [os.path.join(mask_path, d) for d in os.listdir(mask_path) if os.path.isdir(os.path.join(mask_path, d))])
-
-    mri_folders_ds = tf.data.Dataset.from_tensor_slices(mri_folders)
-    mask_folders_ds = tf.data.Dataset.from_tensor_slices(mask_folders)
-
-    dataset = tf.data.Dataset.zip((mri_folders_ds, mask_folders_ds))
-    dataset = dataset.map(load_images, num_parallel_calls=tf.data.AUTOTUNE)
-
-    # randomly shuffle if training
-    if dataset_type == "train":
-        dataset = dataset.shuffle(buffer_size=min([tf.data.experimental.cardinality(dataset).numpy() // 4, 100]), seed=42)
-
-    # Parallelize Data Loading Step
-    # dataset = dataset.interleave(num_parallel_calls=tf.data.AUTOTUNE)
-
-    # Batch each dataset
-    dataset = dataset.batch(batch_size=batch_size)
-
-    # Prefetch batch into memory at a given time
-    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-
-    # Cache dataset to memory
-    # dataset = dataset.cache()
-
-    return dataset
-
-
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(batch_size=batch_size, dataset_type='val', dataset="CHT-Group")
-    visualize_dataset(dataset, num_samples=5)
-    iterable = iter(dataset)
-    out = next(iterable)
-    mri, label = out
-
-    print(f"MRI size: {mri.numpy().shape}")
-    print(f"Mask size: {label.numpy().shape}")
+    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size)
