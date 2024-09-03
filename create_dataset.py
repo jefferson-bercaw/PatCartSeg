@@ -5,6 +5,7 @@ import numpy as np
 from get_data_path import get_data_path
 import matplotlib.pyplot as plt
 from scipy import ndimage
+from glob import glob
 
 
 def assemble_4d_mask(mask_3d):
@@ -22,165 +23,118 @@ def assemble_4d_mask(mask_3d):
     pc = tf.where(pc_mask_inds, 1, 0)
 
     mask = tf.stack([p, pc], axis=-1)
-    mask = tf.squeeze(mask, axis=-2)
+    mask = tf.squeeze(mask, axis=-3)
     # tf.print(mask.shape)
 
     return mask
 
 
-def load_test_data(image_path, mask_path):
-    """Load in MRI slice and mask slice for the test dataset given their absolute paths
+def load_train_scan(mri_folder, mask_folder):
 
-    Inputs: image_path: absolute path of the .bmp file where the MRI slice is stored
-            mask_path: absolute path of the .bmp file where the mask is stored
+    # train_path = get_data_path("CHT-Group")
+    # mri_path = os.path.join(train_path, "train", "mri", scan_folder)
+    # mask_path = os.path.join(train_path, "train", "mask", scan_folder)
 
-    Outputs: filename: filename of the .bmp file for this volume (e.g. AS_010-0011.bmp)
-             image: tf.float64 normalized to [0, 1] of the MRI slice, size (xy_dim, xy_dim)
-             mask_3d: tf.float64 of 0s and 1s of the mask, size (xy_dim, xy_dim, 2)
-    """
+    # tf.print(mri_path)
 
-    # Define vectors of bmp slices
-    numbers = tf.range(start=1, limit=57, dtype=tf.int32)
-    slice_nums = tf.strings.as_string(numbers, width=4, fill='0')
+    mri_files = sorted(glob(os.path.join(mri_folder.numpy().decode("utf-8"), "*.bmp")))
+    mask_files = sorted(glob(os.path.join(mask_folder.numpy().decode("utf-8"), "*.bmp")))
 
-    # Remove .txt extension
-    image_parts = tf.strings.split(image_path, sep='.')[0]
-    mask_parts = tf.strings.split(mask_path, sep='.')[0]
+    # Load each image, resize if needed, and stack them
+    mris = [tf.image.decode_bmp(tf.io.read_file(img_file)) for img_file in mri_files]
+    masks = [tf.image.decode_bmp(tf.io.read_file(img_file)) for img_file in mask_files]
 
-    # Combine into list of strings and load in
-    images = tf.strings.join([image_parts, "-", slice_nums, '.bmp'])
-    masks = tf.strings.join([mask_parts, "-", slice_nums, '.bmp'])
+    # Optionally resize images to (128, 224)
+    mris = [tf.image.resize(img, [224, 128]) for img in mris]
+    masks = [tf.image.resize(img, [224, 128]) for img in masks]
 
-    # tf.print(images)
+    # Stack images to create a (224, 128, 56) tensor
+    mri_3d = tf.stack(mris, axis=-1)
+    mask_3d = tf.stack(masks, axis=-1)
 
-    image = tf.map_fn(read_file, images, fn_output_signature=tf.uint8)
-    mask = tf.map_fn(read_file, masks, fn_output_signature=tf.uint8)
+    mri_3d = tf.transpose(mri_3d, perm=[0, 1, 3, 2])
+    mask_4d = assemble_4d_mask(mask_3d)
 
-    # tf.print(image.shape)
-
-    image = tf.reshape(image, [224, 128, 56, 1])
-    mask = tf.reshape(mask, [224, 128, 56, 1])
-
-    mask_4d = assemble_4d_mask(mask)
-
-    image = tf.cast(image, tf.float64) / 255.0
+    mri_3d = tf.cast(mri_3d, tf.float64) / 255.0
     mask_4d = tf.cast(mask_4d, tf.float64)
 
-    return image_parts, image, mask_4d
+    return mri_3d, mask_4d
 
 
-def read_file(file_path):
-    """Reads in a file from a given file path"""
-    file_path_new = tf.strings.regex_replace(file_path, r"\\", r"/")
+def load_test_scan(mri_folder, mask_folder):
 
-    content = tf.io.read_file(file_path_new)
+    # train_path = get_data_path("CHT-Group")
+    # mri_path = os.path.join(train_path, "train", "mri", scan_folder)
+    # mask_path = os.path.join(train_path, "train", "mask", scan_folder)
 
-    image = tf.io.decode_bmp(content, channels=0)
-    image = tf.reshape(image, [224, 128, 1])
+    # tf.print(mri_path)
 
-    return image
+    mri_files = sorted(glob(os.path.join(mri_folder.numpy().decode("utf-8"), "*.bmp")))
+    mask_files = sorted(glob(os.path.join(mask_folder.numpy().decode("utf-8"), "*.bmp")))
 
+    # Load each image, resize if needed, and stack them
+    mris = [tf.image.decode_bmp(tf.io.read_file(img_file)) for img_file in mri_files]
+    masks = [tf.image.decode_bmp(tf.io.read_file(img_file)) for img_file in mask_files]
 
-def load_data(image_path, mask_path):
-    """Load in MRI slice and mask slice for train or validation datasets given their absolute paths
+    # Optionally resize images to (128, 224)
+    mris = [tf.image.resize(img, [224, 128]) for img in mris]
+    masks = [tf.image.resize(img, [224, 128]) for img in masks]
 
-    Inputs: image_path: absolute path of the .bmp file where the MRI slice is stored
-            mask_path: absolute path of the .bmp file where the mask is stored
+    # Stack images to create a (224, 128, 56) tensor
+    mri_3d = tf.stack(mris, axis=-1)
+    mask_3d = tf.stack(masks, axis=-1)
 
-    Outputs: image: tf.float64 normalized to [0, 1] of the MRI slice, size (xy_dim, xy_dim)
-             mask_3d: tf.float64 of 0s and 1s of the mask, size (xy_dim, xy_dim, 2)
-    """
+    mri_3d = tf.transpose(mri_3d, perm=[0, 1, 3, 2])
+    mask_4d = assemble_4d_mask(mask_3d)
 
-    # Define vectors of bmp slices
-    numbers = tf.range(start=1, limit=57, dtype=tf.int32)
-    slice_nums = tf.strings.as_string(numbers, width=4, fill='0')
-
-    # Remove .txt extension
-    image_parts = tf.strings.split(image_path, sep='.')[0]
-    mask_parts = tf.strings.split(mask_path, sep='.')[0]
-
-    # Combine into list of strings and load in
-    images = tf.strings.join([image_parts, "-", slice_nums, '.bmp'])
-    masks = tf.strings.join([mask_parts, "-", slice_nums, '.bmp'])
-
-    # tf.print(images)
-
-    image = tf.map_fn(read_file, images, fn_output_signature=tf.uint8)
-    mask = tf.map_fn(read_file, masks, fn_output_signature=tf.uint8)
-
-    # tf.print(image.shape)
-
-    image = tf.reshape(image, [224, 128, 56, 1])
-    mask = tf.reshape(mask, [224, 128, 56, 1])
-
-    mask_4d = assemble_4d_mask(mask)
-
-    image = tf.cast(image, tf.float64) / 255.0
+    mri_3d = tf.cast(mri_3d, tf.float64) / 255.0
     mask_4d = tf.cast(mask_4d, tf.float64)
 
-    return image, mask_4d
-
-
-def create_dataset(image_dir, mask_dir, dataset_type):
-    """Creates a tf.data.Dataset object with filenames listed
-
-    Inputs: image_dir: absolute path of mri images with wildcard for all .bmp files (e.g. "R:/.../*.bmp")
-            mask_dir: absolute path of mask images with wildcard for all .bmp files (e.g. "R:/.../*.bmp")
-            dataset_type: one of ["train", "test", "val", "validation"] corresponding to the dataset type we're creating
-
-    Outputs: dataset: tf.data.Dataset object containing filenames and mapping function for calling
-    """
-
-    # Create dataset from list of image files
-    mri = tf.data.Dataset.list_files(image_dir, shuffle=False)
-    mask = tf.data.Dataset.list_files(mask_dir, shuffle=False)
-
-    dataset = tf.data.Dataset.zip((mri, mask))
-
-    if dataset_type == 'train':
-        dataset = dataset.map(load_data)
-    elif dataset_type == 'validation' or dataset_type == 'val':
-        dataset = dataset.map(load_data)
-    elif dataset_type == 'test':
-        dataset = dataset.map(load_test_data)
-    return dataset
+    return mask_folder, mri_3d, mask_4d
 
 
 def get_dataset(batch_size, dataset_type, dataset):
     """Returns a tf.data.Dataset object given batch_size, dataset_type, and dataset selection
 
     Inputs: batch_size: (int), batch size for dataset
-            dataset_type: one of ["train", "test", "val", "validation"] corresponding to the dataset type we're creating
-            dataset: dataset flag from argparse calling, currently one of ["H", "HT"]
+            dataset_type: one of ["train", "test", "val"] corresponding to the dataset type we're creating
+            dataset: dataset flag from argparse calling, currently should be CHT-Group
 
     Outputs: dataset: tf.data.Dataset object containing filenames and mapping function for calling
     """
 
     data_path = get_data_path(dataset)
 
-    if dataset_type == 'train':
-        images_dir = os.path.join(data_path, "train", "mri")
-        mask_dir = os.path.join(data_path, "train", "mask")
-    elif dataset_type == 'test':
-        images_dir = os.path.join(data_path, "test", "mri")
-        mask_dir = os.path.join(data_path, "test", "mask")
-    elif dataset_type == 'val' or dataset_type == 'validation':
-        images_dir = os.path.join(data_path, "val", "mri")
-        mask_dir = os.path.join(data_path, "val", "mask")
-    else:
-        raise(ValueError, f"The value {dataset_type} for the variable dataset_type is not one of 'train', 'test', "
-                          f"or 'val'")
+    # MRI
+    mri_path = os.path.join(data_path, dataset_type, "mri")
+    mri_folders = sorted(
+        [os.path.join(mri_path, d) for d in os.listdir(mri_path) if os.path.isdir(os.path.join(mri_path, d))])
 
-    # Add bmp wildcard
-    images_dir = os.path.join(images_dir, "*.txt")
-    mask_dir = os.path.join(mask_dir, "*.txt")
+    # Mask
+    mask_path = os.path.join(data_path, dataset_type, "mask")
+    mask_folders = sorted(
+        [os.path.join(mask_path, d) for d in os.listdir(mask_path) if os.path.isdir(os.path.join(mask_path, d))])
 
-    # Create dataset
-    dataset = create_dataset(images_dir, mask_dir, dataset_type)
+    mri_folders_ds = tf.data.Dataset.from_tensor_slices(mri_folders)
+    mask_folders_ds = tf.data.Dataset.from_tensor_slices(mask_folders)
+
+    dataset = tf.data.Dataset.zip((mri_folders_ds, mask_folders_ds))
+
+    # Map the load_train_scan function to each pair of folders
+    if dataset_type == 'train' or dataset_type == "val":
+        dataset = dataset.map(lambda mri_folder, mask_folder: tf.py_function(
+            func=load_train_scan,
+            inp=[mri_folder, mask_folder],
+            Tout=[tf.float64, tf.float64]))
+    elif dataset_type == "test":
+        dataset = dataset.map(lambda mri_folder, mask_folder: tf.py_function(
+            func=load_test_scan,
+            inp=[mri_folder, mask_folder],
+            Tout=[tf.string, tf.float64, tf.float64]))
 
     # randomly shuffle if training
     if dataset_type == "train":
-        dataset = dataset.shuffle(buffer_size=min([tf.data.experimental.cardinality(dataset).numpy() // 2, 4000]), seed=42)
+        dataset = dataset.shuffle(buffer_size=min([tf.data.experimental.cardinality(dataset).numpy() // 4, 100]), seed=42)
 
     # Parallelize Data Loading Step
     # dataset = dataset.interleave(num_parallel_calls=tf.data.AUTOTUNE)
@@ -197,8 +151,9 @@ def get_dataset(batch_size, dataset_type, dataset):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(batch_size=batch_size, dataset_type='test', dataset="CHT")
+    dataset = get_dataset(batch_size=batch_size, dataset_type='test', dataset="CHT-Group")
     iterable = iter(dataset)
     out = next(iterable)
+    name, mri, label = out
+    print("Done")
 
-    print(out)
