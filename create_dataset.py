@@ -58,7 +58,8 @@ def load_images(dataset_name, dataset_type):
 
 def get_dataset(dataset_name, dataset_type, batch_size):
     data_path = get_data_path(dataset_name)
-    mri_path = os.listdir(os.path.join(data_path, dataset_type, "mri"))
+    mri_path = os.path.join(data_path, dataset_type, "mri")
+    subjIDs = [folder for folder in os.listdir(mri_path)]
 
     mris, masks = load_images(dataset_name, dataset_type)
 
@@ -70,7 +71,7 @@ def get_dataset(dataset_name, dataset_type, batch_size):
 
     dataset_mri = tf.data.Dataset.from_tensor_slices(tf.constant(mri_3d, dtype=tf.float32))
     dataset_mask = tf.data.Dataset.from_tensor_slices(tf.constant(mask_4d, dtype=tf.float32))
-    dataset_subj = tf.data.Dataset.list_files(mri_path)
+    dataset_subj = tf.data.Dataset.from_tensor_slices(subjIDs)
 
     if dataset_type == "train":
         dataset = tf.data.Dataset.zip((dataset_mri, dataset_mask))
@@ -111,10 +112,11 @@ def visualize_dataset(dataset, num_samples=5):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size)
+    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="test", batch_size=batch_size)
     i = iter(dataset)
     out = next(i)
-    mri, mask = out
+    subj, mri, mask = out
+    subj = subj.numpy()
     mri = mri.numpy()
     mask = mask.numpy()
     print()
