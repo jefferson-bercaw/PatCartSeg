@@ -6,5 +6,6 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
+#SBATCH --nodelist=engelhardlab-gpu-04
 
 python multiclass_segment.py
