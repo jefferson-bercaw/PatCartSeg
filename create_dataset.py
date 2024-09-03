@@ -60,18 +60,22 @@ def get_dataset(dataset_name, dataset_type, batch_size):
     mris, masks = load_images(dataset_name, dataset_type)
 
     mri_3d = mris.astype(np.float32) / 255.0
+    mri_3d = np.expand_dims(mri_3d, axis=-1)
 
     mask_4d = assemble_4d_mask(masks)
     mask_4d = mask_4d.astype(np.float32)
 
     dataset_mri = tf.data.Dataset.from_tensor_slices(tf.constant(mri_3d, dtype=tf.float32))
     dataset_mask = tf.data.Dataset.from_tensor_slices(tf.constant(mask_4d, dtype=tf.float32))
+
     dataset = tf.data.Dataset.zip((dataset_mri, dataset_mask))
 
     if dataset_type == "train":
         dataset = dataset.shuffle(buffer_size=10)
         dataset = dataset.batch(batch_size=batch_size)
         dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    else:
+        dataset = dataset.batch(batch_size=1)
     return dataset
 
 
@@ -101,3 +105,9 @@ if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
     dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size)
+    i = iter(dataset)
+    out = next(i)
+    mri, mask = out
+    mri = mri.numpy()
+    mask = mask.numpy()
+    print()
