@@ -19,19 +19,21 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 4
+        batch_size = 2
         model_depth = 4
         dropout_rate = 0.3
         epochs = 1000
         patience = 200
         min_delta = 0.0001
+        initial_learning_rate = 0.001
 
         dataset = "CHT-Group"
 
         # Build and compile model
         unet_model = build_unet(model_depth=model_depth)
+        adam_optimizer = tf.keras.optimizers.Adam(learning_rate=initial_learning_rate)
 
-        unet_model.compile(optimizer='adam',
+        unet_model.compile(optimizer=adam_optimizer,
                            loss=dice_loss,
                            metrics=[tf.keras.metrics.BinaryAccuracy(),
                                     tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
