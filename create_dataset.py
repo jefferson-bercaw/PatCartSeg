@@ -145,7 +145,9 @@ def get_dataset(batch_size, dataset_type, dataset):
     # Prefetch batch into memory at a given time
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
-    dataset = dataset.cache()
+    # Cache dataset to memory
+    # dataset = dataset.cache()
+
     return dataset
 
 
