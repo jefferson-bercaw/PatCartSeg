@@ -335,7 +335,7 @@ if __name__ == "__main__":
     predict_volumes_option = False  # Predict with network
 
     correct_volumes_option = True  # Use corrected segmentations
-    derandomize_option = False  # Derandomize the corrected segmentations
+    derandomize_option = True  # Derandomize the corrected segmentations
 
     create_point_clouds_option = True
 
