@@ -22,7 +22,7 @@ if __name__ == "__main__":
         # Hyperparameters
         batch_size = 2
         model_depth = 4
-        dropout_rate = 0.3
+        dropout_rate = 0.1
         epochs = 1000
         patience = 200
         min_delta = 0.0001
