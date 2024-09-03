@@ -332,12 +332,12 @@ def deficiency_data(scan_minus_prepost):
 
 if __name__ == "__main__":
     # Options:
-    predict_volumes_option = True  # Predict with network
+    predict_volumes_option = False  # Predict with network
 
-    correct_volumes_option = False  # Use corrected segmentations
+    correct_volumes_option = True  # Use corrected segmentations
     derandomize_option = False  # Derandomize the corrected segmentations
 
-    create_point_clouds_option = False
+    create_point_clouds_option = True
 
     # Geomagic here
 

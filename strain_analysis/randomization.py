@@ -66,7 +66,7 @@ def get_random_info(directory):
 
 def randomize(model_name):
     """This function randomizes model names into a randomized folder, and writes an excel spreadsheet out"""
-    start_path = get_data_path("Crook_Predictions")
+    start_path = get_data_path("Owusu-Akyaw_Predictions")
     directory = os.path.join(start_path, model_name)
 
     original_directory = os.path.join(start_path, model_name, "original")  # Model Predictions
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     random.seed(42)
 
     # Create Randomization #
-    start_path = get_data_path("Crook_Predictions")
+    start_path = get_data_path("Owusu-Akyaw_Predictions")
     model_name = "unet_2024-07-11_00-40-25_ctHT5"
 
     directory = os.path.join(start_path, model_name)
