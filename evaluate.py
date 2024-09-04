@@ -128,10 +128,10 @@ def save_result(scan_name, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
 
     # Save the masks as BMP files
     for i in range(pat.shape[-1]):
-        pat_img = Image.fromarray(pat[0, :, :, i, 0])
-        pat_cart_img = Image.fromarray(pat_cart[0, :, :, i, 1])
-        pat_img.save(pat_filepath + f"_{i}.bmp")
-        pat_cart_img.save(pat_cart_filepath + f"_{i}.bmp")
+        pat_img = Image.fromarray(pat[:, :, i] * 255)
+        pat_cart_img = Image.fromarray(pat_cart[:, :, i] * 255)
+        pat_img.save(pat_filepath + f"_{i:04d}.bmp")
+        pat_cart_img.save(pat_cart_filepath + f"_{i:04d}.bmp")
 
     # Save the probability masks as NPY files
     np.save(pat_prob_filepath, pat_prob)
@@ -141,8 +141,8 @@ def save_result(scan_name, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
 
 def process_true_label(label):
     label = tf.squeeze(label, axis=0)
-    pat = label[:, :, :, :, 0].numpy().astype(np.uint8)
-    pat_cart = label[:, :, :, :, 1].numpy().astype(np.uint8)
+    pat = label[:, :, :, 0].numpy().astype(np.uint8)
+    pat_cart = label[:, :, :, 1].numpy().astype(np.uint8)
     return pat, pat_cart
 
 

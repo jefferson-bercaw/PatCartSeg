@@ -24,7 +24,7 @@ if __name__ == "__main__":
         model_depth = 4
         dropout_rate = 0.1
         epochs = 2000
-        patience = 500
+        patience = 2000
         min_delta = 0.0001
         initial_learning_rate = 0.0001
 

@@ -112,7 +112,7 @@ def visualize_dataset(dataset, num_samples=5):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="test", batch_size=batch_size)
+    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="train", batch_size=batch_size)
     i = iter(dataset)
     out = next(i)
     subj, mri, mask = out
