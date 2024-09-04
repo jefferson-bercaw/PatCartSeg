@@ -8,3 +8,4 @@
 #SBATCH --exclusive
 
 python multiclass_segment.py
+python evaluate.py
