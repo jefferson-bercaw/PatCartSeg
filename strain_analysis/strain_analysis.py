@@ -205,8 +205,8 @@ def produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thicknes
     plot_thickness_array(strain_final_map, pre_scan[:10], save_location, "strain_boundaries_removed", "Strain")
 
     # Perform parametric analysis on averaged, but cropped to one set of parameters, strain map
-    # cropping_list = parameterize_cropping(strain_ptcld_avg, strain)
-    cropping_list = []
+    cropping_list = parameterize_cropping(strain_ptcld_avg, strain)
+    # cropping_list = []
     strain_map = np.concatenate((np.asarray(strain_ptcld_final.points), strain_final[:, np.newaxis]), axis=1)
 
     # save_strain_map(strain_map, "strain", f"R:\\DefratePrivate\\Bercaw\\Patella_Autoseg\\Test_Lauren\\Manual_Segmentations\\Strain\\{subj}\\{dist}mi_strain_map_{idx}.pdf")

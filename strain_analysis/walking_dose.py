@@ -179,11 +179,11 @@ def load_coordinate_arrays(scan):
     Geomagic exports in meters, so we'll convert all distances to millimeters"""
 
     # Remove .npz extension on scan, if there
-    if scan[-4:] == ".npz":
+    if scan[-4:] == ".npz" or scan[-4:] == ".txt":
         scan = scan[:-4]
 
-    filename_P = f"{get_data_path('Owusu-Akyaw_FromGeomagic')}/{scan}_P.pcd"
-    filename_PC = f"{get_data_path('Owusu-Akyaw_FromGeomagic')}/{scan}_PC.pcd"
+    filename_P = f"{get_data_path('Owusu-Akyaw_FromGeomagic')}\\{scan}_P.pcd"
+    filename_PC = f"{get_data_path('Owusu-Akyaw_FromGeomagic')}\\{scan}_PC.pcd"
 
     ptcld_P = o3d.io.read_point_cloud(filename_P)
     ptcld_PC = o3d.io.read_point_cloud(filename_PC)
@@ -316,9 +316,8 @@ def save_cropping_list(scan_name, cropping_list, save_location):
 
 def deficiency_data(scan_minus_prepost):
     """Returns the deficiency of the subject"""
-    subjs = ["CSACL020", "CSACL022", "CSACL031", "CSACL036", "CSACL052", "CSACL054", "CSACL055", "CSACL057", "CSACL059",
-             "CSACL060", "CSACL065", "CSACL066", "CSACL070"]
-    deficients = ["L", "L", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R", "L"]
+    subjs = ["CSACL004", "CSACL005", "CSACL006", "CSACL009", "CSACL011", "CSACL018", "CSACL020", "CSACL031"]
+    deficients = ["L", "R", "L", "L", "R", "R", "L", "R"]
 
     limb = scan_minus_prepost[8]
     subj = scan_minus_prepost[0:8]
@@ -337,11 +336,11 @@ if __name__ == "__main__":
     correct_volumes_option = False  # Use corrected segmentations
     derandomize_option = False  # Derandomize the corrected segmentations
 
-    create_point_clouds_option = True
+    create_point_clouds_option = False
 
     # Geomagic here
 
-    register_point_clouds_option = False
+    register_point_clouds_option = True
     visualize_registration_option = False
     visualize_strain_map_option = False
 
@@ -350,7 +349,7 @@ if __name__ == "__main__":
     batch_size = 10
     n_slices = 80
     batches_per_scan = n_slices // batch_size
-    excluded_list = ["CSACL065LT"]  # Scans excluded
+    excluded_list = ["CSACL006LTpre", "CSACL006RTpre", "CSACL006LTpost", "CSACL006RTpost"]  # Scans excluded
 
     # Predict patella and patellar cartilage volumes
     if predict_volumes_option:
@@ -472,49 +471,51 @@ if __name__ == "__main__":
         for idx in range(len(scans)):
             if idx % 2 != 0:
                 print(f"Current Scans: {scans[idx]} and {scans[idx-1]}")
-                pre_p_array, pre_pc_array = load_coordinate_arrays(scans[idx])
-                post_p_array, post_pc_array = load_coordinate_arrays(scans[idx-1])
+                if scan_criteria(scans[idx], excluded_list):
 
-                # Calculate thickness
-                pre_pc_array = calculate_thickness(pre_p_array, pre_pc_array)
-                post_pc_array = calculate_thickness(post_p_array, post_pc_array)
+                    pre_p_array, pre_pc_array = load_coordinate_arrays(scans[idx])
+                    post_p_array, post_pc_array = load_coordinate_arrays(scans[idx-1])
 
-                # Plot thickness arrays
-                plot_thickness_array(pre_pc_array, scans[idx], save_location, "thick_raw", "Thickness (mm)")
-                plot_thickness_array(post_pc_array, scans[idx - 1], save_location, "thick_raw", "Thickness (mm)")
+                    # Calculate thickness
+                    pre_pc_array = calculate_thickness(pre_p_array, pre_pc_array)
+                    post_pc_array = calculate_thickness(post_p_array, post_pc_array)
 
-                # Extract thicknesses
-                pre_thickness = pre_pc_array[:, 3]
-                post_thickness = post_pc_array[:, 3]
-                info["Change_in_Thickness"].append(np.mean(pre_thickness) - np.mean(post_thickness))
-                info["Group"].append(deficiency_data(scans[idx][0:10]))
+                    # Plot thickness arrays
+                    plot_thickness_array(pre_pc_array, scans[idx], save_location, "thick_raw", "Thickness (mm)")
+                    plot_thickness_array(post_pc_array, scans[idx - 1], save_location, "thick_raw", "Thickness (mm)")
 
-                # Remove last column on pc_arrays
-                pre_pc_array = pre_pc_array[:, :-1]
-                post_pc_array = post_pc_array[:, :-1]
+                    # Extract thicknesses
+                    pre_thickness = pre_pc_array[:, 3]
+                    post_thickness = post_pc_array[:, 3]
+                    info["Change_in_Thickness"].append(np.mean(pre_thickness) - np.mean(post_thickness))
+                    info["Group"].append(deficiency_data(scans[idx][0:10]))
 
-                # Register the patella
-                post_p_array, transform = move_patella(pre_p_array, post_p_array, output=visualize_registration_option)
+                    # Remove last column on pc_arrays
+                    pre_pc_array = pre_pc_array[:, :-1]
+                    post_pc_array = post_pc_array[:, :-1]
 
-                # Move other structures
-                post_pc_array = move_point_cloud(post_pc_array, transform)
+                    # Register the patella
+                    post_p_array, transform = move_patella(pre_p_array, post_p_array, output=visualize_registration_option)
 
-                # Create o3d point clouds
-                pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
+                    # Move other structures
+                    post_pc_array = move_point_cloud(post_pc_array, transform)
 
-                # Calculate strain map
-                strain_map, cropping_list = produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, visualize_strain_map_option, save_location, scans[idx])
-                # save_cropping_list(scans[idx][:-3], cropping_list, save_location)
+                    # Create o3d point clouds
+                    pre_pc_ptcld, post_pc_ptcld = create_point_clouds(pre_pc_array, post_pc_array)
 
-                # Calculate the strain at the middle-most point of the strain map
-                # strains = list(strain_map[:, 3])
-                # plt.hist(strains)
-                # plt.xlabel("Strain")
-                # plt.show()
+                    # Calculate strain map
+                    strain_map, cropping_list = produce_strain_map(pre_pc_ptcld, pre_thickness, post_pc_ptcld, post_thickness, visualize_strain_map_option, save_location, scans[idx])
+                    save_cropping_list(scans[idx][:-3], cropping_list, save_location)
 
-                mean_strain = np.min(strain_map[:, 3])
-                print(f"Mean strain for {scans[idx]}: {mean_strain}")
+                    # Calculate the strain at the middle-most point of the strain map
+                    # strains = list(strain_map[:, 3])
+                    # plt.hist(strains)
+                    # plt.xlabel("Strain")
+                    # plt.show()
 
-                info = scan_properties(scans[idx], scans[idx - 1], info, mean_strain)
+                    mean_strain = np.mean(strain_map[:, 3])
+                    print(f"Mean strain for {scans[idx]}: {mean_strain}")
+
+                    info = scan_properties(scans[idx], scans[idx - 1], info, mean_strain)
 
         output_plots(info)
