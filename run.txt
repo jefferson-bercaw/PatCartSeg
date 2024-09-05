@@ -6,6 +6,7 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
+#SBATCH --nodelist=dcc-gehmlab-gpu-06
 
 python multiclass_segment.py
 python evaluate.py
