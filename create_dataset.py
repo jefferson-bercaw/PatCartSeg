@@ -62,6 +62,7 @@ def get_dataset(dataset_name, dataset_type, batch_size):
     subjIDs = [folder for folder in os.listdir(mri_path)]
 
     mris, masks = load_images(dataset_name, dataset_type)
+    masks = masks.astype(np.uint8)
 
     mri_3d = mris.astype(np.float32) / 255.0
     mri_3d = np.expand_dims(mri_3d, axis=-1)
@@ -112,7 +113,7 @@ def visualize_dataset(dataset, num_samples=5):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="train", batch_size=batch_size)
+    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size)
     i = iter(dataset)
     out = next(i)
     subj, mri, mask = out
