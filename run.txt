@@ -6,10 +6,9 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
-#SBATCH --nodelist=dcc-youlab-gpu-07
 
 python multiclass_segment.py --tissue=p
-python evaluate.py
+python evaluate.py --tissue=p
 
 python multiclass_segment.py --tissue=c
-python evaluate.py
+python evaluate.py --tissue=c

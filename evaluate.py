@@ -12,6 +12,11 @@ from PIL import Image
 from unet import build_unet
 from get_data_path import get_data_path
 from augmentation import assemble_mask_volume, assemble_mri_volume, four_digit_number
+import argparse
+
+
+parser = argparse.ArgumentParser(description="Training Options")
+parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
 
 
 def get_date_and_hour():
@@ -83,14 +88,13 @@ def process_predicted_label(pred_label):
     thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
-    pat = np.squeeze(binary_data[:, :, :, :, 0])
-    pat_cart = np.squeeze(binary_data[:, :, :, :, 1])
+    # Binary predictions
+    binary_predictions = np.squeeze(binary_data)
 
     # Probability masks
-    pat_prob = np.squeeze(pred_label[:, :, :, :, 0])
-    pat_cart_prob = np.squeeze(pred_label[:, :, :, :, 1])
+    probability_predictions = np.squeeze(pred_label)
 
-    return pat, pat_cart, pat_prob, pat_cart_prob
+    return binary_predictions, probability_predictions
 
 
 def process_mri(mri):
@@ -98,52 +102,40 @@ def process_mri(mri):
     return mri
 
 
-def save_result(scan_name, date_time, pat, pat_cart, pat_prob, pat_cart_prob):
+def save_result(scan_name, date_time, pat, pat_prob, tissue):
     subj_str = scan_name.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
-    pat_filepath = os.path.join(results_filename, "pat")
-    pat_cart_filepath = os.path.join(results_filename, "pat_cart")
+    pat_filepath = os.path.join(results_filename, tissue)
 
-    pat_prob_filepath = os.path.join(results_filename, "pat_prob")
-    pat_cart_prob_filepath = os.path.join(results_filename, "pat_cart_prob")
+    pat_prob_filepath = os.path.join(results_filename, tissue+"prob")
 
     # Make directories if they don't exist
     if not os.path.exists(pat_filepath):
         os.mkdir(pat_filepath)
-    if not os.path.exists(pat_cart_filepath):
-        os.mkdir(pat_cart_filepath)
     if not os.path.exists(pat_prob_filepath):
         os.mkdir(pat_prob_filepath)
-    if not os.path.exists(pat_cart_prob_filepath):
-        os.mkdir(pat_cart_prob_filepath)
 
     filename_npy = scan_name + ".npy"
 
     pat_filepath = os.path.join(pat_filepath, subj_str)
-    pat_cart_filepath = os.path.join(pat_cart_filepath, subj_str)
     pat_prob_filepath = os.path.join(pat_prob_filepath, subj_str)
-    pat_cart_prob_filepath = os.path.join(pat_cart_prob_filepath, subj_str)
     # print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
     # Save the masks as BMP files
     for i in range(pat.shape[-1]):
         pat_img = Image.fromarray(pat[:, :, i] * 255)
-        pat_cart_img = Image.fromarray(pat_cart[:, :, i] * 255)
         pat_img.save(pat_filepath + f"_{i:04d}.bmp")
-        pat_cart_img.save(pat_cart_filepath + f"_{i:04d}.bmp")
 
     # Save the probability masks as NPY files
     np.save(pat_prob_filepath, pat_prob)
-    np.save(pat_cart_prob_filepath, pat_cart_prob)
     return
 
 
 def process_true_label(label):
     label = tf.squeeze(label, axis=0)
     pat = label[:, :, :, 0].numpy().astype(np.uint8)
-    pat_cart = label[:, :, :, 1].numpy().astype(np.uint8)
-    return pat, pat_cart
+    return pat
 
 
 def count_positives(pred, true, positives):
@@ -438,7 +430,7 @@ if __name__ == "__main__":
             plot_loss(history, results_filename, show=False)
 
             # Load in test dataset and create iterable
-            test_dataset = get_dataset(dataset_name="CHT-Group", dataset_type="test", batch_size=1)
+            test_dataset = get_dataset(dataset_name="CHT-Group", dataset_type="test", batch_size=1, tissue=parser.parse_args().tissue)
 
             iterable = iter(test_dataset)
             n_test_scans = len(test_dataset)
@@ -448,7 +440,6 @@ if __name__ == "__main__":
 
             # Count true pixels [intersection, predicted, true]
             pat_positives = [0, 0, 0]
-            pat_cart_positives = [0, 0, 0]
 
             for i in range(n_test_scans):
                 filename, mri, label = next(iterable)
@@ -456,32 +447,28 @@ if __name__ == "__main__":
                 pred_label = model.predict(mri)
 
                 mri = process_mri(mri)
-                pat, pat_cart, pat_prob, pat_cart_prob = process_predicted_label(pred_label)
-                pat_true, pat_cart_true = process_true_label(label)
+                pat, pat_prob = process_predicted_label(pred_label)
+                pat_true = process_true_label(label)
 
                 pat_positives = count_positives(pat, pat_true, pat_positives)
-                pat_cart_positives = count_positives(pat_cart, pat_cart_true, pat_cart_positives)
 
                 # Plot examples of true masks that have predictions on them
                 # plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
                 # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
                 # Output predictions
-                save_result(filename, date_time, pat, pat_cart, pat_prob, pat_cart_prob)
+                save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
 
                 # print(f"Img {i+1} of {n_test_images}")
 
             pat_dsc = calculate_dice(pat_positives)
-            pat_cart_dsc = calculate_dice(pat_cart_positives)
 
             print(f"Model: {date_time}")
+            print(f"Tissue: {parser.parse_args().tissue}")
             print(f"Patellar Dice Score: {pat_dsc}")
-            print(f"Patellar Cartilage Dice Score: {pat_cart_dsc}")
 
-            metrics = {"patellar_dice": pat_dsc,
-                       "patellar_cartilage_dice": pat_cart_dsc,
+            metrics = {"dice": pat_dsc,
                        "pat_positive_counts": pat_positives,
-                       "pat_cart_positive_counts": pat_cart_positives,
                        "positive_count_info": ["intersection", "predicted", "true"]}
 
             save_metrics(date_time, metrics)

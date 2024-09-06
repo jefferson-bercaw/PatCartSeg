@@ -24,7 +24,7 @@ if __name__ == "__main__":
         batch_size = 2
         model_depth = 4
         dropout_rate = 0.1
-        epochs = 500
+        epochs = 2000
         patience = 2000
         min_delta = 0.0001
         initial_learning_rate = 0.0001
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_name = f"unet3d_{current_time}_{dataset_name}"
+        model_name = f"unet3d-{parser.parse_args().tissue}_{current_time}_{dataset_name}"
         unet_model.save(os.path.join("models", f"{model_name}.h5"))
 
         # Save history
