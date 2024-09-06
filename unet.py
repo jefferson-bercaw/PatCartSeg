@@ -114,7 +114,7 @@ def build_unet(model_depth):
         u9 = upsample_block(u8, conv_features=f3, n_filt=4 * start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
         u10 = upsample_block(u9, conv_features=f2, n_filt=2 * start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
         u11 = upsample_block(u10, conv_features=f1, n_filt=start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
-        outputs = layers.Conv3D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u11)
+        outputs = layers.Conv3D(filters=1, kernel_size=1, padding="same", activation="sigmoid")(u11)
 
     # outputs
     unet_model = tf.keras.Model(inputs, outputs, name="U-Net")

@@ -12,6 +12,7 @@ from create_dataset import get_dataset
 
 
 parser = argparse.ArgumentParser(description="Training Options")
+parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
 
 if __name__ == "__main__":
 
@@ -43,8 +44,8 @@ if __name__ == "__main__":
                                     tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
 
         # Get datasets
-        train_dataset = get_dataset(dataset_name=dataset_name, dataset_type="train", batch_size=batch_size)
-        val_dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size)
+        train_dataset = get_dataset(dataset_name=dataset_name, dataset_type="train", batch_size=batch_size, tissue=parser.parse_args().tissue)
+        val_dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size, tissue=parser.parse_args().tissue)
 
         # Early stopping callback
         early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -70,10 +71,10 @@ if __name__ == "__main__":
 
         # Print saving model
         print(f"Saving model to {model_name}.h5")
-        print(f"Model Parameters:"
-              f"patience: {patience}"
-              f"batch_size: {batch_size}"
-              f"dropout_rate: {dropout_rate}"
-              f"max epochs: {epochs}"
-              f"epochs trained for: {len(history.history['loss'])}"
-              f"model depth: {model_depth}")
+        print(f"Model Parameters:\n"
+              f"patience: {patience}\n"
+              f"batch_size: {batch_size}\n"
+              f"dropout_rate: {dropout_rate}\n"
+              f"max epochs: {epochs}\n"
+              f"epochs trained for: {len(history.history['loss'])}\n"
+              f"model depth: {model_depth}\n")

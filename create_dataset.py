@@ -9,21 +9,21 @@ from glob import glob
 from PIL import Image
 
 
-def assemble_4d_mask(mask_3d):
+def assemble_4d_mask(mask_3d, tissue):
     """Assembles a 4D tf.Tensor of 1s and 0s pertaining to the patella and patellar cartilage
 
     Inputs: mask_3d (ndarray) of size (xy_dim, xy_dim, depth) containing 0, 1, and 2 pertaining to background, patella, and patellar cartilage, respectively
 
     Outputs: mask_4d (tf.tensor) of size (xy_dim, xy_dim, depth, 2) of 1s and 0s corresponding to P and PC
     """
-    p_mask_inds = np.equal(mask_3d, 1)
-    p = np.where(p_mask_inds, 1, 0)
-
-    pc_mask_inds = np.equal(mask_3d, 2)
-    pc = np.where(pc_mask_inds, 1, 0)
-
-    mask = np.stack([p, pc], axis=-1)
-
+    if tissue == 'p':
+        p_mask_inds = np.equal(mask_3d, 1)
+        mask = np.where(p_mask_inds, 1, 0)
+    elif tissue == 'c':
+        pc_mask_inds = np.equal(mask_3d, 2)
+        mask = np.where(pc_mask_inds, 1, 0)
+    else:
+        raise ValueError("Invalid tissue type. Choose 'p' for patella or 'c' for patellar cartilage.")
     return mask
 
 
@@ -56,7 +56,7 @@ def load_images(dataset_name, dataset_type):
     return mris, masks
 
 
-def get_dataset(dataset_name, dataset_type, batch_size):
+def get_dataset(dataset_name, dataset_type, batch_size, tissue):
     data_path = get_data_path(dataset_name)
     mri_path = os.path.join(data_path, dataset_type, "mri")
     subjIDs = [folder for folder in os.listdir(mri_path)]
@@ -67,7 +67,7 @@ def get_dataset(dataset_name, dataset_type, batch_size):
     mri_3d = mris.astype(np.float32) / 255.0
     mri_3d = np.expand_dims(mri_3d, axis=-1)
 
-    mask_4d = assemble_4d_mask(masks)
+    mask_4d = assemble_4d_mask(masks, tissue)
     mask_4d = mask_4d.astype(np.float32)
 
     dataset_mri = tf.data.Dataset.from_tensor_slices(tf.constant(mri_3d, dtype=tf.float32))
@@ -113,7 +113,8 @@ def visualize_dataset(dataset, num_samples=5):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size)
+    dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size, tissue='p')
+
     i = iter(dataset)
     out = next(i)
     subj, mri, mask = out
