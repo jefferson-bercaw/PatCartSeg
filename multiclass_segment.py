@@ -27,7 +27,7 @@ if __name__ == "__main__":
         epochs = 2000
         patience = 2000
         min_delta = 0.0001
-        initial_learning_rate = 0.0001
+        initial_learning_rate = 0.00001
 
         dataset_name = "CHT-Group"
 
