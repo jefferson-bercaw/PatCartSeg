@@ -24,6 +24,10 @@ def assemble_4d_mask(mask_3d, tissue):
         mask = np.where(pc_mask_inds, 1, 0)
     else:
         raise ValueError("Invalid tissue type. Choose 'p' for patella or 'c' for patellar cartilage.")
+
+    # Add 4th dim
+    mask = np.expand_dims(mask, axis=-1)
+
     return mask
 
 
@@ -117,8 +121,8 @@ if __name__ == '__main__':
 
     i = iter(dataset)
     out = next(i)
-    subj, mri, mask = out
-    subj = subj.numpy()
+    mri, mask = out
+    # subj = subj.numpy()
     mri = mri.numpy()
     mask = mask.numpy()
     print()
