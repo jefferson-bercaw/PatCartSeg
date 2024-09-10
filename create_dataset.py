@@ -9,6 +9,17 @@ from glob import glob
 from PIL import Image
 
 
+def isleftknee(subj):
+    """Returns true if scan is of a left knee, so we can flip about the z dim"""
+    left_scans = ["AS_042", "AS_043", "AS_044", "AS_045", "AS_046", "AS_047", "AS_098", "AS_099",
+                  "AS_102", "AS_103", "AS_106", "AS_107", "AS_110", "AS_111", "AS_114", "AS_115",
+                  "AS_118", "AS_119", "AS_122", "AS_123", "AS_126", "AS_127"]
+    if subj in left_scans:
+        return True
+    else:
+        return False
+
+
 def assemble_4d_mask(mask_3d, tissue):
     """Assembles a 4D tf.Tensor of 1s and 0s pertaining to the patella and patellar cartilage
 
@@ -53,6 +64,10 @@ def load_images(dataset_name, dataset_type):
         for j, mri_file in enumerate(mri_files):
             mri[:, :, j] = np.array(Image.open(mri_file))
             mask[:, :, j] = np.array(Image.open(mask_files[j]))
+
+        if isleftknee(subj):
+            mri = np.flip(mri, axis=-1)
+            mask = np.flip(mask, axis=-1)
 
         mris[i, :, :, :] = mri
         masks[i, :, :, :] = mask
