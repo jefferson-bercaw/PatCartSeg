@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 2
+        batch_size = 4
         model_depth = 4
         dropout_rate = 0.1
         epochs = 2000
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         min_delta = 0.0001
         initial_learning_rate = 0.00001
 
-        dataset_name = "CHT-Group"
+        dataset_name = "cHTCO-Group"
 
         # Build and compile model
         unet_model = build_unet(model_depth=model_depth)
@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
         # Get datasets
         train_dataset = get_dataset(dataset_name=dataset_name, dataset_type="train", batch_size=batch_size, tissue=parser.parse_args().tissue)
-        val_dataset = get_dataset(dataset_name="CHT-Group", dataset_type="val", batch_size=batch_size, tissue=parser.parse_args().tissue)
+        val_dataset = get_dataset(dataset_name=dataset_name, dataset_type="val", batch_size=batch_size, tissue=parser.parse_args().tissue)
 
         # Early stopping callback
         early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',

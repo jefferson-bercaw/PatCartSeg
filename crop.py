@@ -52,10 +52,11 @@ def obtain_cropping_dict():
     # Minimum pixels on either side of the box containing the label
     min_x = 12
     min_y = 25
-    min_z = 2
+    min_z = 1
 
     # Iterate through each subject
     for subject in bounds_dict.keys():
+
 
         # Size of row and col size of the structure
         row_size = bounds_dict[subject]["row_size"]
@@ -104,19 +105,23 @@ def obtain_cropping_dict():
 
     return bounds_dict
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     random.seed(42)
     bounds_dict = obtain_cropping_dict()
     # Get current dataset we're cropping
 
-    data_path = get_data_path("HT")
-    dataset_types = ["test", "train", "val"]
+    bounds_dict["AS_093"]["slice_bounds"] = [78, 118]
+    bounds_dict["AS_093"]["slice_size"] = 41
+    bounds_dict["AS_093"]["slices_list"] = [i for i in range(66, 121)]
+
+    data_path = get_data_path("HTCO")
+    dataset_types = ["train", "test", "val"]
 
     # Get saving dataset and setup
     save_data_path = get_data_path("cHTCO")
 
-    for set_type in ["train", "test", "val"]:
+    for set_type in dataset_types:
         for img_type in ["mri", "mask"]:
 
             # iterate through each image and crop
@@ -124,7 +129,6 @@ if __name__ == "__main__":
             files.sort()
 
             for idx, file in enumerate(files):
-
                 img_num = int(file.split("-")[1].split(".")[0])
 
                 if img_num == 1:
@@ -158,3 +162,5 @@ if __name__ == "__main__":
                         # Save image
                         save_images(mri_crop, os.path.join(save_data_path, set_type, img_type), save_file_name)
                     print("Saved subject ", subj_id)
+
+        print("Saved set ", set_type)
