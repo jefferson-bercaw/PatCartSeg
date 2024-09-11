@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 def perform_positional_analyses():
 
-    data_path = get_data_path("HT")
+    data_path = get_data_path("HTCO")
     dataset_types = ["test", "train", "val"]
     bounds_dict = {}
 
@@ -103,13 +103,13 @@ def perform_positional_analyses():
     # with open("results/size_info_HT.pkl", "wb") as f:
     #     pickle.dump((P_box, PC_box, box_info, P_size, PC_size, size_info), f)
 
-    with open("results/bounds_dict_HT.pkl", "wb") as f:
+    with open("results/bounds_dict_HTCO.pkl", "wb") as f:
         pickle.dump(bounds_dict, f)
 
 
 def analyze_positions():
     # Read in dict
-    with open("results/bounds_dict_HT.pkl", "rb") as f:
+    with open("results/bounds_dict_HTCO.pkl", "rb") as f:
         bounds_dict = pickle.load(f)
 
     # get row, column, and slice max sizes
@@ -152,4 +152,4 @@ def analyze_positions():
 
 if __name__ == "__main__":
     perform_positional_analyses()
-    # analyze_positions()
+    analyze_positions()

@@ -41,7 +41,7 @@ def obtain_cropping_dict():
     normally-distributed about a centered scan.
     """
 
-    with open("results/bounds_dict_HT.pkl", "rb") as f:
+    with open("results/bounds_dict_HTCO.pkl", "rb") as f:
         bounds_dict = pickle.load(f)
 
     # xy_dim of cropped image
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     dataset_types = ["test", "train", "val"]
 
     # Get saving dataset and setup
-    save_data_path = get_data_path("CHT")
+    save_data_path = get_data_path("cHTCO")
 
     for set_type in ["train", "test", "val"]:
         for img_type in ["mri", "mask"]:

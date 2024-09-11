@@ -42,6 +42,12 @@ def organize_subject_scans(scans_list):
         elif num <= 77:
             subj_num = int(np.floor((num-48) / 2)) + 9
 
+        elif num <= 97:
+            subj_num = int(np.floor((num-78) / 2)) + 24
+
+        elif num<= 129:
+            subj_num = int(np.floor((num-98) / 4)) + 34
+
         d[scan] = {
             "scan": scan,
             "scan_num": num,
@@ -97,14 +103,11 @@ if __name__ == "__main__":
     # Randomly select subjects for test and subjects for validation
     random.seed(42)
 
-    num_test_subj = 4
-    num_val_subj = 4
+    num_val_subj = 6
+    num_test_subj = 6
 
-    test_val_nums_ds1 = random.sample(range(8), 2)
-    test_val_nums_ds2 = random.sample(range(8, max_subject_num), 4)
-
-    test_subj_nums = [test_val_nums_ds1[0], test_val_nums_ds2[0], test_val_nums_ds2[1]]
-    val_subj_nums = [test_val_nums_ds1[1], test_val_nums_ds2[2], test_val_nums_ds2[3]]
+    val_subj_nums = random.sample(range(1, max_subject_num+1), num_val_subj)
+    test_subj_nums = random.sample([num for num in range(1, max_subject_num+1) if num not in val_subj_nums], num_test_subj)
 
     # Save these images in one combined folder
     train_scans = [entry["scan"] for entry in scans.values() if (entry['subject_num'] not in test_subj_nums and entry['subject_num'] not in val_subj_nums)]
@@ -112,7 +115,7 @@ if __name__ == "__main__":
     val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] in val_subj_nums]
 
     # Get destinations of where we're saving each group
-    dataset_path = get_data_path(dataset="HT")
+    dataset_path = get_data_path(dataset="HTCO")
     dest_train = dataset_path + "/train"
     dest_test = dataset_path + "/test"
     dest_val = dataset_path + "/val"
