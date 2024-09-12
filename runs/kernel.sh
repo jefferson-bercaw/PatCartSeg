@@ -1,7 +1,5 @@
 #!/bin/sh
 
-NODE_NAME=$1
-
 #SBATCH --output=./outputs/%A_%a_slurm.out
 #SBATCH --error=./errors/%A_%a_slurm.err
 #SBATCH --nodes=1
@@ -9,7 +7,7 @@ NODE_NAME=$1
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
-#SBATCH --nodelist=$NODE_NAME
+#SBATCH --nodelist=dcc-allenlab-gpu-06
 
 python multiclass_segment.py --tissue=p --kernel=3
 python evaluate.py --tissue=p
