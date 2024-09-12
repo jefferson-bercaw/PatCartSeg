@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 import pickle
 import argparse
+import pandas as pd
 
 from unet import build_unet
 from dice_loss_function import dice_loss
@@ -19,6 +20,14 @@ parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate for
 parser.add_argument("--kernel", type=int, default=3, help="Kernel size for convolutional layers.")
 parser.add_argument("--epochs", type=int, default=1000, help="Maximum number of epochs to train for.")
 args = parser.parse_args()
+
+
+def save_model_info(model_info):
+    """Write to an excel spreadsheet that already exists"""
+    df = pd.DataFrame([model_info])
+    with pd.ExcelWriter(os.path.join(os.getcwd(), "results", "3d_gridsearch.xlsx"), mode='a', if_sheet_exists='overlay') as writer:
+        df.to_excel(writer, index=False, header=False, startrow=writer.sheets["Sheet1"].max_row)
+
 
 if __name__ == "__main__":
 
@@ -84,3 +93,14 @@ if __name__ == "__main__":
               f"max epochs: {epochs}\n"
               f"epochs trained for: {len(history.history['loss'])}\n"
               f"model depth: {model_depth}\n")
+
+        model_info = {"model_name": model_name,
+                      "patience": patience,
+                      "batch_size": batch_size,
+                      "kernel_size": kernel_size,
+                      "learning_rate": initial_learning_rate,
+                      "dropout_rate": dropout_rate,
+                      "max_epochs": epochs,
+                      "epochs_trained_for": len(history.history['loss']),
+                      "model_depth": model_depth}
+        save_model_info(model_info)
