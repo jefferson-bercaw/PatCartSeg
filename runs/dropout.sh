@@ -11,26 +11,26 @@ NODE_NAME=$1
 #SBATCH --exclusive
 #SBATCH --nodelist=$NODE_NAME
 
-python multiclass_segment.py --tissue=p --depth=3
+python multiclass_segment.py --tissue=p --dropout=0.1
 python evaluate.py --tissue=p
 
-python multiclass_segment.py --tissue=p --depth=4
+python multiclass_segment.py --tissue=p --dropout=0.2
 python evaluate.py --tissue=p
 
-python multiclass_segment.py --tissue=p --depth=5
+python multiclass_segment.py --tissue=p --dropout=0.3
 python evaluate.py --tissue=p
 
-python multiclass_segment.py --tissue=p --depth=6
+python multiclass_segment.py --tissue=p --dropout=0.4
 python evaluate.py --tissue=p
 
-python multiclass_segment.py --tissue=c --depth=3
+python multiclass_segment.py --tissue=c --dropout=0.1
 python evaluate.py --tissue=c
 
-python multiclass_segment.py --tissue=c --depth=4
+python multiclass_segment.py --tissue=c --dropout=0.2
 python evaluate.py --tissue=c
 
-python multiclass_segment.py --tissue=c --depth=5
+python multiclass_segment.py --tissue=c --dropout=0.3
 python evaluate.py --tissue=c
 
-python multiclass_segment.py --tissue=c --depth=6
+python multiclass_segment.py --tissue=c --dropout=0.4
 python evaluate.py --tissue=c
