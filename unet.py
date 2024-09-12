@@ -25,9 +25,11 @@ def downsample_block(lyr, n_filt, kernel_size, dropout_rate):
     return f, p
 
 
-
 def upsample_block(lyr, conv_features, n_filt, kernel_size, dropout_rate):
     lyr = layers.Conv3DTranspose(n_filt, kernel_size, 2, padding="same")(lyr)
+    if lyr.shape[3] != conv_features.shape[3]:
+        to_add = conv_features.shape[3] - lyr.shape[3]
+        lyr = layers.ZeroPadding3D(padding=((0, 0), (0, 0), (0, to_add)))(lyr)
     lyr = layers.concatenate([lyr, conv_features])
     lyr = layers.Dropout(dropout_rate)(lyr)
     lyr = double_conv_block(lyr, n_filt, kernel_size)
@@ -120,5 +122,5 @@ def build_unet(model_depth, dropout_rate, kernel_size):
 
 
 if __name__ == "__main__":
-    unet_model = build_unet(model_depth=4)
+    unet_model = build_unet(model_depth=4, dropout_rate=0.1, kernel_size=5)
     unet_model.summary()

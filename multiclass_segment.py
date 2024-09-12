@@ -10,7 +10,6 @@ from unet import build_unet
 from dice_loss_function import dice_loss
 from create_dataset import get_dataset
 
-
 parser = argparse.ArgumentParser(description="Training Options")
 parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
 parser.add_argument("--learningrate", type=float, default=0.00001, help="Initial learning rate for Adam optimizer.")
@@ -18,7 +17,7 @@ parser.add_argument("--batch", type=int, default=2, help="Batch size for trainin
 parser.add_argument("--depth", type=int, default=4, help="Depth of U-Net model.")
 parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate for U-Net model.")
 parser.add_argument("--kernel", type=int, default=3, help="Kernel size for convolutional layers.")
-
+parser.add_argument("--epochs", type=int, default=1000, help="Maximum number of epochs to train for.")
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -31,9 +30,9 @@ if __name__ == "__main__":
         batch_size = args.batch
         model_depth = args.depth
         dropout_rate = args.dropout
-        epochs = 1000
-        patience = 1000
-        min_delta = 0.0001
+        epochs = args.epochs
+        patience = args.epochs // 2
+        min_delta = 0.001
         initial_learning_rate = args.learningrate
         kernel_size = args.kernel
         dataset_name = "cHTCO-Group"
