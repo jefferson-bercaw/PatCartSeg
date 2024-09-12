@@ -13,6 +13,13 @@ from create_dataset import get_dataset
 
 parser = argparse.ArgumentParser(description="Training Options")
 parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
+parser.add_argument("--learningrate", type=float, default=0.00001, help="Initial learning rate for Adam optimizer.")
+parser.add_argument("--batch", type=int, default=2, help="Batch size for training.")
+parser.add_argument("--depth", type=int, default=4, help="Depth of U-Net model.")
+parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate for U-Net model.")
+parser.add_argument("--kernel", type=int, default=3, help="Kernel size for convolutional layers.")
+
+args = parser.parse_args()
 
 if __name__ == "__main__":
 
@@ -21,18 +28,18 @@ if __name__ == "__main__":
 
     with strategy.scope():
         # Hyperparameters
-        batch_size = 2
-        model_depth = 4
-        dropout_rate = 0.1
-        epochs = 2000
-        patience = 2000
+        batch_size = args.batch
+        model_depth = args.depth
+        dropout_rate = args.dropout
+        epochs = 1000
+        patience = 1000
         min_delta = 0.0001
-        initial_learning_rate = 0.00001
-
+        initial_learning_rate = args.learningrate
+        kernel_size = args.kernel
         dataset_name = "cHTCO-Group"
 
         # Build and compile model
-        unet_model = build_unet(model_depth=model_depth)
+        unet_model = build_unet(model_depth=model_depth, dropout_rate=dropout_rate, kernel_size=3)
         adam_optimizer = tf.keras.optimizers.Adam(learning_rate=initial_learning_rate)
 
         unet_model.compile(optimizer=adam_optimizer,

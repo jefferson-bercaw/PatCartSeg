@@ -34,11 +34,9 @@ def upsample_block(lyr, conv_features, n_filt, kernel_size, dropout_rate):
     return lyr
 
 
-def build_unet(model_depth):
+def build_unet(model_depth, dropout_rate, kernel_size):
     # inputs
     inputs = layers.Input(shape=(224, 128, 56, 1))  # Adjusted input shape
-    dropout_rate = 0.3
-    kernel_size = 3
 
     if model_depth == 3:
         start_filt = 128
