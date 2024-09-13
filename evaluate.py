@@ -11,8 +11,10 @@ from dice_loss_function import dice_loss
 from PIL import Image
 from unet import build_unet
 from get_data_path import get_data_path
+from multiclass_segment import save_model_info
 from augmentation import assemble_mask_volume, assemble_mri_volume, four_digit_number
 import argparse
+import pandas as pd
 
 
 parser = argparse.ArgumentParser(description="Training Options")
@@ -470,5 +472,8 @@ if __name__ == "__main__":
             metrics = {"dice": pat_dsc,
                        "pat_positive_counts": pat_positives,
                        "positive_count_info": ["intersection", "predicted", "true"]}
+
+            save_model_info({"model_name": date_time,
+                             "dice": pat_dsc})
 
             save_metrics(date_time, metrics)
