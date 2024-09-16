@@ -7,7 +7,7 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
-#SBATCH --nodelist=dcc-allenlab-gpu-03
+#SBATCH --nodelist=dcc-allenlab-gpu-04
 
 python multiclass_segment.py --dataset=cHTCO-Group5Z --tissue=p --batch=2 --epochs=500
 python evaluate.py --tissue=p
