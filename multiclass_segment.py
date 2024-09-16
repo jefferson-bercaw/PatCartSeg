@@ -44,7 +44,7 @@ if __name__ == "__main__":
         min_delta = 0.001
         initial_learning_rate = args.learningrate
         kernel_size = args.kernel
-        dataset_name = "cHTCO-Group"
+        dataset_name = "cHTCO-Group5"
 
         # Build and compile model
         unet_model = build_unet(model_depth=model_depth, dropout_rate=dropout_rate, kernel_size=3)
