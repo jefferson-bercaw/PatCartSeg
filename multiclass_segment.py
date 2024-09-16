@@ -12,6 +12,7 @@ from dice_loss_function import dice_loss
 from create_dataset import get_dataset
 
 parser = argparse.ArgumentParser(description="Training Options")
+parser.add_argument("--dataset", type=str, default="cHTCO-Group", help="Dataset to train on.")
 parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
 parser.add_argument("--learningrate", type=float, default=0.00001, help="Initial learning rate for Adam optimizer.")
 parser.add_argument("--batch", type=int, default=2, help="Batch size for training.")
@@ -40,11 +41,11 @@ if __name__ == "__main__":
         model_depth = args.depth
         dropout_rate = args.dropout
         epochs = args.epochs
+        dataset_name = args.dataset
         patience = args.epochs // 2
         min_delta = 0.001
         initial_learning_rate = args.learningrate
         kernel_size = args.kernel
-        dataset_name = "cHTCO-Group5"
 
         # Build and compile model
         unet_model = build_unet(model_depth=model_depth, dropout_rate=dropout_rate, kernel_size=3)
