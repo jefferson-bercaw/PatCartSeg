@@ -23,12 +23,3 @@ python evaluate.py --tissue=p
 
 python multiclass_segment.py --tissue=c --kernel=3 --batch=1
 python evaluate.py --tissue=c
-
-python multiclass_segment.py --tissue=c --kernel=5 --batch=1
-python evaluate.py --tissue=c
-
-python multiclass_segment.py --tissue=c --kernel=7 --batch=1
-python evaluate.py --tissue=c
-
-python multiclass_segment.py --tissue=c --kernel=9 --batch=1
-python evaluate.py --tissue=c
