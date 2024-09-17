@@ -10,3 +10,5 @@ results
 augmentation
 /checkpoints/
 /strain_analysis/point_clouds.pkl
+/strain_analysis/geomagic/
+/.idea/
