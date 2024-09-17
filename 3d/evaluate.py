@@ -1,20 +1,24 @@
-import matplotlib.colors
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import pickle
 import os
 import matplotlib.pyplot as plt
-from create_dataset import get_dataset
+import argparse
 import datetime
+import sys
+import pandas as pd
+
+# Add the main directory to the system path
+main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(main_dir)
+
+from create_dataset import get_dataset
 from dice_loss_function import dice_loss
 from PIL import Image
-from unet import build_unet
 from get_data_path import get_data_path
 from multiclass_segment import save_model_info
 from augmentation import assemble_mask_volume, assemble_mri_volume, four_digit_number
-import argparse
-import pandas as pd
 
 
 parser = argparse.ArgumentParser(description="Training Options")

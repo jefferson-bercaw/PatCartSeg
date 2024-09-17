@@ -6,6 +6,11 @@ import numpy as np
 import pickle
 import argparse
 import pandas as pd
+import sys
+
+# Add the main directory to the system path
+main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(main_dir)
 
 from unet import build_unet
 from dice_loss_function import dice_loss
