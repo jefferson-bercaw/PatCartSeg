@@ -9,6 +9,8 @@
 #SBATCH --exclusive
 #SBATCH --nodelist=dcc-allenlab-gpu-07
 
+cd 3d
+
 python multiclass_segment.py --tissue=p --learningrate=0.01
 python evaluate.py --tissue=p
 

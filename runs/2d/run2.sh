@@ -9,6 +9,8 @@
 #SBATCH --exclusive
 #SBATCH --nodelist=dcc-majoroslab-gpu-01
 
+cd 3d
+
 python multiclass_segment.py --dataset=cHTCO-Group5 --tissue=p --batch=2 --epochs=500
 python evaluate.py --tissue=p
 
