@@ -78,11 +78,11 @@ if __name__ == "__main__":
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         model_name = f"unet3d-{parser.parse_args().tissue}_{current_time}_{dataset_name}"
-        unet_model.save(os.path.join("models", f"{model_name}.h5"))
+        unet_model.save(os.path.join("../models", f"{model_name}.h5"))
 
         # Save history
         hist_name = f"{model_name}.pkl"
-        with open(os.path.join("history", hist_name), "wb") as f:
+        with open(os.path.join("../history", hist_name), "wb") as f:
             pickle.dump(history.history, f)
 
         # Print saving model

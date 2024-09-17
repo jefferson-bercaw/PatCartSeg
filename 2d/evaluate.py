@@ -1,4 +1,3 @@
-import matplotlib.colors
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
@@ -9,13 +8,10 @@ from create_dataset import get_dataset
 import datetime
 from dice_loss_function import dice_loss
 from PIL import Image
-from unet import build_unet
 from get_data_path import get_data_path
 from multiclass_segment import save_model_info
 from augmentation import assemble_mask_volume, assemble_mri_volume, four_digit_number
 import argparse
-import pandas as pd
-
 
 parser = argparse.ArgumentParser(description="Training Options")
 parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
@@ -90,13 +86,12 @@ def process_predicted_label(pred_label):
     thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
-    # Binary predictions
-    binary_predictions = np.squeeze(binary_data)
+    pat = np.squeeze(binary_data[:, :, :, 0])
 
     # Probability masks
-    probability_predictions = np.squeeze(pred_label)
+    pat_prob = np.squeeze(pred_label[:, :, :, 0])
 
-    return binary_predictions, probability_predictions
+    return pat, pat_prob
 
 
 def process_mri(mri):
@@ -104,12 +99,11 @@ def process_mri(mri):
     return mri
 
 
-def save_result(scan_name, date_time, pat, pat_prob, tissue):
-    subj_str = scan_name.numpy()[0].decode()
+def save_result(filename, date_time, pat, pat_prob, tissue):
+    slice_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
     pat_filepath = os.path.join(results_filename, tissue)
-
     pat_prob_filepath = os.path.join(results_filename, tissue+"prob")
 
     # Make directories if they don't exist
@@ -118,16 +112,15 @@ def save_result(scan_name, date_time, pat, pat_prob, tissue):
     if not os.path.exists(pat_prob_filepath):
         os.mkdir(pat_prob_filepath)
 
-    filename_npy = scan_name + ".npy"
+    filename_npy = slice_str.split(".")[0] + ".npy"
 
-    pat_filepath = os.path.join(pat_filepath, subj_str)
-    pat_prob_filepath = os.path.join(pat_prob_filepath, subj_str)
+    pat_filepath = os.path.join(pat_filepath, slice_str)
+    pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
     # print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
-    # Save the masks as BMP files
-    for i in range(pat.shape[-1]):
-        pat_img = Image.fromarray(pat[:, :, i] * 255)
-        pat_img.save(pat_filepath + f"_{i:04d}.bmp")
+    # Save Image
+    pat_img = Image.fromarray(pat * 255)
+    pat_img.save(pat_filepath + slice_str)
 
     # Save the probability masks as NPY files
     np.save(pat_prob_filepath, pat_prob)
@@ -136,7 +129,7 @@ def save_result(scan_name, date_time, pat, pat_prob, tissue):
 
 def process_true_label(label):
     label = tf.squeeze(label, axis=0)
-    pat = label[:, :, :, 0].numpy().astype(np.uint8)
+    pat = label[:, :, 0].numpy().astype(np.uint8)
     return pat
 
 

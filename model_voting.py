@@ -1,6 +1,5 @@
 import numpy as np
 import os
-from get_data_path import get_data_path
 import scipy
 from PIL import Image
 from create_dataset import get_dataset

@@ -1,14 +1,11 @@
 # This script analyzes the data from Paranjape et al. 2020
 import numpy as np
 import os
-import pickle
 import tensorflow as tf
-import itertools
 import open3d as o3d
 import matplotlib.pyplot as plt
 from PIL import Image
 
-from dice_loss_function import dice_loss
 from get_data_path import get_data_path
 from evaluate import load_model
 from point_clouds import get_coordinate_arrays, calculate_thickness
