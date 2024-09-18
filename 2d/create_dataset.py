@@ -89,7 +89,6 @@ def get_dataset(dataset_name, dataset_type, batch_size, tissue):
     masks = masks.astype(np.uint8)
 
     mri_3d = mris.astype(np.float32) / 255.0
-    mri_3d = np.expand_dims(mri_3d, axis=-1)
 
     mask_3d = assemble_3d_mask(masks, tissue)
     mask_3d = mask_3d.astype(np.float32)
