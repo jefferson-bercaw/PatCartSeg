@@ -9,7 +9,7 @@
 #SBATCH --exclusive
 #SBATCH --nodelist=dcc-allenlab-gpu-06
 
-cd 3d
+cd 2d
 
 python multiclass_segment.py --tissue=p --epochs=500
 python evaluate.py --tissue=p

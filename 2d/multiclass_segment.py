@@ -17,14 +17,14 @@ from dice_loss_function import dice_loss
 from create_dataset import get_dataset
 
 parser = argparse.ArgumentParser(description="Training Options")
-parser.add_argument("--dataset", type=str, default="cHT-Group", help="Dataset to train on.")
+parser.add_argument("--dataset", type=str, default="cHTCO-Group", help="Dataset to train on.")
 parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
 parser.add_argument("--learningrate", type=float, default=0.0001, help="Initial learning rate for Adam optimizer.")
-parser.add_argument("--batch", type=int, default=36, help="Batch size for training.")
+parser.add_argument("--batch", type=int, default=32, help="Batch size for training.")
 parser.add_argument("--depth", type=int, default=4, help="Depth of U-Net model.")
 parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate for U-Net model.")
 parser.add_argument("--kernel", type=int, default=3, help="Kernel size for convolutional layers.")
-parser.add_argument("--epochs", type=int, default=1000, help="Maximum number of epochs to train for.")
+parser.add_argument("--epochs", type=int, default=500, help="Maximum number of epochs to train for.")
 args = parser.parse_args()
 
 
