@@ -58,7 +58,7 @@ def build_unet(model_depth, dropout_rate, kernel_size):
         # decoder
         u4 = upsample_block(bottleneck, conv_features=f2, n_filt=2 * start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
         u5 = upsample_block(u4, conv_features=f1, n_filt=start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
-        outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u5)
+        outputs = layers.Conv2D(filters=1, kernel_size=1, padding="same", activation="sigmoid")(u5)
 
     elif model_depth == 4:
 
@@ -76,7 +76,7 @@ def build_unet(model_depth, dropout_rate, kernel_size):
         u5 = upsample_block(bottleneck, conv_features=f3, n_filt=4 * start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
         u6 = upsample_block(u5, conv_features=f2, n_filt=2 * start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
         u7 = upsample_block(u6, conv_features=f1, n_filt=start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
-        outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u7)
+        outputs = layers.Conv2D(filters=1, kernel_size=1, padding="same", activation="sigmoid")(u7)
 
     elif model_depth == 5:
 
@@ -96,7 +96,7 @@ def build_unet(model_depth, dropout_rate, kernel_size):
         u7 = upsample_block(u6, conv_features=f3, n_filt=4*start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
         u8 = upsample_block(u7, conv_features=f2, n_filt=2*start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
         u9 = upsample_block(u8, conv_features=f1, n_filt=start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
-        outputs = layers.Conv2D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u9)
+        outputs = layers.Conv2D(filters=1, kernel_size=1, padding="same", activation="sigmoid")(u9)
 
     elif model_depth == 6:
 

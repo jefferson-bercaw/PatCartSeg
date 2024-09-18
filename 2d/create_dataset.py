@@ -141,7 +141,9 @@ if __name__ == '__main__':
     i = iter(dataset)
     out = next(i)
     img_name, mri, mask = out
-    # subj = subj.numpy()
+    img_name = img_name.numpy()
+
+    # mri, mask = out
     mri = mri.numpy()
     mask = mask.numpy()
     print()

@@ -32,13 +32,15 @@ def get_date_and_hour():
 def get_history_filename(date_time):
     # Add extension
     date_time = date_time + ".pkl"
-    history_filename = os.path.abspath(os.path.join('history', date_time))
+    main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    history_filename = os.path.abspath(os.path.join(main_dir, 'history', date_time))
     return history_filename
 
 
 def get_model_filename(date_time):
     date_time = date_time + ".h5"
-    model_filename = os.path.abspath(os.path.join('models', date_time))
+    main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    model_filename = os.path.abspath(os.path.join(main_dir, 'models', date_time))
     return model_filename
 
 
@@ -342,8 +344,8 @@ def return_volumes(subj_name, model_name):
     dataset_name = parse_dataset_name(model_name)
 
     # Point to predictions
-    cwd = os.getcwd()
-    pred_folder = os.path.join(cwd, "results", model_name)
+    main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    pred_folder = os.path.join(main_dir, "results", model_name)
     p_pred_folder = os.path.join(pred_folder, "pat")
     pc_pred_folder = os.path.join(pred_folder, "pat_cart")
 

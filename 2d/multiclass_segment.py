@@ -17,7 +17,7 @@ from dice_loss_function import dice_loss
 from create_dataset import get_dataset
 
 parser = argparse.ArgumentParser(description="Training Options")
-parser.add_argument("--dataset", type=str, default="cHTCO-Group", help="Dataset to train on.")
+parser.add_argument("--dataset", type=str, default="cHT-Group", help="Dataset to train on.")
 parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
 parser.add_argument("--learningrate", type=float, default=0.0001, help="Initial learning rate for Adam optimizer.")
 parser.add_argument("--batch", type=int, default=36, help="Batch size for training.")
