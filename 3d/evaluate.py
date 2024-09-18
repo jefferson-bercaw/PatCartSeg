@@ -376,7 +376,9 @@ def return_volumes(subj_name, model_name):
 
 def get_most_recent_model():
     folder_path = os.getcwd()
-    model_path = os.path.join(folder_path, 'models')
+    parent_dir = os.path.abspath(os.path.join(folder_path, os.pardir))
+
+    model_path = os.path.join(parent_dir, 'models')
 
     models = os.listdir(model_path)
 

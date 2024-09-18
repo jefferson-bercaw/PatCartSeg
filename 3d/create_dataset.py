@@ -43,7 +43,10 @@ def assemble_4d_mask(mask_3d, tissue):
 
 
 def load_images(dataset_name, dataset_type):
+    print(f"Loading in {dataset_name}")
+
     data_path = get_data_path(dataset_name)
+
 
     mri_path = os.path.join(data_path, dataset_type, "mri")
     mask_path = os.path.join(data_path, dataset_type, "mask")
@@ -53,7 +56,6 @@ def load_images(dataset_name, dataset_type):
     masks = np.zeros((len(subjs), 224, 128, 56))
 
     for i, subj in enumerate(subjs):
-        print(f"Loading in {subj}")
 
         mri_files = sorted(glob(os.path.join(mri_path, subj, '*.bmp')))
         mask_files = sorted(glob(os.path.join(mask_path, subj, '*.bmp')))
@@ -72,6 +74,7 @@ def load_images(dataset_name, dataset_type):
         mris[i, :, :, :] = mri
         masks[i, :, :, :] = mask
 
+    print(f"{dataset_name} loaded!")
     return mris, masks
 
 

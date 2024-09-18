@@ -31,7 +31,9 @@ args = parser.parse_args()
 def save_model_info(model_info):
     """Write to an excel spreadsheet that already exists"""
     df = pd.DataFrame([model_info])
-    with pd.ExcelWriter(os.path.join(os.getcwd(), "results", "2d_gridsearch.xlsx"), mode='a', if_sheet_exists='overlay') as writer:
+    folder_path = os.getcwd()
+    parent_dir = os.path.abspath(os.path.join(folder_path, os.pardir))
+    with pd.ExcelWriter(os.path.join(parent_dir, "results", "2d_gridsearch.xlsx"), mode='a', if_sheet_exists='overlay') as writer:
         df.to_excel(writer, index=False, header=False, startrow=writer.sheets["Sheet1"].max_row)
 
 

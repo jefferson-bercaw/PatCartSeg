@@ -36,9 +36,6 @@ def assemble_3d_mask(mask_3d, tissue):
     else:
         raise ValueError("Invalid tissue type. Choose 'p' for patella or 'c' for patellar cartilage.")
 
-    # Add 4th dim
-    mask = np.expand_dims(mask, axis=-1)
-
     return mask
 
 
