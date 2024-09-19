@@ -450,7 +450,7 @@ if __name__ == "__main__":
             for i in range(n_test_scans):
                 filename, mri, label = next(iterable)
 
-                pred_label = model.predict(mri)
+                pred_label = model.predict(mri, verbose=0)
 
                 mri = process_mri(mri)
                 pat, pat_prob = process_predicted_label(pred_label)
