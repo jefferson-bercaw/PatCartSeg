@@ -78,11 +78,18 @@ if __name__ == "__main__":
                                                                    min_delta=min_delta,
                                                                    verbose=1)
 
+
+        class PerformanceCallback(tf.keras.callbacks.Callback):
+            def on_epoch_end(self, epoch, logs=None):
+                if (epoch + 1) % 10 == 0:
+                    print(f"Epoch {epoch + 1}: Loss = {logs['loss']:.4f}, Accuracy = {logs.get('accuracy', 'N/A'):.4f}")
+
         # Train model
         history = unet_model.fit(train_dataset,
                                  epochs=epochs,
-                                 callbacks=early_stopping_callback,
-                                 validation_data=val_dataset)
+                                 callbacks=[early_stopping_callback, PerformanceCallback()],
+                                 validation_data=val_dataset,
+                                 verbose=0)
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
