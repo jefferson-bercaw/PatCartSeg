@@ -82,7 +82,9 @@ if __name__ == "__main__":
         class PerformanceCallback(tf.keras.callbacks.Callback):
             def on_epoch_end(self, epoch, logs=None):
                 if (epoch + 1) % 10 == 0:
-                    print(f"Epoch {epoch + 1}: Loss = {logs['loss']:.4f}, Accuracy = {logs.get('accuracy', 'N/A'):.4f}")
+                    loss = logs.get('loss')
+                    val_loss = logs.get('val_loss')
+                    print(f"Epoch {epoch + 1} - Loss: {loss:.4f}, Validation Loss: {val_loss:.4f}")
 
         # Train model
         history = unet_model.fit(train_dataset,
