@@ -10,8 +10,8 @@
 
 cd 2d
 
-python multiclass_segment.py --tissue=p --epochs=10
+python multiclass_segment.py --tissue=p --dataset=cHTCO-Group5
 python evaluate.py --tissue=p
 
-python multiclass_segment.py --tissue=c --epochs=10
+python multiclass_segment.py --tissue=c --dataset=cHTCO-Group5
 python evaluate.py --tissue=c

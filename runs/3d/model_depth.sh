@@ -7,30 +7,12 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
-#SBATCH --nodelist=dcc-allenlab-gpu-04
+#SBATCH --nodelist=dcc-allenlab-gpu-08
 
 cd 3d
 
 python multiclass_segment.py --tissue=p --depth=3
 python evaluate.py --tissue=p
 
-python multiclass_segment.py --tissue=p --depth=4
-python evaluate.py --tissue=p
-
-python multiclass_segment.py --tissue=p --depth=5
-python evaluate.py --tissue=p
-
-python multiclass_segment.py --tissue=p --depth=6
-python evaluate.py --tissue=p
-
 python multiclass_segment.py --tissue=c --depth=3
-python evaluate.py --tissue=c
-
-python multiclass_segment.py --tissue=c --depth=4
-python evaluate.py --tissue=c
-
-python multiclass_segment.py --tissue=c --depth=5
-python evaluate.py --tissue=c
-
-python multiclass_segment.py --tissue=c --depth=6
 python evaluate.py --tissue=c
