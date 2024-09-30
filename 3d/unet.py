@@ -57,7 +57,7 @@ def build_unet(model_depth, dropout_rate, kernel_size):
         u5 = upsample_block(u4, conv_features=f1, n_filt=start_filt, kernel_size=kernel_size, dropout_rate=dropout_rate)
         print(u5.shape)
 
-        outputs = layers.Conv3D(filters=2, kernel_size=1, padding="same", activation="sigmoid")(u5)  # Output shape: (256, 256, 70, 2)
+        outputs = layers.Conv3D(filters=1, kernel_size=1, padding="same", activation="sigmoid")(u5)  # Output shape: (256, 256, 70, 2)
 
     elif model_depth == 4:
         start_filt = 64
