@@ -7,6 +7,7 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
+#SBATCH --nodelist=dcc-majoroslab-gpu-04
 
 cd 2d
 
