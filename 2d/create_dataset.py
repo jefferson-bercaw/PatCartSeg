@@ -75,6 +75,7 @@ def load_images(dataset_name, dataset_type):
 
 
 def get_dataset(dataset_name, dataset_type, batch_size, tissue):
+    print(f"Getting dataset {dataset_name} for {dataset_type} set")
     data_path = get_data_path(dataset_name)
     mri_path = os.path.join(data_path, dataset_type, "mri")
 
@@ -85,7 +86,9 @@ def get_dataset(dataset_name, dataset_type, batch_size, tissue):
         image_names_here = os.listdir(os.path.join(mri_path, subjIDs[i]))
         image_names.extend(image_names_here)
 
+    print(f"Loading {dataset_name} images for {dataset_type} set")
     mris, masks = load_images(dataset_name, dataset_type)
+    print(f"LOADED {dataset_name} images for {dataset_type} set")
     masks = masks.astype(np.uint8)
 
     mri_3d = mris.astype(np.float32) / 255.0
