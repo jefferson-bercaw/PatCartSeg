@@ -139,7 +139,7 @@ def visualize_dataset(dataset, num_samples=5):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 1
-    dataset = get_dataset(dataset_name="cHT-Group", dataset_type="test", batch_size=batch_size, tissue='p')
+    dataset = get_dataset(dataset_name="cHTCO-Group5", dataset_type="train", batch_size=batch_size, tissue='p')
 
     i = iter(dataset)
     out = next(i)
