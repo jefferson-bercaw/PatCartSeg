@@ -38,94 +38,93 @@ def save_model_info(model_info):
 
 
 if __name__ == "__main__":
-    with{'layout_optimizer': False}:  # Disable layout optimization to prevent a bug with Mirrored
-        print("Starting training script code")
-        # Main directory
-        main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    print("Starting training script code")
+    # Main directory
+    main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
-        # GPUs
-        strategy = tf.distribute.MirroredStrategy()
+    # GPUs
+    strategy = tf.distribute.MirroredStrategy()
 
-        with strategy.scope():
-            # Hyperparameters
-            batch_size = args.batch
-            model_depth = args.depth
-            dropout_rate = args.dropout
-            epochs = args.epochs
-            dataset_name = args.dataset
-            patience = args.epochs // 2
-            min_delta = 0.001
-            initial_learning_rate = args.learningrate
-            kernel_size = args.kernel
+    with strategy.scope():
+        # Hyperparameters
+        batch_size = args.batch
+        model_depth = args.depth
+        dropout_rate = args.dropout
+        epochs = args.epochs
+        dataset_name = args.dataset
+        patience = args.epochs // 2
+        min_delta = 0.001
+        initial_learning_rate = args.learningrate
+        kernel_size = args.kernel
 
-            # Build and compile model
-            unet_model = build_unet(model_depth=model_depth, dropout_rate=dropout_rate, kernel_size=3)
-            adam_optimizer = tf.keras.optimizers.Adam(learning_rate=initial_learning_rate)
+        # Build and compile model
+        unet_model = build_unet(model_depth=model_depth, dropout_rate=dropout_rate, kernel_size=3)
+        adam_optimizer = tf.keras.optimizers.Adam(learning_rate=initial_learning_rate)
 
-            unet_model.compile(optimizer=adam_optimizer,
-                               loss=dice_loss,
-                               metrics=[tf.keras.metrics.BinaryAccuracy(),
-                                        tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
-                                        tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
-                                        tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),
-                                        tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
+        unet_model.compile(optimizer=adam_optimizer,
+                           loss=dice_loss,
+                           metrics=[tf.keras.metrics.BinaryAccuracy(),
+                                    tf.keras.metrics.FalsePositives(thresholds=0.5, name='FP'),
+                                    tf.keras.metrics.FalseNegatives(thresholds=0.5, name='FN'),
+                                    tf.keras.metrics.TruePositives(thresholds=0.5, name='TP'),
+                                    tf.keras.metrics.TrueNegatives(thresholds=0.5, name='TN')])
 
-            # Get datasets
-            train_dataset = get_dataset(dataset_name=dataset_name, dataset_type="train", batch_size=batch_size, tissue=parser.parse_args().tissue)
-            val_dataset = get_dataset(dataset_name=dataset_name, dataset_type="val", batch_size=batch_size, tissue=parser.parse_args().tissue)
+        # Get datasets
+        train_dataset = get_dataset(dataset_name=dataset_name, dataset_type="train", batch_size=batch_size, tissue=parser.parse_args().tissue)
+        val_dataset = get_dataset(dataset_name=dataset_name, dataset_type="val", batch_size=batch_size, tissue=parser.parse_args().tissue)
 
-            # Early stopping callback
-            early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
-                                                                       patience=patience,
-                                                                       min_delta=min_delta,
-                                                                       verbose=1)
+        # Early stopping callback
+        early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                                   patience=patience,
+                                                                   min_delta=min_delta,
+                                                                   verbose=1)
 
 
-            class PerformanceCallback(tf.keras.callbacks.Callback):
-                def on_epoch_end(self, epoch, logs=None):
-                    if (epoch + 1) % 10 == 0:
-                        loss = logs.get('loss')
-                        val_loss = logs.get('val_loss')
-                        print(f"Epoch {epoch + 1} - Loss: {loss:.4f}, Validation Loss: {val_loss:.4f}")
+        class PerformanceCallback(tf.keras.callbacks.Callback):
+            def on_epoch_end(self, epoch, logs=None):
+                if (epoch + 1) % 10 == 0:
+                    loss = logs.get('loss')
+                    val_loss = logs.get('val_loss')
+                    print(f"Epoch {epoch + 1} - Loss: {loss:.4f}, Validation Loss: {val_loss:.4f}")
 
-            # Train model
-            history = unet_model.fit(train_dataset,
-                                     epochs=epochs,
-                                     callbacks=[early_stopping_callback, PerformanceCallback()],
-                                     validation_data=val_dataset,
-                                     verbose=0)
+        # Train model
+        history = unet_model.fit(train_dataset,
+                                 epochs=epochs,
+                                 callbacks=[early_stopping_callback, PerformanceCallback()],
+                                 validation_data=val_dataset,
+                                 verbose=0)
 
-            # Save model
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            model_name = f"unet2d-{parser.parse_args().tissue}_{current_time}_{dataset_name}"
+        # Save model
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        model_name = f"unet2d-{parser.parse_args().tissue}_{current_time}_{dataset_name}"
 
-            unet_model.save(os.path.join(main_dir, "models", f"{model_name}.h5"))
+        unet_model.save(os.path.join(main_dir, "models", f"{model_name}.h5"))
 
-            # Save history
-            hist_name = f"{model_name}.pkl"
-            with open(os.path.join(main_dir, "history", hist_name), "wb") as f:
-                pickle.dump(history.history, f)
+        # Save history
+        hist_name = f"{model_name}.pkl"
+        with open(os.path.join(main_dir, "history", hist_name), "wb") as f:
+            pickle.dump(history.history, f)
 
-            # Print saving model
-            print(f"Saving model to {model_name}.h5")
-            print(f"Model Parameters:\n"
-                  f"patience: {patience}\n"
-                  f"learning_rate: {initial_learning_rate}\n"
-                  f"kernel_size: {kernel_size}\n"
-                  f"batch_size: {batch_size}\n"
-                  f"dropout_rate: {dropout_rate}\n"
-                  f"max epochs: {epochs}\n"
-                  f"epochs trained for: {len(history.history['loss'])}\n"
-                  f"model depth: {model_depth}\n")
+        # Print saving model
+        print(f"Saving model to {model_name}.h5")
+        print(f"Model Parameters:\n"
+              f"patience: {patience}\n"
+              f"learning_rate: {initial_learning_rate}\n"
+              f"kernel_size: {kernel_size}\n"
+              f"batch_size: {batch_size}\n"
+              f"dropout_rate: {dropout_rate}\n"
+              f"max epochs: {epochs}\n"
+              f"epochs trained for: {len(history.history['loss'])}\n"
+              f"model depth: {model_depth}\n")
 
-            model_info = {"model_name": model_name,
-                          "patience": patience,
-                          "batch_size": batch_size,
-                          "kernel_size": kernel_size,
-                          "learning_rate": initial_learning_rate,
-                          "dropout_rate": dropout_rate,
-                          "max_epochs": epochs,
-                          "epochs_trained_for": len(history.history['loss']),
-                          "model_depth": model_depth}
+        model_info = {"model_name": model_name,
+                      "patience": patience,
+                      "batch_size": batch_size,
+                      "kernel_size": kernel_size,
+                      "learning_rate": initial_learning_rate,
+                      "dropout_rate": dropout_rate,
+                      "max_epochs": epochs,
+                      "epochs_trained_for": len(history.history['loss']),
+                      "model_depth": model_depth}
 
-            save_model_info(model_info)
+        save_model_info(model_info)
