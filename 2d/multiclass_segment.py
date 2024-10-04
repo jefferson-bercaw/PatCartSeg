@@ -96,7 +96,7 @@ if __name__ == "__main__":
                                  epochs=epochs,
                                  callbacks=[early_stopping_callback, PerformanceCallback()],
                                  validation_data=val_dataset,
-                                 verbose=0)
+                                 verbose=1)
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
