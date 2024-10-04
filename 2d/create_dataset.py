@@ -97,8 +97,8 @@ def get_dataset(dataset_name, dataset_type, batch_size, tissue):
     mask_3d = mask_3d.astype(np.float32)
 
     # NHWC to NCHW hardcoding
-    mri_3d = np.transpose(mri_3d, (0, 3, 1, 2))
-    mask_3d = np.transpose(mask_3d, (0, 3, 1, 2))
+    # mri_3d = np.transpose(mri_3d, (0, 3, 1, 2))
+    # mask_3d = np.transpose(mask_3d, (0, 3, 1, 2))
 
     dataset_mri = tf.data.Dataset.from_tensor_slices(tf.constant(mri_3d, dtype=tf.float32))
     dataset_mask = tf.data.Dataset.from_tensor_slices(tf.constant(mask_3d, dtype=tf.float32))
