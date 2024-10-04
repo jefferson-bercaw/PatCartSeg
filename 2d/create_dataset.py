@@ -37,7 +37,7 @@ def assemble_3d_mask(mask_3d, tissue):
         raise ValueError("Invalid tissue type. Choose 'p' for patella or 'c' for patellar cartilage.")
 
     # Try NHWC to NCHW conversion
-    mask = np.reshape(mask, (2, 0, 1))
+    mask = np.transpose(mask, (2, 0, 1))
 
     return mask
 
@@ -97,7 +97,7 @@ def get_dataset(dataset_name, dataset_type, batch_size, tissue):
     mri_3d = mris.astype(np.float32) / 255.0
 
     # Reshape to NHWC
-    mri_3d = np.reshape(mri_3d, (2, 0, 1))
+    mri_3d = np.transpose(mri_3d, (2, 0, 1))
 
     mask_3d = assemble_3d_mask(masks, tissue)
     mask_3d = mask_3d.astype(np.float32)
