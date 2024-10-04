@@ -38,6 +38,9 @@ def save_model_info(model_info):
 
 
 if __name__ == "__main__":
+
+    tf.config.optimizer.set_experimental_options({"layout_optimizer": False})
+
     # Main directory
     main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
