@@ -10,6 +10,6 @@
 #SBATCH --nodelist=dcc-allenlab-gpu-10
 
 cd 2d
-
+echo "Starting training script"
 python multiclass_segment.py --tissue=p --dataset=cHTCO-Group5
 python evaluate.py --tissue=p
