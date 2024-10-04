@@ -36,6 +36,9 @@ def assemble_3d_mask(mask_3d, tissue):
     else:
         raise ValueError("Invalid tissue type. Choose 'p' for patella or 'c' for patellar cartilage.")
 
+    # Try NHWC to NCHW conversion
+    mask = np.reshape(mask, (2, 0, 1))
+
     return mask
 
 
@@ -93,6 +96,9 @@ def get_dataset(dataset_name, dataset_type, batch_size, tissue):
 
     mri_3d = mris.astype(np.float32) / 255.0
 
+    # Reshape to NHWC
+    mri_3d = np.reshape(mri_3d, (2, 0, 1))
+
     mask_3d = assemble_3d_mask(masks, tissue)
     mask_3d = mask_3d.astype(np.float32)
 
@@ -139,7 +145,7 @@ def visualize_dataset(dataset, num_samples=5):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 1
-    dataset = get_dataset(dataset_name="cHTCO-Group5", dataset_type="train", batch_size=batch_size, tissue='p')
+    dataset = get_dataset(dataset_name="cHTCO-Group5", dataset_type="test", batch_size=batch_size, tissue='p')
 
     i = iter(dataset)
     out = next(i)

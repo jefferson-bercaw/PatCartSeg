@@ -13,3 +13,9 @@ cd 2d
 
 python multiclass_segment.py --tissue=p --dataset=cHTCO-Group5
 python evaluate.py --tissue=p
+python multiclass_segment.py --tissue=c --dataset=cHTCO-Group5
+python evaluate.py --tissue=c
+python multiclass_segment.py --tissue=p --dataset=cHTCO-Group5Z
+python evaluate.py --tissue=p
+python multiclass_segment.py --tissue=c --dataset=cHTCO-Group5Z
+python evaluate.py --tissue=c

@@ -126,5 +126,5 @@ def build_unet(model_depth, dropout_rate, kernel_size):
 
 
 if __name__ == "__main__":
-    unet_model = build_unet(model_depth=6, dropout_rate=0.1, kernel_size=3)
+    unet_model = build_unet(model_depth=4, dropout_rate=0.1, kernel_size=3)
     unet_model.summary()
