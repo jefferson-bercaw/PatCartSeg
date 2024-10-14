@@ -4,7 +4,6 @@ import numpy as np
 import pickle
 import os
 import matplotlib.pyplot as plt
-import argparse
 import datetime
 import sys
 import pandas as pd
@@ -19,9 +18,6 @@ from PIL import Image
 from get_data_path import get_data_path
 from multiclass_segment import save_model_info
 from augmentation import assemble_mask_volume, assemble_mri_volume, four_digit_number
-
-parser = argparse.ArgumentParser(description="Training Options")
-parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
 
 
 def get_date_and_hour():
@@ -164,10 +160,6 @@ def save_metrics(date_time, metrics):
 
 
 def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filename, image_filename, tissue):
-    # Define colors for ground truth and predicted masks
-    gt_color = 'blue'
-    pred_color = 'red'
-
     # Create figure and axes
     fig, ax = plt.subplots()
 
@@ -175,28 +167,32 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filen
     ax.imshow(mri_image, cmap='gray')
 
     # Overlay ground truth mask
-    alpha_gt = np.where(ground_truth_mask == 1, 0.4, 0)  # Set alpha based on mask values
-    ax.imshow(ground_truth_mask, cmap='Blues', alpha=alpha_gt)
+    agreement = np.where(np.logical_and(ground_truth_mask == 1, predicted_mask == 1), 1, 0)
+    predicted_orange = np.where(np.logical_and(ground_truth_mask == 0, predicted_mask == 1), 1, 0)
+    manual_cyan = np.where(np.logical_and(ground_truth_mask == 1, predicted_mask == 0), 1, 0)
 
-    # Overlay predicted mask
-    alpha_pred = np.where(predicted_mask == 1, 0.4, 0)  # Set alpha based on mask values
-    ax.imshow(predicted_mask, cmap='Reds', alpha=alpha_pred)
+    agree_mask = np.where(agreement == 1, 0.4, 0)
+    pred_mask = np.where(predicted_orange == 1, 0.4, 0)
+    manual_mask = np.where(manual_cyan == 1, 0.4, 0)
 
-    # Create legend
-    legend_handles = [
-        plt.Rectangle((0, 0), 1, 1, color=gt_color, alpha=0.5, label='Ground Truth'),
-        plt.Rectangle((0, 0), 1, 1, color=pred_color, alpha=0.5, label='Predicted')
-    ]
-    ax.legend(handles=legend_handles, loc='upper right')
+    ax.imshow(agree_mask, cmap='Greens', alpha=agree_mask)
+    ax.imshow(predicted_orange, cmap='Wistia', alpha=pred_mask)
+    ax.imshow(manual_cyan, cmap='cool', alpha=manual_mask)
 
     # Saving figure
-    image_filename = image_filename.numpy()[0].decode()
-    plot_filename = os.path.join(comp_filename, tissue)
+    save_path = get_data_path(" ").split(os.path.sep)[0:-1]
+    save_path = os.path.sep.join(save_path)
+    save_path = os.path.join(save_path, "results", date_time)
 
-    if not os.path.exists(plot_filename):
-        os.mkdir(plot_filename)
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
 
-    plot_filename = os.path.join(plot_filename, image_filename)
+    save_path = os.path.join(save_path, "examples")
+
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+
+    plot_filename = os.path.join(save_path, comp_filename)
 
     # Go to .png format
     plot_filename = plot_filename[:-3] + "png"
@@ -413,12 +409,14 @@ if __name__ == "__main__":
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # # date_time pattern to identify model we just trained
-        date_times = get_most_recent_model()
-        # date_times = ["unet_2024-07-11_00-40-25_ctHT5"]
+        # date_times = get_most_recent_model()
+        date_times = ["unet2d-c_2024-10-12_07-52-44_cHTCO-Group5", "unet2d-p_2024-10-10_09-34-58_cHTCO-Group5"]
 
         for date_time in date_times:
 
             dataset_name = parse_dataset_name(date_time)
+
+            tissue = date_time[7]
 
             # plot_mri_with_both_masks("AS_006", date_time)
 
@@ -436,7 +434,7 @@ if __name__ == "__main__":
             plot_loss(history, results_filename, show=False)
 
             # Load in test dataset and create iterable
-            test_dataset = get_dataset(dataset_name="CHT-Group", dataset_type="test", batch_size=1, tissue=parser.parse_args().tissue)
+            test_dataset = get_dataset(dataset_name="cHTCO-Group", dataset_type="test", batch_size=1, tissue=tissue)
 
             iterable = iter(test_dataset)
             n_test_scans = len(test_dataset)
@@ -449,6 +447,7 @@ if __name__ == "__main__":
 
             for i in range(n_test_scans):
                 filename, mri, label = next(iterable)
+                filename = filename.numpy()[0].decode()
 
                 pred_label = model.predict(mri, verbose=0)
 
@@ -459,18 +458,18 @@ if __name__ == "__main__":
                 pat_positives = count_positives(pat, pat_true, pat_positives)
 
                 # Plot examples of true masks that have predictions on them
-                # plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
+                plot_mri_with_masks(mri, pat_true, pat, filename, filename, tissue=tissue)
                 # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
                 # Output predictions
-                save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
+                # save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
 
                 # print(f"Img {i+1} of {n_test_images}")
 
             pat_dsc = calculate_dice(pat_positives)
 
             print(f"Model: {date_time}")
-            print(f"Tissue: {parser.parse_args().tissue}")
+            print(f"Tissue: {tissue}")
             print(f"Patellar Dice Score: {pat_dsc}")
 
             metrics = {"dice": pat_dsc,
