@@ -10,7 +10,6 @@
 #SBATCH --nodelist=dcc-allenlab-gpu-12
 
 cd 3d
-
 python multiclass_segment.py --dataset=cHTCO-Group5 --tissue=c
 python evaluate.py --tissue=c
 
