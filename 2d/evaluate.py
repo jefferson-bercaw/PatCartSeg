@@ -422,76 +422,74 @@ if __name__ == "__main__":
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # # date_time pattern to identify model we just trained
-        # date_times = get_most_recent_model()
-        date_times = get_all_models_containing("unet2d")
-        taskID = int(os.environ['SLURM_ARRAY_TASK_ID'])
-        date_time = date_times[taskID]
-        # for date_time in date_times:
+        date_times = get_most_recent_model()
 
-        dataset_name = parse_dataset_name(date_time)
+        for date_time in date_times:
 
-        tissue = date_time[7]
+            dataset_name = parse_dataset_name(date_time)
 
-        # plot_mri_with_both_masks("AS_006", date_time)
+            tissue = date_time[7]
 
-        print(f"Evaluating model {date_time}")
+            # plot_mri_with_both_masks("AS_006", date_time)
 
-        # Get results filename
-        results_filename = get_results_filename(date_time)
-        prep_results_filepath(results_filename)
-        print(f"Saving results to {results_filename}")
+            print(f"Evaluating model {date_time}")
 
-        # get the history and model
-        history, model = get_hist_and_model(date_time)
+            # Get results filename
+            results_filename = get_results_filename(date_time)
+            prep_results_filepath(results_filename)
+            print(f"Saving results to {results_filename}")
 
-        # Create training curves from model and save them to the results filename
-        plot_loss(history, results_filename, show=False)
+            # get the history and model
+            history, model = get_hist_and_model(date_time)
 
-        # Load in test dataset and create iterable
-        test_dataset = get_dataset(dataset_name="cHTCO-Group", dataset_type="test", batch_size=1, tissue=tissue)
+            # Create training curves from model and save them to the results filename
+            plot_loss(history, results_filename, show=False)
 
-        iterable = iter(test_dataset)
-        n_test_scans = len(test_dataset)
+            # Load in test dataset and create iterable
+            test_dataset = get_dataset(dataset_name=dataset_name, dataset_type="test", batch_size=1, tissue=tissue)
 
-        # Get comparison plots filename
-        # comp_filename = get_comparison_plot_filename(date_time)
+            iterable = iter(test_dataset)
+            n_test_scans = len(test_dataset)
 
-        # Count true pixels [intersection, predicted, true]
-        pat_positives = [0, 0, 0]
+            # Get comparison plots filename
+            # comp_filename = get_comparison_plot_filename(date_time)
 
-        for i in range(n_test_scans):
-            filename, mri, label = next(iterable)
-            filename = filename.numpy()[0].decode()
+            # Count true pixels [intersection, predicted, true]
+            pat_positives = [0, 0, 0]
 
-            pred_label = model.predict(mri, verbose=0)
+            for i in range(n_test_scans):
+                filename, mri, label = next(iterable)
+                filename = filename.numpy()[0].decode()
 
-            mri = process_mri(mri)
-            pat, pat_prob = process_predicted_label(pred_label)
-            pat_true = process_true_label(label)
+                pred_label = model.predict(mri, verbose=0)
 
-            pat_positives = count_positives(pat, pat_true, pat_positives)
+                mri = process_mri(mri)
+                pat, pat_prob = process_predicted_label(pred_label)
+                pat_true = process_true_label(label)
 
-            # Plot examples of true masks that have predictions on them
-            if i < 56:
-                plot_mri_with_masks(mri, pat_true, pat, filename, filename, tissue=tissue)
-            # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
+                pat_positives = count_positives(pat, pat_true, pat_positives)
 
-            # Output predictions
-            # save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
+                # Plot examples of true masks that have predictions on them
+                if i < 56:
+                    plot_mri_with_masks(mri, pat_true, pat, filename, filename, tissue=tissue)
+                # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
-            # print(f"Img {i+1} of {n_test_images}")
+                # Output predictions
+                # save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
 
-        pat_dsc = calculate_dice(pat_positives)
+                # print(f"Img {i+1} of {n_test_images}")
 
-        print(f"Model: {date_time}")
-        print(f"Tissue: {tissue}")
-        print(f"Patellar Dice Score: {pat_dsc}")
+            pat_dsc = calculate_dice(pat_positives)
 
-        metrics = {"dice": pat_dsc,
-                   "pat_positive_counts": pat_positives,
-                   "positive_count_info": ["intersection", "predicted", "true"]}
+            print(f"Model: {date_time}")
+            print(f"Tissue: {tissue}")
+            print(f"Patellar Dice Score: {pat_dsc}")
 
-        save_model_info({"model_name": date_time,
-                         "dice": pat_dsc})
+            metrics = {"dice": pat_dsc,
+                       "pat_positive_counts": pat_positives,
+                       "positive_count_info": ["intersection", "predicted", "true"]}
 
-        save_metrics(date_time, metrics)
+            save_model_info({"model_name": date_time,
+                             "dice": pat_dsc})
+
+            save_metrics(date_time, metrics)
