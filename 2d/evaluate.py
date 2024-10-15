@@ -403,6 +403,19 @@ def plot_loss(history, results_filename, show=False):
         plt.show()
 
 
+def get_all_models_containing(substring):
+    save_path = get_data_path(" ").split(os.path.sep)[0:-1]
+    save_path = os.path.sep.join(save_path)
+    model_path = os.path.join(save_path, "models")
+    models = os.listdir(model_path)
+
+    date_times = list()
+    for model in models:
+        if substring in model:
+            date_times.append(model)
+    return date_times
+
+
 if __name__ == "__main__":
 
     # Mirrored strategy
@@ -410,73 +423,75 @@ if __name__ == "__main__":
     with strategy.scope():
         # # date_time pattern to identify model we just trained
         # date_times = get_most_recent_model()
-        date_times = ["unet2d-c_2024-10-12_07-52-44_cHTCO-Group5", "unet2d-p_2024-10-10_09-34-58_cHTCO-Group5"]
+        date_times = get_all_models_containing("unet2d")
+        taskID = int(os.environ['SLURM_ARRAY_TASK_ID'])
+        date_time = date_times[taskID]
+        # for date_time in date_times:
 
-        for date_time in date_times:
+        dataset_name = parse_dataset_name(date_time)
 
-            dataset_name = parse_dataset_name(date_time)
+        tissue = date_time[7]
 
-            tissue = date_time[7]
+        # plot_mri_with_both_masks("AS_006", date_time)
 
-            # plot_mri_with_both_masks("AS_006", date_time)
+        print(f"Evaluating model {date_time}")
 
-            print(f"Evaluating model {date_time}")
+        # Get results filename
+        results_filename = get_results_filename(date_time)
+        prep_results_filepath(results_filename)
+        print(f"Saving results to {results_filename}")
 
-            # Get results filename
-            results_filename = get_results_filename(date_time)
-            prep_results_filepath(results_filename)
-            print(f"Saving results to {results_filename}")
+        # get the history and model
+        history, model = get_hist_and_model(date_time)
 
-            # get the history and model
-            history, model = get_hist_and_model(date_time)
+        # Create training curves from model and save them to the results filename
+        plot_loss(history, results_filename, show=False)
 
-            # Create training curves from model and save them to the results filename
-            plot_loss(history, results_filename, show=False)
+        # Load in test dataset and create iterable
+        test_dataset = get_dataset(dataset_name="cHTCO-Group", dataset_type="test", batch_size=1, tissue=tissue)
 
-            # Load in test dataset and create iterable
-            test_dataset = get_dataset(dataset_name="cHTCO-Group", dataset_type="test", batch_size=1, tissue=tissue)
+        iterable = iter(test_dataset)
+        n_test_scans = len(test_dataset)
 
-            iterable = iter(test_dataset)
-            n_test_scans = len(test_dataset)
+        # Get comparison plots filename
+        # comp_filename = get_comparison_plot_filename(date_time)
 
-            # Get comparison plots filename
-            # comp_filename = get_comparison_plot_filename(date_time)
+        # Count true pixels [intersection, predicted, true]
+        pat_positives = [0, 0, 0]
 
-            # Count true pixels [intersection, predicted, true]
-            pat_positives = [0, 0, 0]
+        for i in range(n_test_scans):
+            filename, mri, label = next(iterable)
+            filename = filename.numpy()[0].decode()
 
-            for i in range(n_test_scans):
-                filename, mri, label = next(iterable)
-                filename = filename.numpy()[0].decode()
+            pred_label = model.predict(mri, verbose=0)
 
-                pred_label = model.predict(mri, verbose=0)
+            mri = process_mri(mri)
+            pat, pat_prob = process_predicted_label(pred_label)
+            pat_true = process_true_label(label)
 
-                mri = process_mri(mri)
-                pat, pat_prob = process_predicted_label(pred_label)
-                pat_true = process_true_label(label)
+            pat_positives = count_positives(pat, pat_true, pat_positives)
 
-                pat_positives = count_positives(pat, pat_true, pat_positives)
-
-                # Plot examples of true masks that have predictions on them
+            # Plot examples of true masks that have predictions on them
+            if i < 56:
                 plot_mri_with_masks(mri, pat_true, pat, filename, filename, tissue=tissue)
-                # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
+            # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
-                # Output predictions
-                # save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
+            # Output predictions
+            # save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
 
-                # print(f"Img {i+1} of {n_test_images}")
+            # print(f"Img {i+1} of {n_test_images}")
 
-            pat_dsc = calculate_dice(pat_positives)
+        pat_dsc = calculate_dice(pat_positives)
 
-            print(f"Model: {date_time}")
-            print(f"Tissue: {tissue}")
-            print(f"Patellar Dice Score: {pat_dsc}")
+        print(f"Model: {date_time}")
+        print(f"Tissue: {tissue}")
+        print(f"Patellar Dice Score: {pat_dsc}")
 
-            metrics = {"dice": pat_dsc,
-                       "pat_positive_counts": pat_positives,
-                       "positive_count_info": ["intersection", "predicted", "true"]}
+        metrics = {"dice": pat_dsc,
+                   "pat_positive_counts": pat_positives,
+                   "positive_count_info": ["intersection", "predicted", "true"]}
 
-            save_model_info({"model_name": date_time,
-                             "dice": pat_dsc})
+        save_model_info({"model_name": date_time,
+                         "dice": pat_dsc})
 
-            save_metrics(date_time, metrics)
+        save_metrics(date_time, metrics)
