@@ -418,7 +418,7 @@ def get_all_models_containing(substring):
     date_times = list()
     for model in models:
         if substring in model:
-            date_times.append(model)
+            date_times.append(model[:-3])
     return date_times
 
 
