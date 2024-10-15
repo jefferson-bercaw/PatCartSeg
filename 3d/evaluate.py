@@ -428,7 +428,8 @@ if __name__ == "__main__":
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # # date_time pattern to identify model we just trained
-        date_times = get_most_recent_model()
+        # date_times = get_most_recent_model()
+        date_times = get_all_models_containing("unet3d")
         taskID = int(os.environ['SLURM_ARRAY_TASK_ID'])
         date_time = date_times[taskID]
         # date_times = ["unet_2024-07-11_00-40-25_ctHT5"]
