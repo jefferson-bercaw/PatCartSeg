@@ -103,8 +103,8 @@ if __name__ == "__main__":
     # Randomly select subjects for test and subjects for validation
     random.seed(42)
 
-    num_val_subj = 6
-    num_test_subj = 6
+    num_val_subj = 5
+    num_test_subj = 5
 
     val_subj_nums = random.sample(range(1, max_subject_num+1), num_val_subj)
     test_subj_nums = random.sample([num for num in range(1, max_subject_num+1) if num not in val_subj_nums], num_test_subj)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     val_scans = [entry["scan"] for entry in scans.values() if entry['subject_num'] in val_subj_nums]
 
     # Get destinations of where we're saving each group
-    dataset_path = get_data_path(dataset="HTCO")
+    dataset_path = get_data_path(dataset="HTO")
     dest_train = dataset_path + "/train"
     dest_test = dataset_path + "/test"
     dest_val = dataset_path + "/val"
