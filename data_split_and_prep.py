@@ -98,7 +98,10 @@ if __name__ == "__main__":
 
     # Get Subject IDs from each scan
     scans = organize_subject_scans(scans_list)
-    max_subject_num = max(entry['subject_num'] for entry in scans.values())
+    subj_nums = [entry["subject_num"] for entry in scans.values()]
+
+    # Remove duplicates in subj_nums
+    subj_nums = list(set(subj_nums))
 
     # Randomly select subjects for test and subjects for validation
     random.seed(42)
@@ -106,8 +109,8 @@ if __name__ == "__main__":
     num_val_subj = 5
     num_test_subj = 5
 
-    val_subj_nums = random.sample(range(1, max_subject_num+1), num_val_subj)
-    test_subj_nums = random.sample([num for num in range(1, max_subject_num+1) if num not in val_subj_nums], num_test_subj)
+    val_subj_nums = random.sample(range(1, len(subj_nums)), num_val_subj)
+    test_subj_nums = random.sample([num for num in range(1, len(subj_nums)) if num not in val_subj_nums], num_test_subj)
 
     # Save these images in one combined folder
     train_scans = [entry["scan"] for entry in scans.values() if (entry['subject_num'] not in test_subj_nums and entry['subject_num'] not in val_subj_nums)]
@@ -116,9 +119,9 @@ if __name__ == "__main__":
 
     # Get destinations of where we're saving each group
     dataset_path = get_data_path(dataset="HTO")
-    dest_train = dataset_path + "/train"
-    dest_test = dataset_path + "/test"
-    dest_val = dataset_path + "/val"
+    dest_train = dataset_path + os.path.sep + "train"
+    dest_test = dataset_path + os.path.sep + "test"
+    dest_val = dataset_path + os.path.sep + "val"
 
     for scan in scans.keys():
 
