@@ -430,12 +430,13 @@ if __name__ == "__main__":
         # # date_time pattern to identify model we just trained
         date_times = get_most_recent_model()
 
+        tissue = date_times[0][7]
+        dataset_name = parse_dataset_name(date_times[0])
+
+        date_times.append([f"unet3d-{tissue}_8888-88-88_88-88-88_{dataset_name}"])
         # date_times = ["unet_2024-07-11_00-40-25_ctHT5"]
 
         for date_time in date_times:
-
-            dataset_name = parse_dataset_name(date_time)
-            tissue = date_time[7]
 
             # plot_mri_with_both_masks("AS_006", date_time)
 

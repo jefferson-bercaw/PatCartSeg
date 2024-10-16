@@ -47,7 +47,6 @@ def load_images(dataset_name, dataset_type):
 
     data_path = get_data_path(dataset_name)
 
-
     mri_path = os.path.join(data_path, dataset_type, "mri")
     mask_path = os.path.join(data_path, dataset_type, "mask")
 
@@ -135,7 +134,7 @@ def visualize_dataset(dataset, num_samples=5):
 if __name__ == '__main__':
     # Hyperparameters
     batch_size = 4
-    dataset = get_dataset(dataset_name="cHTCO-Group", dataset_type="val", batch_size=batch_size, tissue='p')
+    dataset = get_dataset(dataset_name="cHTO-Group", dataset_type="val", batch_size=batch_size, tissue='p')
 
     i = iter(dataset)
     out = next(i)

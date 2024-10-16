@@ -81,11 +81,28 @@ if __name__ == "__main__":
                                                                    min_delta=min_delta,
                                                                    verbose=1)
 
+        class PerformanceCallback(tf.keras.callbacks.Callback):
+            def __init__(self):
+                super(PerformanceCallback, self).__init__()
+                self.best_val_loss = float('inf')
+
+            def on_epoch_end(self, epoch, logs=None):
+                if (epoch + 1) % 10 == 0:
+                    loss = logs.get('loss')
+                    val_loss = logs.get('val_loss')
+                    print(f"Epoch {epoch + 1} - Loss: {loss:.4f}, Validation Loss: {val_loss:.4f}")
+                if val_loss < self.best_val_loss:
+                    self.best_val_loss = val_loss
+                    print("Saving model!")
+                    self.model.save(os.path.join(main_dir, "models", f"unet3d-{parser.parse_args().tissue}_8888-88-88_88-88-88_{dataset_name}.h5"))
+
+        print("Training!")
         # Train model
         history = unet_model.fit(train_dataset,
                                  epochs=epochs,
-                                 callbacks=early_stopping_callback,
-                                 validation_data=val_dataset)
+                                 callbacks=[early_stopping_callback, PerformanceCallback()],
+                                 validation_data=val_dataset,
+                                 verbose=2)
 
         # Save model
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
