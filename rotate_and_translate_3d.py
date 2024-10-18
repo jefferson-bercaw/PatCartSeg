@@ -104,17 +104,17 @@ def rotate_volumes(mri_vol, mask_vol, rot):
     z_rot = np.random.uniform(-rot, rot)
 
     # Rotate only about Z axis
-    rot_mri = scipy.ndimage.rotate(mri_vol, x_rot, axes=(0, 1), reshape=False, order=3, mode='constant', cval=0, prefilter=False)
-    rot_mask = scipy.ndimage.rotate(mask_vol, x_rot, axes=(0, 1), reshape=False, order=0, mode='constant', cval=0, prefilter=False)
+    # rot_mri = scipy.ndimage.rotate(mri_vol, x_rot, axes=(0, 1), reshape=False, order=3, mode='constant', cval=0, prefilter=False)
+    # rot_mask = scipy.ndimage.rotate(mask_vol, x_rot, axes=(0, 1), reshape=False, order=0, mode='constant', cval=0, prefilter=False)
 
     # Rotate MRI and mask volumes about all 3 axes
-    # rot_mri = scipy.ndimage.rotate(mri_vol, x_rot, axes=(0, 1), reshape=False, order=3, mode='constant', cval=0, prefilter=False)
-    # rot_mri = scipy.ndimage.rotate(rot_mri, y_rot, axes=(0, 2), reshape=False, order=3, mode='constant', cval=0, prefilter=False)
-    # rot_mri = scipy.ndimage.rotate(rot_mri, z_rot, axes=(1, 2), reshape=False, order=3, mode='constant', cval=0, prefilter=False)
-    #
-    # rot_mask = scipy.ndimage.rotate(mask_vol, x_rot, axes=(0, 1), reshape=False, order=0, mode='constant', cval=0, prefilter=False)
-    # rot_mask = scipy.ndimage.rotate(rot_mask, y_rot, axes=(0, 2), reshape=False, order=0, mode='constant', cval=0, prefilter=False)
-    # rot_mask = scipy.ndimage.rotate(rot_mask, z_rot, axes=(1, 2), reshape=False, order=0, mode='constant', cval=0, prefilter=False)
+    rot_mri = scipy.ndimage.rotate(mri_vol, x_rot, axes=(0, 1), reshape=False, order=3, mode='constant', cval=0, prefilter=False)
+    rot_mri = scipy.ndimage.rotate(rot_mri, y_rot, axes=(0, 2), reshape=False, order=3, mode='constant', cval=0, prefilter=False)
+    rot_mri = scipy.ndimage.rotate(rot_mri, z_rot, axes=(1, 2), reshape=False, order=3, mode='constant', cval=0, prefilter=False)
+
+    rot_mask = scipy.ndimage.rotate(mask_vol, x_rot, axes=(0, 1), reshape=False, order=0, mode='constant', cval=0, prefilter=False)
+    rot_mask = scipy.ndimage.rotate(rot_mask, y_rot, axes=(0, 2), reshape=False, order=0, mode='constant', cval=0, prefilter=False)
+    rot_mask = scipy.ndimage.rotate(rot_mask, z_rot, axes=(1, 2), reshape=False, order=0, mode='constant', cval=0, prefilter=False)
 
     return rot_mri, rot_mask
 
@@ -132,65 +132,91 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     # Load in image path
-    data_path = get_data_path("cHTCO-Group")
+    data_path = get_data_path("HTO")
     train_path = os.path.join(data_path, "train")
 
     # Save data path: make it if it doesn't exist
-    save_data_path = get_data_path("cHTCO-Group5Z")
+    save_data_path = get_data_path("cHTO5")
 
     print(f"Saving new images to {save_data_path}")
 
     set_up_dataset_directory(save_data_path)
 
-    # move_test_and_val(data_path, save_data_path)
-
     # List images
     mri_path = os.path.join(train_path, "mri")
     mask_path = os.path.join(train_path, "mask")
 
-    scans = os.listdir(mri_path)
+    # scans = os.listdir(mri_path)
+    #
+    # for scan in scans:
+    #     # make mri and mask directories in destination
+    #     if not os.path.exists(os.path.join(save_data_path, "train", "mri", scan)):
+    #         os.mkdir(os.path.join(save_data_path, "train", "mri", scan))
+    #         os.mkdir(os.path.join(save_data_path, "train", "mask", scan))
+    #
+    #     mask_vol = np.zeros((224, 128, 56))
+    #     mri_vol = np.zeros((224, 128, 56))
+    #
+    #     for idx, file in enumerate(os.listdir(os.path.join(mri_path, scan))):
+    #         slice_num = get_slice_num(file)
+    #         if slice_num < 57:
+    #             mri_file = os.path.join(mri_path, scan, file)
+    #             mask_file = os.path.join(mask_path, scan, file)
+    #
+    #             mri_img = Image.open(mri_file)
+    #             mri = np.asarray(mri_img)
+    #             mask_img = Image.open(mask_file)
+    #             mask = np.asarray(mask_img)
+    #
+    #             mask_vol[:, :, idx] = mask
+    #             mri_vol[:, :, idx] = mri
+    #
+    #             # Save original image
+    #             save_images(scan, mri, mask, save_data_path, file)
+    #
+    #     print(f"Saved {scan}")
+    #
+    #     # rotate volumes n number of times
+    #     for i in range(args.naug):
+    #         mri_rot, mask_rot = rotate_volumes(mri_vol, mask_vol, rot)
+    #
+    #         # Create directories
+    #         scan_aug = f"a{i}{scan}"
+    #         if not os.path.exists(os.path.join(save_data_path, "train", "mri", scan_aug)):
+    #             os.mkdir(os.path.join(save_data_path, "train", "mri", scan_aug))
+    #             os.mkdir(os.path.join(save_data_path, "train", "mask", scan_aug))
+    #
+    #         # iterate through slices and save
+    #         for idx in range(mri_rot.shape[2]):
+    #             filename = f"{scan_aug}-{idx+1:04}.bmp"
+    #             save_images(scan_aug, mri_rot[:, :, idx], mask_rot[:, :, idx], save_data_path, filename)
+    #
+    #         print(f"Saved {scan_aug}")
 
-    for scan in scans:
-        # make mri and mask directories in destination
-        if not os.path.exists(os.path.join(save_data_path, "train", "mri", scan)):
-            os.mkdir(os.path.join(save_data_path, "train", "mri", scan))
-            os.mkdir(os.path.join(save_data_path, "train", "mask", scan))
+    # Move val and test datasets if image number is less than 57
+    test_path = os.path.join(data_path, "test")
+    val_path = os.path.join(data_path, "val")
 
-        mask_vol = np.zeros((224, 128, 56))
-        mri_vol = np.zeros((224, 128, 56))
+    test_save_path = os.path.join(save_data_path, "test")
+    val_save_path = os.path.join(save_data_path, "val")
 
-        for idx, file in enumerate(os.listdir(os.path.join(mri_path, scan))):
-            slice_num = get_slice_num(file)
+    for dataset, dataset_save in zip([val_path], [val_save_path]):
+        for scan in os.listdir(os.path.join(dataset, "mri")):
+            if not os.path.exists(os.path.join(dataset_save, "mri", scan)):
+                os.mkdir(os.path.join(dataset_save, "mri", scan))
+            if not os.path.exists(os.path.join(dataset_save, "mask", scan)):
+                os.mkdir(os.path.join(dataset_save,"mask", scan))
 
-            mri_file = os.path.join(mri_path, scan, file)
-            mask_file = os.path.join(mask_path, scan, file)
+            for file in os.listdir(os.path.join(dataset, "mri", scan)):
+                slice_num = get_slice_num(file)
+                if slice_num < 57:
+                    mri_file = os.path.join(dataset, "mri", scan, file)
+                    mask_file = os.path.join(dataset, "mask", scan, file)
 
-            mri_img = Image.open(mri_file)
-            mri = np.asarray(mri_img)
-            mask_img = Image.open(mask_file)
-            mask = np.asarray(mask_img)
+                    # copy files with shutil
+                    shutil.copy(mri_file, os.path.join(dataset_save, "mri", scan, file))
+                    shutil.copy(mask_file, os.path.join(dataset_save, "mask", scan, file))
 
-            mask_vol[:, :, idx] = mask
-            mri_vol[:, :, idx] = mri
+                    print(f"Saved {scan}")
 
-            # Save original image
-            save_images(scan, mri, mask, save_data_path, file)
 
-        print(f"Saved {scan}")
-
-        # rotate volumes n number of times
-        for i in range(args.naug):
-            mri_rot, mask_rot = rotate_volumes(mri_vol, mask_vol, rot)
-
-            # Create directories
-            scan_aug = f"a{i}{scan}"
-            if not os.path.exists(os.path.join(save_data_path, "train", "mri", scan_aug)):
-                os.mkdir(os.path.join(save_data_path, "train", "mri", scan_aug))
-                os.mkdir(os.path.join(save_data_path, "train", "mask", scan_aug))
-
-            # iterate through slices and save
-            for idx in range(mri_rot.shape[2]):
-                filename = f"{scan_aug}-{idx+1:04}.bmp"
-                save_images(scan_aug, mri_rot[:, :, idx], mask_rot[:, :, idx], save_data_path, filename)
-
-            print(f"Saved {scan_aug}")

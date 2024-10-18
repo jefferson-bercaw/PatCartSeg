@@ -1,4 +1,4 @@
-tensorflow[and-cuda]==2.14.1
+tensorflow==2.16.1
 matplotlib
 scipy==1.13.0
 pyvista==0.43.8

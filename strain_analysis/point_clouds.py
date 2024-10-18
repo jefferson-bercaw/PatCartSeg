@@ -8,7 +8,6 @@ import pyvista as pv
 import pickle
 import open3d as o3d
 from get_data_path import get_data_path
-from registration import move_patella
 
 
 def return_predicted_volumes(subj_name, model_name):

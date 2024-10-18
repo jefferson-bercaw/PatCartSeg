@@ -1,24 +1,23 @@
-import matplotlib.colors
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import pickle
 import os
 import matplotlib.pyplot as plt
-from create_dataset import get_dataset
 import datetime
+import sys
+import pandas as pd
+
+# Add the main directory to the system path
+main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(main_dir)
+
+from create_dataset import get_dataset
 from dice_loss_function import dice_loss
 from PIL import Image
-from unet import build_unet
 from get_data_path import get_data_path
 from multiclass_segment import save_model_info
 from augmentation import assemble_mask_volume, assemble_mri_volume, four_digit_number
-import argparse
-import pandas as pd
-
-
-parser = argparse.ArgumentParser(description="Training Options")
-parser.add_argument("--tissue", type=str, default='p', help="Tissue type to segment. Choose 'p' for patella or 'c' for patellar cartilage.")
 
 
 def get_date_and_hour():
@@ -29,13 +28,15 @@ def get_date_and_hour():
 def get_history_filename(date_time):
     # Add extension
     date_time = date_time + ".pkl"
-    history_filename = os.path.abspath(os.path.join('history', date_time))
+    main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    history_filename = os.path.abspath(os.path.join(main_dir, 'history', date_time))
     return history_filename
 
 
 def get_model_filename(date_time):
     date_time = date_time + ".h5"
-    model_filename = os.path.abspath(os.path.join('models', date_time))
+    main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    model_filename = os.path.abspath(os.path.join(main_dir, 'models', date_time))
     return model_filename
 
 
@@ -90,13 +91,12 @@ def process_predicted_label(pred_label):
     thresholded_label = (pred_label >= 0.5)
     binary_data = thresholded_label.astype(np.uint8)
 
-    # Binary predictions
-    binary_predictions = np.squeeze(binary_data)
+    pat = np.squeeze(binary_data[:, :, :, 0])
 
     # Probability masks
-    probability_predictions = np.squeeze(pred_label)
+    pat_prob = np.squeeze(pred_label[:, :, :, 0])
 
-    return binary_predictions, probability_predictions
+    return pat, pat_prob
 
 
 def process_mri(mri):
@@ -104,12 +104,11 @@ def process_mri(mri):
     return mri
 
 
-def save_result(scan_name, date_time, pat, pat_prob, tissue):
-    subj_str = scan_name.numpy()[0].decode()
+def save_result(filename, date_time, pat, pat_prob, tissue):
+    slice_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
     pat_filepath = os.path.join(results_filename, tissue)
-
     pat_prob_filepath = os.path.join(results_filename, tissue+"prob")
 
     # Make directories if they don't exist
@@ -118,16 +117,15 @@ def save_result(scan_name, date_time, pat, pat_prob, tissue):
     if not os.path.exists(pat_prob_filepath):
         os.mkdir(pat_prob_filepath)
 
-    filename_npy = scan_name + ".npy"
+    filename_npy = slice_str.split(".")[0] + ".npy"
 
-    pat_filepath = os.path.join(pat_filepath, subj_str)
-    pat_prob_filepath = os.path.join(pat_prob_filepath, subj_str)
+    pat_filepath = os.path.join(pat_filepath, slice_str)
+    pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
     # print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
-    # Save the masks as BMP files
-    for i in range(pat.shape[-1]):
-        pat_img = Image.fromarray(pat[:, :, i] * 255)
-        pat_img.save(pat_filepath + f"_{i:04d}.bmp")
+    # Save Image
+    pat_img = Image.fromarray(pat * 255)
+    pat_img.save(pat_filepath + slice_str)
 
     # Save the probability masks as NPY files
     np.save(pat_prob_filepath, pat_prob)
@@ -136,7 +134,7 @@ def save_result(scan_name, date_time, pat, pat_prob, tissue):
 
 def process_true_label(label):
     label = tf.squeeze(label, axis=0)
-    pat = label[:, :, :, 0].numpy().astype(np.uint8)
+    pat = label[:, :, 0].numpy().astype(np.uint8)
     return pat
 
 
@@ -162,10 +160,6 @@ def save_metrics(date_time, metrics):
 
 
 def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filename, image_filename, tissue):
-    # Define colors for ground truth and predicted masks
-    gt_color = 'blue'
-    pred_color = 'red'
-
     # Create figure and axes
     fig, ax = plt.subplots()
 
@@ -173,28 +167,32 @@ def plot_mri_with_masks(mri_image, ground_truth_mask, predicted_mask, comp_filen
     ax.imshow(mri_image, cmap='gray')
 
     # Overlay ground truth mask
-    alpha_gt = np.where(ground_truth_mask == 1, 0.4, 0)  # Set alpha based on mask values
-    ax.imshow(ground_truth_mask, cmap='Blues', alpha=alpha_gt)
+    agreement = np.where(np.logical_and(ground_truth_mask == 1, predicted_mask == 1), 1, 0)
+    predicted_orange = np.where(np.logical_and(ground_truth_mask == 0, predicted_mask == 1), 1, 0)
+    manual_cyan = np.where(np.logical_and(ground_truth_mask == 1, predicted_mask == 0), 1, 0)
 
-    # Overlay predicted mask
-    alpha_pred = np.where(predicted_mask == 1, 0.4, 0)  # Set alpha based on mask values
-    ax.imshow(predicted_mask, cmap='Reds', alpha=alpha_pred)
+    agree_mask = np.where(agreement == 1, 0.4, 0)
+    pred_mask = np.where(predicted_orange == 1, 0.4, 0)
+    manual_mask = np.where(manual_cyan == 1, 0.4, 0)
 
-    # Create legend
-    legend_handles = [
-        plt.Rectangle((0, 0), 1, 1, color=gt_color, alpha=0.5, label='Ground Truth'),
-        plt.Rectangle((0, 0), 1, 1, color=pred_color, alpha=0.5, label='Predicted')
-    ]
-    ax.legend(handles=legend_handles, loc='upper right')
+    ax.imshow(agree_mask, cmap='Greens', alpha=agree_mask)
+    ax.imshow(predicted_orange, cmap='Wistia', alpha=pred_mask)
+    ax.imshow(manual_cyan, cmap='cool', alpha=manual_mask)
 
     # Saving figure
-    image_filename = image_filename.numpy()[0].decode()
-    plot_filename = os.path.join(comp_filename, tissue)
+    save_path = get_data_path(" ").split(os.path.sep)[0:-1]
+    save_path = os.path.sep.join(save_path)
+    save_path = os.path.join(save_path, "results", date_time)
 
-    if not os.path.exists(plot_filename):
-        os.mkdir(plot_filename)
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
 
-    plot_filename = os.path.join(plot_filename, image_filename)
+    save_path = os.path.join(save_path, "examples")
+
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+
+    plot_filename = os.path.join(save_path, comp_filename)
 
     # Go to .png format
     plot_filename = plot_filename[:-3] + "png"
@@ -342,8 +340,8 @@ def return_volumes(subj_name, model_name):
     dataset_name = parse_dataset_name(model_name)
 
     # Point to predictions
-    cwd = os.getcwd()
-    pred_folder = os.path.join(cwd, "results", model_name)
+    main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    pred_folder = os.path.join(main_dir, "results", model_name)
     p_pred_folder = os.path.join(pred_folder, "pat")
     pc_pred_folder = os.path.join(pred_folder, "pat_cart")
 
@@ -372,7 +370,9 @@ def return_volumes(subj_name, model_name):
 
 def get_most_recent_model():
     folder_path = os.getcwd()
-    model_path = os.path.join(folder_path, 'models')
+    parent_dir = os.path.abspath(os.path.join(folder_path, os.pardir))
+
+    model_path = os.path.join(parent_dir, 'models')
 
     models = os.listdir(model_path)
 
@@ -403,6 +403,19 @@ def plot_loss(history, results_filename, show=False):
         plt.show()
 
 
+def get_all_models_containing(substring):
+    save_path = get_data_path(" ").split(os.path.sep)[0:-1]
+    save_path = os.path.sep.join(save_path)
+    model_path = os.path.join(save_path, "models")
+    models = os.listdir(model_path)
+
+    date_times = list()
+    for model in models:
+        if substring in model:
+            date_times.append(model[:-3])
+    return date_times
+
+
 if __name__ == "__main__":
 
     # Mirrored strategy
@@ -410,11 +423,17 @@ if __name__ == "__main__":
     with strategy.scope():
         # # date_time pattern to identify model we just trained
         date_times = get_most_recent_model()
-        # date_times = ["unet_2024-07-11_00-40-25_ctHT5"]
+
+        tissue = date_times[0][7]
+        dataset_name = parse_dataset_name(date_times[0])
+
+        date_times.append([f"unet2d-{tissue}_8888-88-88_88-88-88_{dataset_name}"])
 
         for date_time in date_times:
 
             dataset_name = parse_dataset_name(date_time)
+
+            tissue = date_time[7]
 
             # plot_mri_with_both_masks("AS_006", date_time)
 
@@ -432,7 +451,7 @@ if __name__ == "__main__":
             plot_loss(history, results_filename, show=False)
 
             # Load in test dataset and create iterable
-            test_dataset = get_dataset(dataset_name="CHT-Group", dataset_type="test", batch_size=1, tissue=parser.parse_args().tissue)
+            test_dataset = get_dataset(dataset_name=dataset_name, dataset_type="test", batch_size=1, tissue=tissue)
 
             iterable = iter(test_dataset)
             n_test_scans = len(test_dataset)
@@ -445,8 +464,9 @@ if __name__ == "__main__":
 
             for i in range(n_test_scans):
                 filename, mri, label = next(iterable)
+                filename = filename.numpy()[0].decode()
 
-                pred_label = model.predict(mri)
+                pred_label = model.predict(mri, verbose=0)
 
                 mri = process_mri(mri)
                 pat, pat_prob = process_predicted_label(pred_label)
@@ -455,18 +475,19 @@ if __name__ == "__main__":
                 pat_positives = count_positives(pat, pat_true, pat_positives)
 
                 # Plot examples of true masks that have predictions on them
-                # plot_mri_with_masks(mri, pat_true, pat, comp_filename, filename, tissue='pat')
+                if i < 56:
+                    plot_mri_with_masks(mri, pat_true, pat, filename, filename, tissue=tissue)
                 # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
                 # Output predictions
-                save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
+                # save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
 
                 # print(f"Img {i+1} of {n_test_images}")
 
             pat_dsc = calculate_dice(pat_positives)
 
             print(f"Model: {date_time}")
-            print(f"Tissue: {parser.parse_args().tissue}")
+            print(f"Tissue: {tissue}")
             print(f"Patellar Dice Score: {pat_dsc}")
 
             metrics = {"dice": pat_dsc,
