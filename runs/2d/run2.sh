@@ -7,7 +7,7 @@
 #SBATCH -p scavenger-gpu
 #SBATCH --gres=gpu:1
 #SBATCH --exclusive
-#SBATCH --nodelist=dcc-allenlab-gpu-02
+#SBATCH --nodelist=dcc-allenlab-gpu-09
 
 cd 2d
 
