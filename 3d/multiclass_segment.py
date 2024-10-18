@@ -87,14 +87,16 @@ if __name__ == "__main__":
                 self.best_val_loss = float('inf')
 
             def on_epoch_end(self, epoch, logs=None):
-                if (epoch + 1) % 10 == 0:
-                    loss = logs.get('loss')
-                    val_loss = logs.get('val_loss')
-                    print(f"Epoch {epoch + 1} - Loss: {loss:.4f}, Validation Loss: {val_loss:.4f}")
-                if val_loss < self.best_val_loss:
-                    self.best_val_loss = val_loss
-                    print("Saving model!")
-                    self.model.save(os.path.join(main_dir, "models", f"unet3d-{parser.parse_args().tissue}_8888-88-88_88-88-88_{dataset_name}.h5"))
+                loss = logs.get('loss')
+                val_loss = logs.get('val_loss')
+
+                print(f"Epoch {epoch + 1} - Loss: {loss:.4f}, Validation Loss: {val_loss:.4f}")
+
+                if val_loss is not None:
+                    if val_loss < self.best_val_loss:
+                        self.best_val_loss = val_loss
+                        print("Saving model!")
+                        self.model.save(os.path.join(main_dir, "models", f"unet3d-{parser.parse_args().tissue}_8888-88-88_88-88-88_{dataset_name}.h5"))
 
         print("Training!")
         # Train model
