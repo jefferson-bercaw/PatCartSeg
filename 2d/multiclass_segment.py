@@ -82,7 +82,6 @@ if __name__ == "__main__":
                                                                    min_delta=min_delta,
                                                                    verbose=1)
 
-
         class PerformanceCallback(tf.keras.callbacks.Callback):
             def __init__(self):
                 super(PerformanceCallback, self).__init__()

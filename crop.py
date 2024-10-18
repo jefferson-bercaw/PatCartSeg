@@ -115,11 +115,11 @@ if __name__ == "__main__":
     bounds_dict["AS_093"]["slice_size"] = 41
     bounds_dict["AS_093"]["slices_list"] = [i for i in range(66, 121)]
 
-    data_path = get_data_path("HTCO")
+    data_path = get_data_path("HTO")
     dataset_types = ["train", "test", "val"]
 
     # Get saving dataset and setup
-    save_data_path = get_data_path("cHTCO")
+    save_data_path = get_data_path("HTO")
 
     for set_type in dataset_types:
         for img_type in ["mri", "mask"]:

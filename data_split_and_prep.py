@@ -109,8 +109,8 @@ if __name__ == "__main__":
     num_val_subj = 5
     num_test_subj = 5
 
-    val_subj_nums = random.sample(range(1, len(subj_nums)), num_val_subj)
-    test_subj_nums = random.sample([num for num in range(1, len(subj_nums)) if num not in val_subj_nums], num_test_subj)
+    val_subj_nums = random.sample(subj_nums, num_val_subj)
+    test_subj_nums = random.sample([num for num in subj_nums if num not in val_subj_nums], num_test_subj)
 
     # Save these images in one combined folder
     train_scans = [entry["scan"] for entry in scans.values() if (entry['subject_num'] not in test_subj_nums and entry['subject_num'] not in val_subj_nums)]
