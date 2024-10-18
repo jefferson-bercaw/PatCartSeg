@@ -11,5 +11,5 @@
 
 cd 2d
 
-python multiclass_segment.py --dataset=cHTO5--tissue=c --learningrate=0.001 --batch=16 --depth=5 --dropout=0.4 --kernel=9 --epochs=1000
+python multiclass_segment.py --dataset=cHTO5 --tissue=c --learningrate=0.001 --batch=16 --depth=5 --dropout=0.4 --kernel=9 --epochs=1000
 python evaluate.py
