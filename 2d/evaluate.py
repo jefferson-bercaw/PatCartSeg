@@ -30,6 +30,12 @@ def get_history_filename(date_time):
     date_time = date_time + ".pkl"
     main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     history_filename = os.path.abspath(os.path.join(main_dir, 'history', date_time))
+
+    if not os.path.exists(history_filename):
+        histories = os.listdir(os.path.join(main_dir, 'history'))
+        for history in histories:
+            if date_time[0:9] in history:
+                return os.path.join(main_dir, 'history', history)
     return history_filename
 
 
@@ -105,7 +111,6 @@ def process_mri(mri):
 
 
 def save_result(filename, date_time, pat, pat_prob, tissue):
-    slice_str = filename.numpy()[0].decode()
     results_filename = get_results_filename(date_time)
 
     pat_filepath = os.path.join(results_filename, tissue)
@@ -117,15 +122,15 @@ def save_result(filename, date_time, pat, pat_prob, tissue):
     if not os.path.exists(pat_prob_filepath):
         os.mkdir(pat_prob_filepath)
 
-    filename_npy = slice_str.split(".")[0] + ".npy"
+    filename_npy = filename.split(".")[0] + ".npy"
 
-    pat_filepath = os.path.join(pat_filepath, slice_str)
+    pat_filepath = os.path.join(pat_filepath, filename)
     pat_prob_filepath = os.path.join(pat_prob_filepath, filename_npy)
     # print(f"Saving numpy arrays to {pat_prob_filepath} and {pat_cart_prob_filepath}")
 
     # Save Image
     pat_img = Image.fromarray(pat * 255)
-    pat_img.save(pat_filepath + slice_str)
+    pat_img.save(pat_filepath + filename)
 
     # Save the probability masks as NPY files
     np.save(pat_prob_filepath, pat_prob)
@@ -391,6 +396,7 @@ def get_most_recent_model():
 
 
 def plot_loss(history, results_filename, show=False):
+    plt.close("all")
     plt.plot(history["val_loss"], label='val_loss')
     plt.plot(history["loss"], label='train_loss')
     plt.xlabel('Epoch')
@@ -422,17 +428,17 @@ if __name__ == "__main__":
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # # date_time pattern to identify model we just trained
-        date_times = get_most_recent_model()
+        # date_times = get_most_recent_model()
 
-        tissue = date_times[0][7]
-        dataset_name = parse_dataset_name(date_times[0])
-
-        date_times.append([f"unet2d-{tissue}_8888-88-88_88-88-88_{dataset_name}"])
+        # date_times = ["unet2d-c_2024-10-19_11-54-52_cHTO5",
+        #              "unet2d-c_8888-88-88_88-88-88_cHTO5",
+        #              "unet2d-p_2024-10-19_18-43-41_cHTO5",
+        #              "unet2d-p_8888-88-88_88-88-88_cHTO5"]
+        date_times = ["unet2d-p_2024-10-19_18-43-41_cHTO5",
+                     "unet2d-p_8888-88-88_88-88-88_cHTO5"]
 
         for date_time in date_times:
-
             dataset_name = parse_dataset_name(date_time)
-
             tissue = date_time[7]
 
             # plot_mri_with_both_masks("AS_006", date_time)
@@ -480,9 +486,9 @@ if __name__ == "__main__":
                 # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
                 # Output predictions
-                # save_result(filename, date_time, pat, pat_prob, tissue=parser.parse_args().tissue)
+                save_result(filename, date_time, pat, pat_prob, tissue=tissue)
 
-                # print(f"Img {i+1} of {n_test_images}")
+                print(f"Scan {i+1} of {n_test_scans}")
 
             pat_dsc = calculate_dice(pat_positives)
 
