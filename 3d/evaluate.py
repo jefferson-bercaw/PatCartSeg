@@ -34,6 +34,12 @@ def get_history_filename(date_time):
     # Add extension
     date_time = date_time + ".pkl"
     history_filename = os.path.abspath(os.path.join('../history', date_time))
+
+    if not os.path.exists(history_filename):
+        histories = os.listdir(os.path.join(main_dir, 'history'))
+        for history in histories:
+            if date_time[0:9] in history:
+                return os.path.join(main_dir, 'history', history)
     return history_filename
 
 
@@ -397,6 +403,7 @@ def get_most_recent_model():
 
 
 def plot_loss(history, results_filename, show=False):
+    plt.close("all")
     plt.plot(history["val_loss"], label='val_loss')
     plt.plot(history["loss"], label='train_loss')
     plt.xlabel('Epoch')
@@ -430,13 +437,17 @@ if __name__ == "__main__":
         # # date_time pattern to identify model we just trained
         date_times = get_most_recent_model()
 
-        tissue = date_times[0][7]
-        dataset_name = parse_dataset_name(date_times[0])
-
-        date_times.append([f"unet3d-{tissue}_8888-88-88_88-88-88_{dataset_name}"])
-        # date_times = ["unet_2024-07-11_00-40-25_ctHT5"]
+        # date_times = ["unet3d-c_2024-10-19_19-47-52_cHTO5",
+        #               "unet3d-c_8888-88-88_88-88-88_cHTO5",
+        #               "unet3d-p_2024-10-19_09-25-04_cHTO5",
+        #               "unet3d-p_8888-88-88_88-88-88_cHTO5"]
+        date_times = ["unet3d-p_2024-10-19_09-25-04_cHTO5",
+                      "unet3d-p_8888-88-88_88-88-88_cHTO5"]
 
         for date_time in date_times:
+
+            tissue = date_time[7]
+            dataset_name = parse_dataset_name(date_time)
 
             # plot_mri_with_both_masks("AS_006", date_time)
 
@@ -481,14 +492,14 @@ if __name__ == "__main__":
                 # plot_mri_with_masks(mri, pat_cart_true, pat_cart, comp_filename, filename, tissue='pat_cart')
 
                 # Output predictions
-                # save_result(filename, date_time, pat, pat_prob, tissue=tissue)
+                save_result(filename, date_time, pat, pat_prob, tissue=tissue)
 
-                # print(f"Img {i+1} of {n_test_images}")
+                print(f"Img {i+1} of {n_test_scans}")
 
             pat_dsc = calculate_dice(pat_positives)
 
             print(f"Model: {date_time}")
-            print(f"Tissue: {parser.parse_args().tissue}")
+            print(f"Tissue: {tissue}")
             print(f"Patellar Dice Score: {pat_dsc}")
 
             metrics = {"dice": pat_dsc,
